@@ -195,7 +195,7 @@ func TestDaemonReplyAndTimeout(t *testing.T) {
 	}
 	defer l.Close()
 	slow := false
-	go ipc.Serve(l, func(r ipc.Request) ipc.Response {
+	go ipc.Serve(l, func(_ ipc.Request) ipc.Response {
 		if slow {
 			time.Sleep(200 * time.Millisecond)
 		}

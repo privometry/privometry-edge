@@ -441,14 +441,14 @@ func (d *discoverer) files(a registry.Adapter, osPaths map[string][]string) ([]s
 }
 
 func (d *discoverer) read(p, format string, tier contract.ConfigTier, holds []string) *ConfigFile {
-	real := d.real(p)
-	if cf, ok := d.parsed[real]; ok {
+	realPath := d.real(p)
+	if cf, ok := d.parsed[realPath]; ok {
 		c := *cf
 		c.Tier, c.Holds = tier, holds
 		return &c
 	}
-	cf := &ConfigFile{Tier: tier, Path: d.display(p), Format: format, Holds: holds, RealPath: real}
-	raw, err := readLimited(real)
+	cf := &ConfigFile{Tier: tier, Path: d.display(p), Format: format, Holds: holds, RealPath: realPath}
+	raw, err := readLimited(realPath)
 	if err == nil {
 		sum := sha256.Sum256(raw)
 		cf.SHA256 = "sha256:" + hex.EncodeToString(sum[:])
@@ -457,7 +457,7 @@ func (d *discoverer) read(p, format string, tier contract.ConfigTier, holds []st
 	if err != nil {
 		cf.Error = firstLine(err.Error())
 	}
-	d.parsed[real] = cf
+	d.parsed[realPath] = cf
 	return cf
 }
 
@@ -797,7 +797,7 @@ func tierOrder(t contract.ConfigTier) int {
 func runVersion(argv []string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, argv[0], argv[1:]...).CombinedOutput()
+	out, err := exec.CommandContext(ctx, argv[0], argv[1:]...).CombinedOutput() //nolint:gosec // runs a discovered agent binary with --version
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return "", errors.New("timed out")
 	}

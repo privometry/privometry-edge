@@ -1,10 +1,7 @@
 package platform
 
 import (
-	"bytes"
-	"context"
 	"errors"
-	"os/exec"
 	"strings"
 	"time"
 )
@@ -102,46 +99,28 @@ func pickEnv(entries []string, names []string) map[string]string {
 	return out
 }
 
-func run(name string, args ...string) ([]byte, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Env = append(cmd.Environ(), "LC_ALL=C")
-	return cmd.Output()
-}
-
 // SplitCommandLine splits a command line on spaces outside double quotes.
 func SplitCommandLine(s string) []string {
 	var args []string
 	var cur strings.Builder
-	quoted, any := false, false
+	quoted, inArg := false, false
 	for _, r := range s {
 		switch {
 		case r == '"':
-			quoted, any = !quoted, true
+			quoted, inArg = !quoted, true
 		case (r == ' ' || r == '\t') && !quoted:
-			if any {
+			if inArg {
 				args = append(args, cur.String())
 				cur.Reset()
-				any = false
+				inArg = false
 			}
 		default:
 			cur.WriteRune(r)
-			any = true
+			inArg = true
 		}
 	}
-	if any {
+	if inArg {
 		args = append(args, cur.String())
 	}
 	return args
-}
-
-func lines(out []byte) []string {
-	var ls []string
-	for _, l := range bytes.Split(out, []byte("\n")) {
-		if s := strings.TrimSpace(string(l)); s != "" {
-			ls = append(ls, s)
-		}
-	}
-	return ls
 }

@@ -236,7 +236,7 @@ const RenewBefore = 10 * 24 * time.Hour
 // Renew asks the edge API, as this device, for a certificate for a new key,
 // and keeps both. base is the client to clone (tests pass one that trusts
 // their server); its TLS client certificate is replaced by the device's.
-func Renew(ctx context.Context, base *http.Client, env platform.Env, keys keystore.Store, now time.Time) (*Identity, error) {
+func Renew(ctx context.Context, base *http.Client, env platform.Env, keys keystore.Store) (*Identity, error) {
 	id, err := Load(env)
 	if err != nil {
 		return nil, err

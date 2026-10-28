@@ -276,7 +276,7 @@ func dpPath(t *testing.T, s *community.Store) string {
 		t.Fatalf("list %v %v", list, err)
 	}
 	var found string
-	filepath.WalkDir(filepath.Join(s.Dir(), "packs"), func(p string, d os.DirEntry, err error) error {
+	filepath.WalkDir(filepath.Join(s.Dir(), "packs"), func(p string, _ os.DirEntry, err error) error {
 		if err == nil && strings.HasSuffix(p, "service-tokens.json") {
 			found = p
 		}

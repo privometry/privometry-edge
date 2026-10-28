@@ -32,13 +32,13 @@ type CatalogItem struct {
 // the same rules to inventory, except command globs, which only devices see.
 func (c BundleCatalog) CatalogStatus(it CatalogItem, now time.Time) (contract.CatalogStatus, *BundleCatalogEntry) {
 	var approved, listed *BundleCatalogEntry
-	any := false
+	kindListed := false
 	for i := range c.Entries {
 		e := &c.Entries[i]
 		if string(e.Kind) != it.Kind || (e.ExpiresAt != nil && !now.Before(e.ExpiresAt.Time)) {
 			continue
 		}
-		any = true
+		kindListed = true
 		if !e.matches(it) {
 			continue
 		}
@@ -56,7 +56,7 @@ func (c BundleCatalog) CatalogStatus(it CatalogItem, now time.Time) (contract.Ca
 		return contract.CatalogStatusApproved, approved
 	case listed != nil:
 		return contract.CatalogStatusUnapproved, listed
-	case any:
+	case kindListed:
 		return contract.CatalogStatusUnknown, nil
 	}
 	return "", nil

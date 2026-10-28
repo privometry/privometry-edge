@@ -167,21 +167,21 @@ func TestUpdateRefusals(t *testing.T) {
 		{"downgrade", "0.6.0", nil, ErrDowngrade, ""},
 		{"release older than a prerelease", "0.5.1-beta.1", nil, ErrDowngrade, ""},
 		{"dev build", "dev", nil, ErrDevBuild, ""},
-		{"expired manifest", "0.4.2", func(f *fixture, o *Options) {
+		{"expired manifest", "0.4.2", func(_ *fixture, o *Options) {
 			o.Now = func() time.Time { return now.Add(31 * 24 * time.Hour) }
 		}, ErrExpired, ""},
-		{"signed by a policy key", "0.4.2", func(f *fixture, o *Options) { f.sign("policy", "test-in") }, signing.ErrNoValidSignature, ""},
-		{"signed by an unknown release key", "0.4.2", func(f *fixture, o *Options) { f.sign("release", "attacker") }, signing.ErrNoValidSignature, ""},
-		{"payload changed after signing", "0.4.2", func(f *fixture, o *Options) {
+		{"signed by a policy key", "0.4.2", func(f *fixture, _ *Options) { f.sign("policy", "test-in") }, signing.ErrNoValidSignature, ""},
+		{"signed by an unknown release key", "0.4.2", func(f *fixture, _ *Options) { f.sign("release", "attacker") }, signing.ErrNoValidSignature, ""},
+		{"payload changed after signing", "0.4.2", func(f *fixture, _ *Options) {
 			f.manifest = bytes.Replace(f.manifest, []byte(`"payload":"`), []byte(`"payload":"A`), 1)
 		}, nil, "manifest signature"},
-		{"invalid manifest", "0.4.2", func(f *fixture, o *Options) {
+		{"invalid manifest", "0.4.2", func(f *fixture, _ *Options) {
 			f.release.Artifacts[0].Binaries = append(f.release.Artifacts[0].Binaries, "install.sh")
 			f.sign("release", "test")
 		}, nil, "binaries/3"},
-		{"no download for this platform", "0.4.2", func(f *fixture, o *Options) { o.GOARCH = "riscv64" }, ErrNoArtifact, ""},
-		{"manifest over plain HTTP", "0.4.2", func(f *fixture, o *Options) { o.ManifestURL = "http://example.com/release.json" }, nil, "not an HTTPS URL"},
-		{"no release keys built in", "0.4.2", func(f *fixture, o *Options) { o.Keys = nil }, ErrNoReleaseKeys, ""},
+		{"no download for this platform", "0.4.2", func(_ *fixture, o *Options) { o.GOARCH = "riscv64" }, ErrNoArtifact, ""},
+		{"manifest over plain HTTP", "0.4.2", func(_ *fixture, o *Options) { o.ManifestURL = "http://example.com/release.json" }, nil, "not an HTTPS URL"},
+		{"no release keys built in", "0.4.2", func(_ *fixture, o *Options) { o.Keys = nil }, ErrNoReleaseKeys, ""},
 	}
 	for _, c := range cases {
 		f := newFixture(t, "0.5.0")
@@ -208,9 +208,9 @@ func TestStageRejectsBadDownloads(t *testing.T) {
 		edit func(f *fixture, art *Artifact)
 		msg  string
 	}{
-		{"digest mismatch", func(f *fixture, art *Artifact) { art.SHA256 = "sha256:" + strings.Repeat("0", 64) }, "digest"},
-		{"bigger than declared", func(f *fixture, art *Artifact) { art.Size-- }, "larger than"},
-		{"smaller than declared", func(f *fixture, art *Artifact) { art.Size++ }, "bytes, the manifest says"},
+		{"digest mismatch", func(_ *fixture, art *Artifact) { art.SHA256 = "sha256:" + strings.Repeat("0", 64) }, "digest"},
+		{"bigger than declared", func(_ *fixture, art *Artifact) { art.Size-- }, "larger than"},
+		{"smaller than declared", func(_ *fixture, art *Artifact) { art.Size++ }, "bytes, the manifest says"},
 		{"redirect to plain HTTP", func(f *fixture, art *Artifact) { art.URL = f.srv.URL + "/redirect-to-http" }, "redirect off HTTPS"},
 		{"binary missing", func(f *fixture, art *Artifact) {
 			f.archive = tarGz(f.t, map[string][]byte{"privometry": script("0.5.0"), "privometryd": script("0.5.0")})

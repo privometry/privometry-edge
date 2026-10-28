@@ -1,3 +1,5 @@
+// Package riskfeed syncs and holds the risk feed on an enrolled device, and
+// computes the tool manifest hashes the feed is keyed by.
 package riskfeed
 
 import (

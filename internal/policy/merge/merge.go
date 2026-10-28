@@ -321,7 +321,7 @@ func (m *merger) applyOverrides(sources []Source) {
 		}
 		base := e.meta
 		lower := bundles.BundleRule{}
-		any := false
+		overridden := false
 		for _, c := range byRule[id] {
 			if c.layer == Org {
 				continue
@@ -333,7 +333,7 @@ func (m *merger) applyOverrides(sources []Source) {
 			if !m.permitted(e, c.layer, c.policy, c.o, base) {
 				continue
 			}
-			any = true
+			overridden = true
 			if v := c.o.Verdict; v != "" && verdictStrength[v] > verdictStrength[string(lower.Verdict)] {
 				lower.Verdict = contract.Verdict(v)
 			}
@@ -347,7 +347,7 @@ func (m *merger) applyOverrides(sources []Source) {
 				lower.Message = c.o.Message
 			}
 		}
-		if any {
+		if overridden {
 			apply(&e.meta, lower)
 		}
 		for _, c := range byRule[id] {

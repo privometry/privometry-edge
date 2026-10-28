@@ -114,7 +114,7 @@ func Run(ctx context.Context, opts Options) int {
 	s := &shim{opts: opts, session: randomID(), out: opts.Stdout, pending: map[string]pendingCall{}}
 	s.cwd, _ = os.Getwd()
 
-	cmd := exec.CommandContext(ctx, opts.Command, opts.Args...)
+	cmd := exec.CommandContext(ctx, opts.Command, opts.Args...) //nolint:gosec // starting the MCP server the user configured is the shim's job
 	cmd.Stderr = opts.Stderr
 	// When the agent stops the shim, let the server shut down cleanly first.
 	cmd.Cancel = func() error { return terminate(cmd.Process) }

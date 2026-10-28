@@ -246,7 +246,7 @@ func sibling(flagPath, name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	info, err := os.Stat(abs)
+	info, err := os.Stat(abs) //nolint:gosec // the path is the user's own --binary flag or the CLI's sibling
 	if err != nil || info.IsDir() || info.Mode().Perm()&0o111 == 0 {
 		return "", fmt.Errorf("%s not found or not executable at %s (use --%s)", name, abs, strings.TrimSuffix(name, "-hook"))
 	}

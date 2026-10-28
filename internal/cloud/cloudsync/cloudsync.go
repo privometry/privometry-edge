@@ -114,7 +114,7 @@ func (s *Syncer) Tick(ctx context.Context, now time.Time) bool {
 		base = &http.Client{Transport: http.DefaultTransport}
 	}
 	if !now.Before(s.nextRenew) && id.CertificateExpiresAt.Sub(now) < enroll.RenewBefore {
-		if renewed, err := enroll.Renew(ctx, base, s.Env, keys, now); err != nil {
+		if renewed, err := enroll.Renew(ctx, base, s.Env, keys); err != nil {
 			s.log().Warn("certificate renewal failed", "err", err, "expires", id.CertificateExpiresAt)
 			s.nextRenew = now.Add(retryRenew)
 		} else {

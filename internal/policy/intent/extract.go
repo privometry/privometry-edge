@@ -112,7 +112,7 @@ func writeRisk(class string) string {
 }
 
 func describeClass(class string) string {
-	return map[string]string{"repo": "the repo", "temp": "a temp folder", "home": "your home folder", "system": "a system folder",
+	return map[string]string{"repo": "the repo", "temp": "a temp folder", "home": "your home folder", "system": "a system folder", //nolint:gosec // folder class labels, not credentials
 		"secret_store": "a credential store", "other": "a folder outside the repo"}[class]
 }
 

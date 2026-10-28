@@ -1,6 +1,7 @@
 package parsers_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/privometry/privometry-oss/internal/scanner/parsers"
@@ -37,7 +38,7 @@ func TestErrors(t *testing.T) {
 			t.Errorf("%s: want an error for %q", format, input)
 		}
 	}
-	if _, err := parsers.Parse("json", make([]byte, parsers.MaxSize+1)); err != parsers.ErrTooLarge {
+	if _, err := parsers.Parse("json", make([]byte, parsers.MaxSize+1)); !errors.Is(err, parsers.ErrTooLarge) {
 		t.Errorf("oversized file: %v", err)
 	}
 }

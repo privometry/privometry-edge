@@ -105,3 +105,13 @@ func bootTime() (time.Time, error) {
 	}
 	return time.Unix(tv.Sec, int64(tv.Usec)*1000), nil
 }
+
+func lines(out []byte) []string {
+	var ls []string
+	for _, l := range bytes.Split(out, []byte("\n")) {
+		if s := strings.TrimSpace(string(l)); s != "" {
+			ls = append(ls, s)
+		}
+	}
+	return ls
+}

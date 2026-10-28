@@ -164,7 +164,7 @@ func TestEnrollThenRenewOverMutualTLS(t *testing.T) {
 	}
 	firstKey, _ := keys.Get(DeviceKeyName)
 
-	renewed, err := Renew(ctx, e.srv.Client(), env, keys, time.Now())
+	renewed, err := Renew(ctx, e.srv.Client(), env, keys)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,7 +179,7 @@ func TestEnrollThenRenewOverMutualTLS(t *testing.T) {
 		t.Error("device.json keeps the renewed certificate")
 	}
 	// The renewed certificate works for the next renewal.
-	if _, err := Renew(ctx, e.srv.Client(), env, keys, time.Now()); err != nil {
+	if _, err := Renew(ctx, e.srv.Client(), env, keys); err != nil {
 		t.Fatalf("second renewal: %v", err)
 	}
 }
@@ -187,7 +187,7 @@ func TestEnrollThenRenewOverMutualTLS(t *testing.T) {
 func TestRenewNeedsAnEnrolledDevice(t *testing.T) {
 	e := newEdge(t)
 	env, keys := testEnv(t)
-	if _, err := Renew(context.Background(), e.srv.Client(), env, keys, time.Now()); err == nil || !strings.Contains(err.Error(), "not enrolled") {
+	if _, err := Renew(context.Background(), e.srv.Client(), env, keys); err == nil || !strings.Contains(err.Error(), "not enrolled") {
 		t.Fatalf("renew before enrolling: %v", err)
 	}
 }

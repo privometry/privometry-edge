@@ -90,7 +90,7 @@ func deviceCmd(args []string, stdout, stderr io.Writer) int {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
-		if id, err = enroll.Renew(ctx, accountHTTP(), env, keys, accountNow()); err != nil {
+		if id, err = enroll.Renew(ctx, accountHTTP(), env, keys); err != nil {
 			return fail(stderr, err)
 		}
 		fmt.Fprintf(stdout, "Renewed: a new device key and a certificate that expires %s.\n", id.CertificateExpiresAt.Format("2 Jan 2006"))

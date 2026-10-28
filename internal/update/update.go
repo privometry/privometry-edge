@@ -251,7 +251,7 @@ func Stage(ctx context.Context, opts Options, art *Artifact, dir, want string) (
 			return err
 		}
 		tmp += s.Ext
-		f, err := os.OpenFile(tmp, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o755)
+		f, err := os.OpenFile(tmp, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o755) //nolint:gosec // installed binaries must be executable
 		if err != nil {
 			return err
 		}

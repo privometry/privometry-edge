@@ -113,8 +113,8 @@ func settingsPath(a registry.Adapter, opts Options) (string, string, error) {
 	return paths[0], filepath.Join(opts.Root, paths[0]), nil
 }
 
-func load(real string) ([]byte, *object, error) {
-	raw, err := os.ReadFile(real)
+func load(realPath string) ([]byte, *object, error) {
+	raw, err := os.ReadFile(realPath)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, newObject(), nil
 	}
@@ -123,7 +123,7 @@ func load(real string) ([]byte, *object, error) {
 	}
 	o, err := parseOrdered(raw)
 	if err != nil {
-		return nil, nil, fmt.Errorf("guard: %s is not valid JSON, so Privometry will not edit it: %w", real, err)
+		return nil, nil, fmt.Errorf("guard: %s is not valid JSON, so Privometry will not edit it: %w", realPath, err)
 	}
 	return raw, o, nil
 }
@@ -159,17 +159,17 @@ func Install(a registry.Adapter, opts Options) (*Change, error) {
 	if err != nil {
 		return nil, err
 	}
-	path, real, err := settingsPath(a, opts)
+	path, realPath, err := settingsPath(a, opts)
 	if err != nil {
 		return nil, err
 	}
-	before, doc, err := load(real)
+	before, doc, err := load(realPath)
 	if err != nil {
 		return nil, err
 	}
 	lay.remove(doc)
 
-	c := &Change{Agent: string(a.Agent), Path: path, real: real, Before: before}
+	c := &Change{Agent: string(a.Agent), Path: path, real: realPath, Before: before}
 	fc := a.Hooks.FailClosedOption
 	failClosed := fc != nil && (fc.MinVersion == "" || opts.AgentVersion != "" && atLeast(opts.AgentVersion, fc.MinVersion))
 	for _, ev := range a.Hooks.Events {
@@ -246,15 +246,15 @@ func Uninstall(a registry.Adapter, opts Options) (*Change, error) {
 	if err != nil {
 		return nil, err
 	}
-	path, real, err := settingsPath(a, opts)
+	path, realPath, err := settingsPath(a, opts)
 	if err != nil {
 		return nil, err
 	}
-	before, doc, err := load(real)
+	before, doc, err := load(realPath)
 	if err != nil {
 		return nil, err
 	}
-	c := &Change{Agent: string(a.Agent), Path: path, real: real, Before: before, After: before}
+	c := &Change{Agent: string(a.Agent), Path: path, real: realPath, Before: before, After: before}
 	if before == nil || lay.remove(doc) == 0 {
 		return c, nil
 	}
@@ -291,13 +291,13 @@ func Check(a registry.Adapter, opts Options) Status {
 		s.State = "unsupported"
 		return s
 	}
-	path, real, err := settingsPath(a, opts)
+	path, realPath, err := settingsPath(a, opts)
 	s.Path = path
 	if err != nil {
 		s.State, s.Detail = "missing", err.Error()
 		return s
 	}
-	_, doc, err := load(real)
+	_, doc, err := load(realPath)
 	if err != nil {
 		s.State, s.Detail = "missing", err.Error()
 		return s
@@ -352,11 +352,11 @@ func Installed(a registry.Adapter, opts Options) bool {
 	if err != nil {
 		return false
 	}
-	_, real, err := settingsPath(a, opts)
+	_, realPath, err := settingsPath(a, opts)
 	if err != nil {
 		return false
 	}
-	_, doc, err := load(real)
+	_, doc, err := load(realPath)
 	if err != nil {
 		return false
 	}
@@ -655,11 +655,11 @@ func shellQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
-func atLeast(version, min string) bool {
-	if min == "" {
+func atLeast(version, minimum string) bool {
+	if minimum == "" {
 		return true
 	}
-	a, b := registry.ParseVersion(version), registry.ParseVersion(min)
+	a, b := registry.ParseVersion(version), registry.ParseVersion(minimum)
 	if a == "" || b == "" {
 		return false
 	}

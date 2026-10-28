@@ -6,6 +6,13 @@ linters:
     - misspell
     - revive
     - unconvert
+  settings:
+    gosec:
+      excludes:
+        - G104 # unhandled errors: errcheck reports the same calls
+    staticcheck:
+      # The defaults, plus QF1001: the negated conditions it would rewrite read closer to their intent.
+      checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022", "-QF1001"]
   exclusions:
     presets:
       - std-error-handling
@@ -16,6 +23,11 @@ linters:
         linters:
           - errcheck
           - gosec
+      # Developer tools that write generated files into the repo, from paths given on their command line.
+      - path: ^scripts/
+        linters:
+          - gosec
+        text: "G301|G306|G703"
 formatters:
   enable:
     - gofmt

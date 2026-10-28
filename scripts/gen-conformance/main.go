@@ -407,6 +407,8 @@ func buildCommunityPack(dir string, kind community.DocumentKind) []byte {
 		log.Fatal(err)
 	}
 	var v community.Document
-	json.Unmarshal(raw, &v)
+	if err := json.Unmarshal(raw, &v); err != nil {
+		log.Fatal(err)
+	}
 	return mustJSON(v)
 }

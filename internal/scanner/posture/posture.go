@@ -346,7 +346,7 @@ func secretInConfig(a discover.Agent, _ platform.Env, _ string) []Finding {
 	return out
 }
 
-var secretLabels = map[string]string{
+var secretLabels = map[string]string{ //nolint:gosec // labels for secret kinds, not credentials
 	"aws_key": "an AWS access key", "github_token": "a GitHub token", "gitlab_token": "a GitLab token",
 	"slack_token": "a Slack token", "stripe_key": "a Stripe key", "anthropic_key": "an Anthropic API key",
 	"openai_key": "an OpenAI API key", "google_api_key": "a Google API key", "npm_token": "an npm token",

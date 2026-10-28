@@ -202,8 +202,8 @@ func (d *Daemon) recordFindings(c call, sess *sessionInfo, action *events.Action
 			d.cfg.Logger.Info("content findings capped", "found", len(hs), "recorded", maxFindingEvents)
 			break
 		}
-		ev, clear := d.findingEvent(c, sess, action, mcp, remote, h, ps[h.piece], taken)
-		if err := d.appendEvent(ev, clear); err != nil {
+		ev, targetClear := d.findingEvent(c, sess, action, mcp, remote, h, ps[h.piece], taken)
+		if err := d.appendEvent(ev, targetClear); err != nil {
 			d.cfg.Logger.Warn("could not record content finding", "err", err)
 		}
 	}

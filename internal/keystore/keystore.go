@@ -115,7 +115,7 @@ func (m *macOS) Put(name string, secret []byte) error {
 	}
 	// "security -i" reads commands from standard input, so the secret stays off the command line. Hex keeps it to
 	// characters the command parser takes as one word.
-	cmd := exec.Command(m.tool, "-i")
+	cmd := exec.Command(m.tool, "-i") //nolint:gosec // fixed tool; the secret goes on standard input, not the command line
 	cmd.Stdin = strings.NewReader(fmt.Sprintf("add-generic-password -U -s %s -a %s -l privometry-%s -w %s\n",
 		m.service, name, name, hex.EncodeToString(secret)))
 	var out bytes.Buffer
@@ -135,7 +135,7 @@ func (m *macOS) Get(name string) ([]byte, error) {
 	if err := checkName(name); err != nil {
 		return nil, err
 	}
-	out, err := exec.Command(m.tool, "find-generic-password", "-s", m.service, "-a", name, "-w").Output()
+	out, err := exec.Command(m.tool, "find-generic-password", "-s", m.service, "-a", name, "-w").Output() //nolint:gosec // fixed tool and arguments: our service and key names
 	var exit *exec.ExitError
 	if errors.As(err, &exit) && exit.ExitCode() == 44 { // errSecItemNotFound
 		return nil, ErrNotFound
@@ -150,7 +150,7 @@ func (m *macOS) Delete(name string) error {
 	if err := checkName(name); err != nil {
 		return err
 	}
-	err := exec.Command(m.tool, "delete-generic-password", "-s", m.service, "-a", name).Run()
+	err := exec.Command(m.tool, "delete-generic-password", "-s", m.service, "-a", name).Run() //nolint:gosec // fixed tool and arguments: our service and key names
 	var exit *exec.ExitError
 	if errors.As(err, &exit) && exit.ExitCode() == 44 {
 		return nil
@@ -168,7 +168,7 @@ func (s *secretService) Put(name string, secret []byte) error {
 	if err := checkName(name); err != nil {
 		return err
 	}
-	cmd := exec.Command("secret-tool", "store", "--label=privometry-"+name, "service", s.service, "account", name)
+	cmd := exec.Command("secret-tool", "store", "--label=privometry-"+name, "service", s.service, "account", name) //nolint:gosec // fixed tool; the secret goes on standard input
 	cmd.Stdin = strings.NewReader(hex.EncodeToString(secret))
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("keystore: secret-tool: %w: %s", err, strings.TrimSpace(string(out)))
@@ -180,7 +180,7 @@ func (s *secretService) Get(name string) ([]byte, error) {
 	if err := checkName(name); err != nil {
 		return nil, err
 	}
-	out, err := exec.Command("secret-tool", "lookup", "service", s.service, "account", name).Output()
+	out, err := exec.Command("secret-tool", "lookup", "service", s.service, "account", name).Output() //nolint:gosec // fixed tool and arguments: our service and key names
 	if len(bytes.TrimSpace(out)) == 0 {
 		return nil, ErrNotFound
 	}
@@ -194,7 +194,7 @@ func (s *secretService) Delete(name string) error {
 	if err := checkName(name); err != nil {
 		return err
 	}
-	return exec.Command("secret-tool", "clear", "service", s.service, "account", name).Run()
+	return exec.Command("secret-tool", "clear", "service", s.service, "account", name).Run() //nolint:gosec // fixed tool and arguments: our service and key names
 }
 
 // ---- files only the user can read
@@ -218,7 +218,7 @@ func (f *files) Put(name string, secret []byte) error {
 	if err := os.MkdirAll(f.dir, 0o700); err != nil {
 		return err
 	}
-	if err := os.Chmod(f.dir, 0o700); err != nil {
+	if err := os.Chmod(f.dir, 0o700); err != nil { //nolint:gosec // a folder: 0700 is owner-only
 		return err
 	}
 	tmp, err := os.CreateTemp(f.dir, "."+name+"-*")

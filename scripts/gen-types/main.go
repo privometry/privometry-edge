@@ -460,7 +460,7 @@ func description(at loc) string {
 	return ""
 }
 
-func emitEnum(c *fileCtx, b *strings.Builder, t *named) {
+func emitEnum(_ *fileCtx, b *strings.Builder, t *named) {
 	fmt.Fprintf(b, "// %s is generated from %s.\n", t.name, t.at)
 	if d := description(t.at); d != "" {
 		b.WriteString("//\n")
@@ -522,7 +522,7 @@ func (c *fileCtx) needsPointer(typ string) bool {
 	return c.kinds[typ] == "struct"
 }
 
-func schemaConsts(c *fileCtx, b *strings.Builder, o *output) {
+func schemaConsts(_ *fileCtx, b *strings.Builder, o *output) {
 	var lines []string
 	for _, s := range o.sources {
 		if s.root == "" {

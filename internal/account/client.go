@@ -56,33 +56,39 @@ type Client struct {
 	UserAgent string
 }
 
+// StartRegistration starts a registration and emails a verification code to its address.
 func (c *Client) StartRegistration(ctx context.Context, r cloudaccount.RegistrationStart) (*cloudaccount.Registration, error) {
 	var out cloudaccount.Registration
 	return &out, c.post(ctx, "/registrations", r, http.StatusAccepted, &out)
 }
 
+// ResendCode sends a registration's verification code again.
 func (c *Client) ResendCode(ctx context.Context, registrationID string) (*cloudaccount.Registration, error) {
 	var out cloudaccount.Registration
 	return &out, c.post(ctx, "/registrations/"+url.PathEscape(registrationID)+":resend", nil, http.StatusAccepted, &out)
 }
 
+// VerifyCode checks the emailed code and returns the challenge for the new credential.
 func (c *Client) VerifyCode(ctx context.Context, registrationID, code string) (*cloudaccount.RegistrationChallenge, error) {
 	var out cloudaccount.RegistrationChallenge
 	return &out, c.post(ctx, "/registrations/"+url.PathEscape(registrationID)+":verify", cloudaccount.RegistrationVerify{Code: code},
 		http.StatusOK, &out)
 }
 
+// CompleteRegistration registers the credential and finishes the registration.
 func (c *Client) CompleteRegistration(ctx context.Context, registrationID string, r cloudaccount.RegistrationComplete) (*cloudaccount.RegistrationResult, error) {
 	var out cloudaccount.RegistrationResult
 	return &out, c.post(ctx, "/registrations/"+url.PathEscape(registrationID)+":complete", r, http.StatusCreated, &out)
 }
 
+// SignInChallenge asks for a challenge to sign with the CLI key credentialID.
 func (c *Client) SignInChallenge(ctx context.Context, credentialID string) (*cloudaccount.SignInChallenge, error) {
 	var out cloudaccount.SignInChallenge
 	req := cloudaccount.SignInChallengeRequest{Method: cloudaccount.CredentialTypeCLIKey, CredentialID: credentialID}
 	return &out, c.post(ctx, "/sign-in/challenges", req, http.StatusCreated, &out)
 }
 
+// SignIn exchanges a signed challenge for a session.
 func (c *Client) SignIn(ctx context.Context, r cloudaccount.SignInRequest) (*cloudaccount.SignInResult, error) {
 	var out cloudaccount.SignInResult
 	return &out, c.post(ctx, "/sign-in", r, http.StatusOK, &out)

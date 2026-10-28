@@ -1,3 +1,5 @@
+// Package bundles verifies, stores and syncs the signed policy bundles an
+// enrolled device enforces, and evaluates their approved catalog.
 package bundles
 
 import (
@@ -42,10 +44,15 @@ const (
 const MaxSize = 5 << 20
 
 var (
-	ErrOtherOrg    = errors.New("bundle is for another organization")
-	ErrRollback    = errors.New("bundle is older than the one this device holds")
-	ErrExpired     = errors.New("bundle has expired")
-	ErrNoKeySet    = errors.New("this device has no key set to verify bundles; enroll it again")
+	// ErrOtherOrg means the bundle names an organization other than this device's.
+	ErrOtherOrg = errors.New("bundle is for another organization")
+	// ErrRollback means the bundle is older than the one this device holds.
+	ErrRollback = errors.New("bundle is older than the one this device holds")
+	// ErrExpired means the bundle's expiry has passed.
+	ErrExpired = errors.New("bundle has expired")
+	// ErrNoKeySet means the device has no key set to verify bundles with.
+	ErrNoKeySet = errors.New("this device has no key set to verify bundles; enroll it again")
+	// ErrNotEnrolled means the device is not enrolled in an organization.
 	ErrNotEnrolled = errors.New("this device is not enrolled")
 )
 

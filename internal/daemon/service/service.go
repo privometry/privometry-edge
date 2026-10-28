@@ -99,7 +99,7 @@ func start(opts Options, cmd []string) error {
 	if opts.Start != nil {
 		return opts.Start(cmd[0], cmd[1:]...)
 	}
-	c := exec.Command(cmd[0], cmd[1:]...)
+	c := exec.Command(cmd[0], cmd[1:]...) //nolint:gosec // the plan's command is privometryd's own path and fixed arguments
 	c.SysProcAttr = detached()
 	if err := c.Start(); err != nil {
 		return err
@@ -369,11 +369,11 @@ func Install(p *Plan, opts Options) error {
 // load writes the plan's file, runs its Load commands and starts its Start
 // command. It returns the index of the command that failed.
 func load(p *Plan, opts Options) (int, error) {
-	real := filepath.Join(opts.Root, p.Path)
-	if err := os.MkdirAll(filepath.Dir(real), 0o755); err != nil {
+	realPath := filepath.Join(opts.Root, p.Path)
+	if err := os.MkdirAll(filepath.Dir(realPath), 0o755); err != nil { //nolint:gosec // service manager folders (LaunchAgents, systemd user units) are 0755
 		return -1, err
 	}
-	if err := os.WriteFile(real, p.file(), 0o644); err != nil {
+	if err := os.WriteFile(realPath, p.file(), 0o644); err != nil { //nolint:gosec // launchd and systemd read unit files that are 0644
 		return -1, err
 	}
 	for i, cmd := range p.Load {

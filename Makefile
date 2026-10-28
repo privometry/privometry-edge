@@ -27,7 +27,7 @@ race:
 
 lint:
 	$(GO) vet ./...
-	@command -v golangci-lint >/dev/null && golangci-lint run || echo "golangci-lint not installed; skipped"
+	@if command -v golangci-lint >/dev/null; then golangci-lint run; else echo "golangci-lint not installed; skipped"; fi
 
 fmt:
 	gofmt -s -w .

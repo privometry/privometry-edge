@@ -149,7 +149,7 @@ func (s *Server) Handler(port int) http.Handler {
 				http.Error(w, "wrong token", http.StatusUnauthorized)
 				return
 			}
-			http.SetCookie(w, &http.Cookie{Name: s.cookieName(), Value: s.token, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode})
+			http.SetCookie(w, &http.Cookie{Name: s.cookieName(), Value: s.token, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode}) //nolint:gosec // HttpOnly and SameSite=Strict; Secure cannot work on http://127.0.0.1
 			// Drop the token from the address bar. The page routes by fragment, so "/" is always right, and a path
 			// like //example.com cannot turn this into a redirect off the machine.
 			http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -317,7 +317,7 @@ type Summary struct {
 	User   string                   `json:"user,omitempty"`
 }
 
-func (s *Server) summary(w http.ResponseWriter, r *http.Request) {
+func (s *Server) summary(w http.ResponseWriter, _ *http.Request) {
 	out := Summary{Host: s.cfg.Host, User: s.cfg.User}
 	if s.cfg.Daemon != nil {
 		d := s.cfg.Daemon()
@@ -345,7 +345,7 @@ func (s *Server) summary(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, out)
 }
 
-func (s *Server) sessions(w http.ResponseWriter, r *http.Request) {
+func (s *Server) sessions(w http.ResponseWriter, _ *http.Request) {
 	src, err := s.source()
 	if err != nil {
 		writeJSON(w, []timeline.SessionSummary{})

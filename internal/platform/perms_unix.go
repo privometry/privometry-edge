@@ -33,7 +33,7 @@ func checkPrivate(path string, info fs.FileInfo) error {
 // tighten sets mode 0700 on a directory the user owns that others can use.
 func tighten(dir string, info fs.FileInfo) error {
 	if info.Mode().Perm()&0o077 != 0 && checkOwner(dir, info) == nil {
-		return os.Chmod(dir, 0o700)
+		return os.Chmod(dir, 0o700) //nolint:gosec // a folder: 0700 is owner-only
 	}
 	return nil
 }

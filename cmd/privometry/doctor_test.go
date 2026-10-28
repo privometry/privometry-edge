@@ -40,7 +40,7 @@ func TestDoctorAndBundle(t *testing.T) {
 	defer func() { daemonEnv = platform.CurrentEnv }()
 
 	token := "ghp_" + strings.Repeat("Ab3", 12) // a GitHub token shape
-	clear := "cat " + home + "/.ssh/id_rsa --password hunter2-secret-value"
+	plain := "cat " + home + "/.ssh/id_rsa --password hunter2-secret-value"
 	store, err := timeline.Open(filepath.Join(data, "privometry.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -52,7 +52,7 @@ func TestDoctorAndBundle(t *testing.T) {
 		Action:    &events.Action{Kind: contract.ActionKindShellExec, Target: "cat ~/<redacted_path> --password <redacted>"},
 		Decision:  &events.Decision{Verdict: contract.VerdictAsk},
 		Redaction: map[string]contract.PrivacyLevel{}}
-	if err := store.Append(ev, clear); err != nil {
+	if err := store.Append(ev, plain); err != nil {
 		t.Fatal(err)
 	}
 	store.Close()

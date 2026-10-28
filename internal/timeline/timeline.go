@@ -276,7 +276,7 @@ func (s *Store) Events(q Query) ([]Row, error) {
 	}
 	if q.Verdict != "" {
 		vs := strings.Split(q.Verdict, ",")
-		sqlText += " AND verdict IN (?" + strings.Repeat(", ?", len(vs)-1) + ")"
+		sqlText += " AND verdict IN (?" + strings.Repeat(", ?", len(vs)-1) + ")" //nolint:gosec // only ? placeholders are concatenated; values are bound
 		for _, v := range vs {
 			args = append(args, strings.TrimSpace(v))
 		}

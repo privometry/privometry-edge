@@ -77,7 +77,7 @@ func readSource(src string) ([]byte, error) {
 		defer cancel()
 		return definitions.Fetch(ctx, &http.Client{Timeout: 30 * time.Second}, src)
 	}
-	return os.ReadFile(src)
+	return os.ReadFile(src) //nolint:gosec // reads the pack path the user passed on the command line
 }
 
 func trustCmd(args []string, stdout, stderr io.Writer) int {
@@ -305,14 +305,14 @@ func packsKeygen(publisher, out string, stdout, stderr io.Writer) int {
 	}
 	keyPath, setPath := out+".key", out+".keyset.json"
 	for _, p := range []string{keyPath, setPath} {
-		if _, err := os.Stat(p); err == nil {
+		if _, err := os.Stat(p); err == nil { //nolint:gosec // output paths come from the user's own --out flag
 			return fail(stderr, fmt.Errorf("%s exists; choose another --out", p))
 		}
 	}
-	if err := os.WriteFile(keyPath, seed, 0o600); err != nil {
+	if err := os.WriteFile(keyPath, seed, 0o600); err != nil { //nolint:gosec // output paths come from the user's own --out flag
 		return fail(stderr, err)
 	}
-	if err := os.WriteFile(setPath, keySet, 0o644); err != nil {
+	if err := os.WriteFile(setPath, keySet, 0o644); err != nil { //nolint:gosec // the key set is public and meant to be shared
 		return fail(stderr, err)
 	}
 	fmt.Fprintf(stdout, "Wrote %s (secret: keep it out of repos) and %s (share it).\nKey %s\nFingerprint %s\n", keyPath, setPath, key.KeyID, key.Fingerprint())
@@ -322,7 +322,7 @@ func packsKeygen(publisher, out string, stdout, stderr io.Writer) int {
 func packsSign(dir, keyFile, kind, out string, stdout, stderr io.Writer) int {
 	if kind == "" {
 		kind = string(community.DocumentKindRules)
-		if info, err := os.Stat(filepath.Join(dir, "detectors")); err == nil && info.IsDir() {
+		if info, err := os.Stat(filepath.Join(dir, "detectors")); err == nil && info.IsDir() { //nolint:gosec // the pack folder the user passed on the command line
 			kind = string(community.DocumentKindDetectors)
 		}
 	}
@@ -330,7 +330,7 @@ func packsSign(dir, keyFile, kind, out string, stdout, stderr io.Writer) int {
 	if err != nil {
 		return fail(stderr, err)
 	}
-	seed, err := os.ReadFile(keyFile)
+	seed, err := os.ReadFile(keyFile) //nolint:gosec // the key file the user passed on the command line
 	if err != nil {
 		return fail(stderr, err)
 	}
@@ -370,7 +370,7 @@ func packsSign(dir, keyFile, kind, out string, stdout, stderr io.Writer) int {
 	if out == "" {
 		out = community.SignedFile(d.ID, d.Version)
 	}
-	if err := os.WriteFile(out, signed, 0o644); err != nil {
+	if err := os.WriteFile(out, signed, 0o644); err != nil { //nolint:gosec // a signed pack is public and meant to be published
 		return fail(stderr, err)
 	}
 	fmt.Fprintf(stdout, "Signed %s %s (%s pack, %d files) into %s.\n", d.ID, d.Version, d.Kind, len(d.Files), out)

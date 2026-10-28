@@ -1,3 +1,5 @@
+// Package rulepack loads built-in and community rule packs and matches
+// their versions against a policy's extends ranges.
 package rulepack
 
 import (

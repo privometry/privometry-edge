@@ -142,15 +142,15 @@ func eachMCPSource(a registry.Adapter, opts Options, fn func(mcpSource) error) e
 			return err
 		}
 		for _, p := range paths {
-			real := filepath.Join(opts.Root, p)
-			raw, err := os.ReadFile(real)
+			realPath := filepath.Join(opts.Root, p)
+			raw, err := os.ReadFile(realPath)
 			if errors.Is(err, fs.ErrNotExist) {
 				continue
 			}
 			if err != nil {
 				return err
 			}
-			if err := fn(mcpSource{display: p, real: real, format: string(src.Format), pointer: src.Pointer, raw: raw}); err != nil {
+			if err := fn(mcpSource{display: p, real: realPath, format: string(src.Format), pointer: src.Pointer, raw: raw}); err != nil {
 				return err
 			}
 		}

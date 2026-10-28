@@ -609,7 +609,7 @@ func Build(dir string, kind DocumentKind, publishedAt time.Time) ([]byte, error)
 		if !allowedPath.MatchString(rel) {
 			return nil // not part of a pack (editor files, notes)
 		}
-		body, err := os.ReadFile(p)
+		body, err := os.ReadFile(p) //nolint:gosec // walks the user's own pack folder, as the user
 		if err != nil {
 			return err
 		}

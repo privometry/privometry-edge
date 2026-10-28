@@ -32,7 +32,7 @@ func newKeywordIndex(ds []*Compiled) *keywordIndex {
 				if k.next[node][c] == 0 {
 					k.next = append(k.next, [256]int32{})
 					k.out = append(k.out, nil)
-					k.next[node][c] = int32(len(k.next) - 1)
+					k.next[node][c] = int32(len(k.next) - 1) //nolint:gosec // node count is bounded by the keyword list, far below 2^31
 				}
 				node = k.next[node][c]
 			}

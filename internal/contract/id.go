@@ -17,8 +17,8 @@ func NewID(prefix string) string { return prefix + "_" + ULID(time.Now()) }
 func ULID(t time.Time) string {
 	var b [16]byte
 	ms := uint64(t.UnixMilli())
-	binary.BigEndian.PutUint16(b[0:2], uint16(ms>>32))
-	binary.BigEndian.PutUint32(b[2:6], uint32(ms))
+	binary.BigEndian.PutUint16(b[0:2], uint16(ms>>32)) //nolint:gosec // deliberate: the top 16 bits of the 48-bit timestamp
+	binary.BigEndian.PutUint32(b[2:6], uint32(ms))     //nolint:gosec // deliberate: the low 32 bits of the 48-bit timestamp
 	if _, err := rand.Read(b[6:]); err != nil {
 		panic(err) // crypto/rand never fails on supported platforms
 	}

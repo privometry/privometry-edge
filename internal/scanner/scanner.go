@@ -142,12 +142,12 @@ func scanContent(agents []discover.Agent, opts Options) ([]ContentFinding, int, 
 				Source: string(src), Path: display, Line: line, SecretType: f.SecretType, Excerpt: f.Excerpt})
 		}
 	}
-	scan := func(a discover.Agent, tier contract.ConfigTier, display, real string, src content.Source) {
-		if seen[real] {
+	scan := func(a discover.Agent, tier contract.ConfigTier, display, realPath string, src content.Source) {
+		if seen[realPath] {
 			return
 		}
-		seen[real] = true
-		raw, err := os.ReadFile(real)
+		seen[realPath] = true
+		raw, err := os.ReadFile(realPath)
 		if err != nil {
 			return
 		}
@@ -192,16 +192,16 @@ func scanContent(agents []discover.Agent, opts Options) ([]ContentFinding, int, 
 		if c.Deleted || opts.RepoRoot == "" {
 			continue
 		}
-		real := opts.Root + path.Join(opts.RepoRoot, c.Path)
-		if seen[real] {
+		realPath := opts.Root + path.Join(opts.RepoRoot, c.Path)
+		if seen[realPath] {
 			continue
 		}
-		seen[real] = true
-		info, err := os.Lstat(real)
+		seen[realPath] = true
+		info, err := os.Lstat(realPath)
 		if err != nil || !info.Mode().IsRegular() {
 			continue // gone, a folder, or a symlink that may point outside the repo
 		}
-		raw, err := os.ReadFile(real)
+		raw, err := os.ReadFile(realPath)
 		if err != nil || isBinary(raw) {
 			continue
 		}
@@ -272,15 +272,15 @@ func Scan(reg *registry.Registry, opts Options) (*Result, error) {
 // locate sets each finding's line from its JSON pointer: the first line that
 // holds the pointer's last key. Good enough for annotations; 0 when unknown.
 func locate(agents []discover.Agent, findings []posture.Finding) {
-	real := map[string]string{}
+	realPath := map[string]string{}
 	for _, a := range agents {
 		for _, c := range a.Configs {
-			real[c.Path] = c.RealPath
+			realPath[c.Path] = c.RealPath
 		}
 	}
 	for i := range findings {
 		f := &findings[i]
-		p, ok := real[f.Path]
+		p, ok := realPath[f.Path]
 		if !ok || f.Pointer == "" {
 			continue
 		}

@@ -88,12 +88,12 @@ var systemDirs = []string{"/etc", "/usr", "/bin", "/sbin", "/var", "/opt", "/Sys
 // windowsSystemDirs are checked on any drive.
 var windowsSystemDirs = []string{"/windows", "/program files", "/program files (x86)", "/programdata"}
 
-// classify returns the path_class of an absolute path and whether the file
-// itself holds secrets (a .env file in the repo is still class repo).
 // Classify returns the path class of an absolute path, and whether the file
 // is a credential by name or location.
 func (c Context) Classify(p string) (class string, secret bool) { return c.classify(p) }
 
+// classify returns the path_class of an absolute path and whether the file
+// itself holds secrets (a .env file in the repo is still class repo).
 func (c Context) classify(p string) (class string, secret bool) {
 	p = slash(p)
 	base := path.Base(p)

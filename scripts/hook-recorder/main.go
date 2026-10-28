@@ -345,8 +345,8 @@ func cleaner(env platform.Env, project string) *strings.Replacer {
 			return
 		}
 		if abs, err := filepath.Abs(p); err == nil {
-			if real, err := filepath.EvalSymlinks(abs); err == nil {
-				add(real, to) // /private/tmp/x on macOS for /tmp/x
+			if realPath, err := filepath.EvalSymlinks(abs); err == nil {
+				add(realPath, to) // /private/tmp/x on macOS for /tmp/x
 			}
 			add(abs, to)
 		}

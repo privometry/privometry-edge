@@ -81,7 +81,7 @@ func processCwd(pid int) (string, error) {
 }
 
 func processEnv(pid int) ([]string, error) {
-	raw, err := os.ReadFile(fmt.Sprintf("/proc/%d/environ", pid))
+	raw, err := os.ReadFile(fmt.Sprintf("/proc/%d/environ", pid)) //nolint:gosec // a /proc path built from a pid
 	if err != nil {
 		return nil, err
 	}

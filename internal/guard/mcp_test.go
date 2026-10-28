@@ -59,11 +59,11 @@ func mcpSetup(t *testing.T, files map[string]string) (*registry.Registry, guard.
 	t.Helper()
 	root := t.TempDir()
 	for p, body := range files {
-		real := filepath.Join(root, p)
-		if err := os.MkdirAll(filepath.Dir(real), 0o700); err != nil {
+		realPath := filepath.Join(root, p)
+		if err := os.MkdirAll(filepath.Dir(realPath), 0o700); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(real, []byte(body), 0o600); err != nil {
+		if err := os.WriteFile(realPath, []byte(body), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
