@@ -1,0 +1,15 @@
+{
+  "session_id": "01a16d90-b8f1-74c2-8abb-587a37d9c1b3",
+  "turn_id": "01a16d90-bda7-7902-9dce-9f2a67639704",
+  "transcript_path": null,
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-6-sol",
+  "permission_mode": "bypassPermissions",
+  "tool_name": "apply_patch",
+  "tool_input": {
+    "command": "*** Begin Patch\n*** Add File: NOTES.md\n+Release notes go here.\n*** End Patch"
+  },
+  "tool_response": "Exit code: 0\nWall time: 0 seconds\nOutput:\nSuccess. Updated the following files:\nA NOTES.md\n",
+  "tool_use_id": "exec-30b650b9-02b4-42c3-8758-1d999c0c8a77"
+}

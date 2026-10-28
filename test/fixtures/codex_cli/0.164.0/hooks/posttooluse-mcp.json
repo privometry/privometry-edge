@@ -1,0 +1,22 @@
+{
+  "session_id": "01a16d8f-6680-7f01-8c3d-a6d7d56cc796",
+  "turn_id": "01a16d8f-6b14-7dd2-84dd-6de1eaaa87f0",
+  "transcript_path": null,
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-6-sol",
+  "permission_mode": "bypassPermissions",
+  "tool_name": "mcp__tickets__lookup_ticket",
+  "tool_input": {
+    "id": "T-1042"
+  },
+  "tool_response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Ticket T-1042: printer on floor 3 is offline. Status: open."
+      }
+    ]
+  },
+  "tool_use_id": "exec-35ef94d3-1210-41e9-b304-710c5a8e4dd6"
+}

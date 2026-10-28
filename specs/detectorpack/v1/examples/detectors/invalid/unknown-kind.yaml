@@ -1,0 +1,10 @@
+schema: privometry.detectors/v1
+detectors:
+  - id: classifier
+    title: Model classifier
+    category: injected_instructions
+    kind: llm
+    severity: high
+    confidence: low
+    applies_to: [memory_file]
+    samples: { match: [a], no_match: [b] }

@@ -1,0 +1,190 @@
+# Claude Code. Payload pointers and replies are confirmed by recorded fixtures.
+schema: privometry.adapter/v1
+agent: claude_code
+display_name: Claude Code
+versions: ">=2.1.295 <3.0.0"   # onFailure (fail-closed hooks) arrived in 2.1.295
+verified:
+  - version: 2.1.304
+    fixtures: claude_code/2.1.304
+detect:
+  binaries: [claude]
+  processes: [claude]
+  version_cmd: [claude, --version]
+env_overrides:
+  - var: CLAUDE_CONFIG_DIR
+    replaces: "~/.claude"
+config_tiers:
+  - tier: user
+    format: json
+    holds: [settings, permissions, hooks, plugins]
+    paths: { any: ["~/.claude/settings.json"] }
+  - tier: user
+    format: json
+    holds: [plugins]
+    paths: { any: ["~/.claude/plugins/installed_plugins.json"] }
+  - tier: project
+    format: json
+    holds: [settings, permissions, hooks, plugins]
+    paths: { any: [".claude/settings.json", ".claude/settings.local.json"] }
+  - tier: managed
+    format: json
+    holds: [settings, permissions, hooks]
+    paths:
+      macos:
+        - "/Library/Application Support/ClaudeCode/managed-settings.json"
+        - "/Library/Application Support/ClaudeCode/managed-settings.d/*.json"
+      linux:
+        - "/etc/claude-code/managed-settings.json"
+        - "/etc/claude-code/managed-settings.d/*.json"
+      windows:
+        - "C:\\Program Files\\ClaudeCode\\managed-settings.json"
+        - "C:\\Program Files\\ClaudeCode\\managed-settings.d\\*.json"
+  - tier: user
+    format: markdown
+    holds: [skills]
+    paths: { any: ["~/.claude/skills/*/SKILL.md"] }
+  - tier: project
+    format: markdown
+    holds: [skills]
+    paths: { any: [".claude/skills/*/SKILL.md"] }
+mcp_sources:
+  - tier: user
+    format: json
+    paths: { any: ["~/.claude.json"] }
+    pointer: /mcpServers
+  - tier: user
+    format: json
+    paths: { any: ["~/.claude.json"] }
+    pointer: /projects/*/mcpServers
+  - tier: project
+    format: json
+    paths: { any: [".mcp.json"] }
+    pointer: /mcpServers
+memory_files:
+  - tier: user
+    kind: instructions
+    format: markdown
+    imports: true
+    paths: { any: ["~/.claude/CLAUDE.md"] }
+  - tier: project
+    kind: instructions
+    format: markdown
+    imports: true
+    nested: true
+    paths: { any: ["CLAUDE.md", ".claude/CLAUDE.md"] }
+  - tier: user
+    kind: memory
+    format: markdown
+    written_by_agent: true
+    paths: { any: ["~/.claude/projects/*/memory/*.md"] }
+hooks:
+  registration: claude_settings
+  install:
+    free:
+      tier: user
+      paths: { any: ["~/.claude/settings.json"] }
+    enterprise:
+      tier: managed
+      paths:
+        macos: ["/Library/Application Support/ClaudeCode/managed-settings.d/50-privometry.json"]
+        linux: ["/etc/claude-code/managed-settings.d/50-privometry.json"]
+        windows: ["C:\\Program Files\\ClaudeCode\\managed-settings.d\\50-privometry.json"]
+      lock: { key: allowManagedHooksOnly, value: true }
+  timeout_seconds: 10
+  fail_closed_option: { key: onFailure, value: block, min_version: 2.1.295 }
+  trust: { required: false }
+  imported_by:
+    - agent: cursor
+      default_enabled: true
+      setting: Third-Party Imports
+  events:
+    - name: PreToolUse
+      role: pre_tool
+      matcher: "*"
+      verdicts: [allow, ask, deny]
+      request: &tool_request
+        session_id: /session_id
+        tool_use_id: /tool_use_id
+        tool_name: /tool_name
+        tool_input: /tool_input
+        cwd: /cwd
+        permission_mode: /permission_mode
+        mcp_server: /mcp_server/name
+      responses:
+        allow:
+          exit_code: 0
+          stdout:
+            hookSpecificOutput:
+              hookEventName: PreToolUse
+              permissionDecision: allow
+              permissionDecisionReason: "{message}"
+        ask:
+          exit_code: 0
+          stdout:
+            hookSpecificOutput:
+              hookEventName: PreToolUse
+              permissionDecision: ask
+              permissionDecisionReason: "{message}"
+        deny:
+          exit_code: 0
+          stdout:
+            hookSpecificOutput:
+              hookEventName: PreToolUse
+              permissionDecision: deny
+              permissionDecisionReason: "{message}"
+    - name: PostToolUse
+      role: post_tool
+      matcher: "*"
+      verdicts: []
+      request:
+        <<: *tool_request
+        tool_response: /tool_response
+      responses:
+        none: { exit_code: 0, stdout: null }
+    - name: SessionStart
+      role: session_start
+      verdicts: []
+      request: { session_id: /session_id, cwd: /cwd }
+      responses:
+        none: { exit_code: 0, stdout: null }
+    - name: SessionEnd
+      role: session_end
+      verdicts: []
+      request: { session_id: /session_id, cwd: /cwd }
+      responses:
+        none: { exit_code: 0, stdout: null }
+    - name: ConfigChange
+      role: config_change
+      verdicts: []
+      request: { session_id: /session_id, cwd: /cwd, config_source: /source, config_path: /file_path }
+      responses:
+        none: { exit_code: 0, stdout: null }
+tool_kinds:
+  Bash: shell_exec
+  PowerShell: shell_exec
+  Read: file_read
+  Glob: file_read
+  Grep: file_read
+  Write: file_write
+  Edit: file_write
+  NotebookEdit: file_write
+  WebFetch: network_fetch
+  WebSearch: web_search
+  Agent: subagent_spawn
+  Task: subagent_spawn
+  "mcp__*": mcp_call
+  "*": other
+tool_targets:
+  Bash: { command: /command }
+  PowerShell: { command: /command }
+  Read: { path: /file_path }
+  Write: { path: /file_path }
+  Edit: { path: /file_path }
+  NotebookEdit: { path: /notebook_path }
+  Glob: { path: /path }
+  Grep: { path: /path }
+  WebFetch: { url: /url }
+  WebSearch: { query: /query }
+mcp_tools:
+  name_template: "mcp__{server}__{tool}"
+posture_checks: [auto_approve_mode, sandbox_disabled, managed_hooks_only_off, unapproved_mcp_server, secret_in_config]

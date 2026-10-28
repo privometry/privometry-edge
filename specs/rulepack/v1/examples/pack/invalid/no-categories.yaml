@@ -1,0 +1,9 @@
+schema: privometry.rulepack/v1
+id: community/terraform-safety
+version: 0.1.0-beta.1
+title: Terraform safety
+description: Asks before destructive Terraform commands.
+maintainers: [{ name: Jane Doe }]
+license: Apache-2.0
+min_sensor_version: 0.1.0
+categories: []

@@ -1,0 +1,41 @@
+# Build and release output
+/bin/
+/dist/
+/privometry.cdx.json
+/dependency-licenses.json
+/coverage/
+coverage.out
+*.coverprofile
+*.prof
+*.test
+*.out
+
+# Local Go workspace files
+go.work
+go.work.sum
+
+# Privometry runtime state from local runs; the repo policy in the root
+# .privometry/ folder is committed
+**/.privometry/*
+!/.privometry/policy.yaml
+!/.privometry/tests/
+*.db
+*.db-shm
+*.db-wal
+*.log
+*.pid
+*.sock
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+.fleet/
+*.swp
+*.swo
+*~

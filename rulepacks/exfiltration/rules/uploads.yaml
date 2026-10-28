@@ -1,0 +1,129 @@
+schema: privometry.rules/v1
+rules:
+  - id: upload-secret-file
+    description: A credential file sent to another host in the same command, for example curl -F file=@~/.ssh/id_rsa.
+    category: exfiltration
+    when:
+      action: shell_exec
+      intent: network_upload
+      category: secrets
+    verdict: deny
+    message: The agent tried to send a credential file to another host.
+  - id: upload-to-paste-site
+    category: exfiltration
+    when:
+      intent: network_upload
+      host:
+        - pastebin.com
+        - "*.pastebin.com"
+        - paste.ee
+        - hastebin.com
+        - "*.hastebin.com"
+        - termbin.com
+        - ix.io
+        - 0x0.st
+        - paste.rs
+        - dpaste.com
+        - dpaste.org
+        - controlc.com
+        - rentry.co
+        - file.io
+        - transfer.sh
+        - "*.transfer.sh"
+        - catbox.moe
+        - litterbox.catbox.moe
+        - tmpfiles.org
+        - gofile.io
+        - "*.gofile.io"
+    verdict: deny
+    message: Uploads to paste and file-drop sites are blocked.
+  - id: contact-capture-service
+    description: Request-capture and tunnel services are common exfiltration endpoints, even for GET requests that carry data in the URL.
+    category: exfiltration
+    when:
+      action: [shell_exec, network_fetch]
+      host:
+        - webhook.site
+        - "*.webhook.site"
+        - requestbin.com
+        - "*.requestbin.com"
+        - "*.requestcatcher.com"
+        - "*.pipedream.net"
+        - "*.m.pipedream.net"
+        - beeceptor.com
+        - "*.beeceptor.com"
+        - "*.ngrok.io"
+        - "*.ngrok-free.app"
+        - "*.ngrok.app"
+        - "*.trycloudflare.com"
+        - "*.loca.lt"
+        - "*.serveo.net"
+        - "*.localhost.run"
+        - "*.oast.fun"
+        - "*.oast.live"
+        - "*.oast.me"
+        - "*.oast.online"
+        - "*.oast.pro"
+        - "*.oast.site"
+        - "*.interact.sh"
+        - "*.burpcollaborator.net"
+        - "*.oastify.com"
+        - "*.canarytokens.com"
+    verdict: ask
+    message: The agent wants to contact a request-capture or tunnel service, a common way to leak data.
+  - id: upload-after-untrusted-input
+    description: Data leaving the machine after the agent read untrusted content, the usual shape of a prompt-injection attack.
+    category: exfiltration
+    when:
+      intent: network_upload
+      untrusted_input_seen: true
+    verdict: ask
+    message: The agent read untrusted content and now wants to upload data; confirm this is yours.
+  - id: curl-upload
+    category: exfiltration
+    when:
+      action: shell_exec
+      program: [curl, wget, http, https, xh]
+      intent: network_upload
+    verdict: ask
+    message: The agent wants to send data with an HTTP request.
+  - id: remote-copy
+    category: exfiltration
+    when:
+      action: shell_exec
+      program: [scp, rsync, sftp]
+      intent: network_upload
+    verdict: ask
+    message: The agent wants to copy files to another host.
+  - id: raw-socket
+    category: exfiltration
+    when:
+      action: shell_exec
+      program: [nc, ncat, netcat, socat]
+    verdict: ask
+    message: The agent wants to open a raw network connection.
+  - id: cloud-storage-upload
+    category: exfiltration
+    when:
+      action: shell_exec
+      program: [aws, gsutil, gcloud, rclone, azcopy]
+      intent: network_upload
+    verdict: ask
+    message: The agent wants to upload files to cloud storage.
+  - id: secret-to-network
+    description: A credential in a request leaving the machine, such as a token in a URL, header or body. Detected in the request itself, not by file name.
+    category: exfiltration
+    when:
+      action: network_fetch
+      secret_detected: any
+    verdict: deny
+    message: A credential was about to leave this machine.
+  - id: secret-in-network-command
+    description: 'A network tool run with a credential in its arguments, for example curl -H "Authorization: Bearer <token>".'
+    category: exfiltration
+    when:
+      action: shell_exec
+      program: [curl, wget, http, https, xh, nc, ncat, netcat, socat, telnet]
+      secret_detected: any
+    verdict: deny
+    message: A credential was about to leave this machine; pass it through an environment variable or a credential helper.

@@ -1,0 +1,6 @@
+{
+  "org_id": "org_01JA0000000000000000000001",
+  "slug": "acme",
+  "account_base_url": "https://in.api.privometry.dev/account/v1",
+  "edge_base_url": "https://in.api.privometry.dev/edge/v1"
+}

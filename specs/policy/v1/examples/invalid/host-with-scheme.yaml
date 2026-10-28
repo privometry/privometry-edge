@@ -1,0 +1,9 @@
+schema: privometry.policy/v1
+name: bad
+rules:
+  - id: r1
+    when:
+      action: network_fetch
+      host: https://pastebin.com
+    verdict: deny
+    message: No.

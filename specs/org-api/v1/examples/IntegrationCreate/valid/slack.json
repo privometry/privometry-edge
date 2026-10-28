@@ -1,0 +1,9 @@
+{
+  "type": "slack",
+  "name": "#agent-approvals",
+  "secret": "xoxb-not-a-real-token",
+  "signing_secret": "slack-signing-secret",
+  "config": {
+    "channel_id": "C0123ABCD"
+  }
+}

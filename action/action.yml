@@ -1,0 +1,80 @@
+name: Privometry Scan
+description: Flag pull request changes to AI coding agent configs, hooks, MCP servers and memory files, scan for leaked credentials and injected instructions, and fail on a severity gate.
+author: Privometry
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  fail-on:
+    description: Fail the job when a finding is at least this severity (low, medium, high or critical), or never with none.
+    default: high
+  validate-policy:
+    description: Run privometry policy test on .privometry/policy.yaml, when the repo has one, and fail the job if it does not pass.
+    default: "true"
+  upload-sarif:
+    description: Upload the SARIF report to GitHub code scanning (needs the security-events write permission; public repos, or private ones with code scanning).
+    default: "false"
+  annotations:
+    description: Annotate findings on the pull request with workflow commands, which works without code scanning.
+    default: "true"
+  sarif-file:
+    description: Where to write the SARIF report.
+    default: privometry.sarif
+  base:
+    description: Commit to compare against. Defaults to the pull request's base, or the previous commit of a push; without one only the whole-repo scan runs.
+    default: ""
+  working-directory:
+    description: A folder inside the repository to scan; the scan always covers the whole repository it is in.
+    default: "."
+  privometry:
+    description: Path to a privometry binary to use. When empty, the action builds one from its own source with the Go version in its go.mod.
+    default: ""
+
+outputs:
+  result:
+    description: pass, or fail when a finding met fail-on or the repo policy failed its tests.
+    value: ${{ steps.scan.outputs.result }}
+  sarif-file:
+    description: Path of the SARIF report.
+    value: ${{ steps.scan.outputs.sarif-file }}
+  findings:
+    description: Number of findings, at any severity.
+    value: ${{ steps.scan.outputs.findings }}
+  changed-files:
+    description: Number of changed files compared against the base, or empty without a base.
+    value: ${{ steps.scan.outputs.changed-files }}
+
+runs:
+  using: composite
+  steps:
+    - if: inputs.privometry == ''
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: ${{ github.action_path }}/../go.mod
+        cache-dependency-path: ${{ github.action_path }}/../go.sum
+
+    - id: scan
+      shell: bash
+      run: '"$GITHUB_ACTION_PATH/entrypoint.sh"'
+      env:
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_VALIDATE_POLICY: ${{ inputs.validate-policy }}
+        INPUT_ANNOTATIONS: ${{ inputs.annotations }}
+        INPUT_SARIF_FILE: ${{ inputs.sarif-file }}
+        INPUT_BASE: ${{ inputs.base }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_PRIVOMETRY: ${{ inputs.privometry }}
+
+    - if: always() && inputs.upload-sarif == 'true' && steps.scan.outputs.sarif-file != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif-file }}
+        category: privometry
+
+    # Fail last, so the SARIF report is uploaded either way.
+    - if: steps.scan.outputs.result == 'fail'
+      shell: bash
+      run: |
+        echo "::error title=Privometry::Findings at or above '${{ inputs.fail-on }}', or a repo policy that fails its tests. See the job summary."
+        exit 1

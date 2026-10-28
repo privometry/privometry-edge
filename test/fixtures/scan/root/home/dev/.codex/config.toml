@@ -1,0 +1,13 @@
+model = "gpt-5-codex"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+[profiles.fast]
+approval_policy = "never"
+
+[mcp_servers.pg]
+command = "docker"
+args = ["run", "-i", "--rm", "-e", "PG_URL", "mcp/postgres:latest"]
+
+[mcp_servers.pg.env]
+PG_URL = "${PG_URL}"

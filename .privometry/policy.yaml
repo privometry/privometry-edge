@@ -1,0 +1,46 @@
+# Privometry's own repo policy. The detector packs, rule packs, specs, tests
+# and docs in this repo quote the credentials and attack text Privometry
+# detects, on purpose. These entries accept them where they are expected, so
+# merge request checks flag only new occurrences elsewhere. Keep each entry
+# narrow: a path here hides findings from every check that reads this file.
+schema: privometry.policy/v1
+name: privometry-oss
+description: Repo policy for privometry-oss; allowlists the samples the project ships.
+allowlist:
+  - detectors: [privometry/credentials:*]
+    paths:
+      - test/fixtures/*
+      - specs/*/examples/*
+      - specs/conformance/*
+      - detectorpacks/*
+      - "*_test.go"
+    reason: Fake credentials in test fixtures, spec examples, conformance vectors, detector samples and Go tests.
+  - detectors: [privometry/injection:*, privometry/hidden-content:*]
+    paths:
+      - detectorpacks/*
+      - specs/detectorpack/v1/examples/*
+      - rulepacks/*
+      - test/fixtures/*
+      - "*_test.go"
+    reason: Detector definitions, samples, rule descriptions and tests quote the text they detect.
+  - detectors: [privometry/hidden-content:encoded-instructions]
+    paths: [specs/conformance/signatures/*]
+    reason: Signed conformance envelopes carry base64 payloads that decode to policy and detector text.
+  - detectors: [privometry/injection:disable-protection, privometry/injection:skip-approvals]
+    paths:
+      - docs/*
+      - cmd/privometry/*.go
+      - internal/guard/guard.go
+      - internal/scanner/posture/posture.go
+    reason: Docs and CLI help name Privometry's own uninstall commands and the agent permission settings the posture checks report.
+  - detectors: [privometry/injection:disable-protection, privometry/injection:skip-approvals]
+    paths:
+      - adapter-defs/*
+      - specs/adapter/v1/*
+      - specs/event-schema/v1/*
+      - internal/adapters/registry/adapter.gen.go
+      - internal/daemon/lifecycle.go
+    reason: Adapter definitions and their contracts list the flags and settings that skip approvals or turn hooks off, which the sensor detects; its lifecycle events name its own uninstall command.
+  - detectors: [privometry/injection:embed-data-in-url]
+    paths: [docs/implementation-plan.md]
+    reason: The plan describes the detectors for data carried out in URLs.

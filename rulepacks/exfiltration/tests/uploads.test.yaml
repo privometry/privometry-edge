@@ -1,0 +1,98 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: blocks curl -F with an SSH key
+    covers: upload-secret-file
+    facts: { action: shell_exec, program: curl, intent: [network_upload, secret_read], category: [exfiltration, secrets], path_class: secret_store, target_path: /home/dev/.ssh/id_rsa, risk: high }
+    expect: { verdict: deny, rule: upload-secret-file }
+  - name: uploading a build artifact is not a secret upload
+    covers: upload-secret-file
+    facts: { action: shell_exec, program: curl, intent: [network_upload], category: [exfiltration], host: uploads.example.com, risk: high }
+    expect: { verdict: ask, rule: curl-upload }
+
+  - name: blocks curl -T to transfer.sh
+    covers: upload-to-paste-site
+    facts: { action: shell_exec, program: curl, intent: [network_upload], category: [exfiltration], host: transfer.sh, risk: high }
+    expect: { verdict: deny, rule: upload-to-paste-site }
+  - name: blocks posting to pastebin
+    covers: upload-to-paste-site
+    facts: { action: shell_exec, program: curl, intent: [network_upload], host: www.pastebin.com, risk: high }
+    expect: { verdict: deny, rule: upload-to-paste-site }
+  - name: reading a paste is not an upload
+    covers: upload-to-paste-site
+    facts: { action: network_fetch, host: pastebin.com, risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before calling webhook.site
+    covers: contact-capture-service
+    facts: { action: shell_exec, program: curl, subcommand: "https://webhook.site/abc?d=x", host: webhook.site, risk: low }
+    expect: { verdict: ask, rule: contact-capture-service }
+  - name: asks before the WebFetch tool reaches an ngrok tunnel
+    covers: contact-capture-service
+    facts: { action: network_fetch, host: 4f2a.ngrok-free.app, risk: low }
+    expect: { verdict: ask, rule: contact-capture-service }
+  - name: a normal API host is fine
+    covers: contact-capture-service
+    facts: { action: network_fetch, host: api.github.com, risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before publishing a gist after untrusted input
+    covers: upload-after-untrusted-input
+    facts: { action: shell_exec, program: gh, subcommand: gist create notes.md, intent: [network_upload], untrusted_input_seen: true, risk: high }
+    expect: { verdict: ask, rule: upload-after-untrusted-input }
+  - name: untrusted input alone is not an upload
+    covers: upload-after-untrusted-input
+    facts: { action: shell_exec, program: ls, untrusted_input_seen: true, risk: none }
+    expect: { verdict: allow }
+
+  - name: asks before curl --data
+    covers: curl-upload
+    facts: { action: shell_exec, program: curl, flags: [--data], intent: [network_upload], host: api.example.com, risk: high }
+    expect: { verdict: ask, rule: curl-upload }
+  - name: a plain curl GET is not an upload
+    covers: curl-upload
+    facts: { action: shell_exec, program: curl, flags: [-s], host: api.example.com, risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before scp to a host
+    covers: remote-copy
+    facts: { action: shell_exec, program: scp, intent: [network_upload], host: backup.example.net, risk: high }
+    expect: { verdict: ask, rule: remote-copy }
+  - name: scp from a host downloads
+    covers: remote-copy
+    facts: { action: shell_exec, program: scp, host: backup.example.net, path_class: repo, target_path: /home/dev/api/db.sql, risk: medium }
+    expect: { verdict: ask }
+
+  - name: asks before nc
+    covers: raw-socket
+    facts: { action: shell_exec, program: nc, intent: [network_upload], host: 10.0.0.5, risk: high }
+    expect: { verdict: ask, rule: raw-socket }
+  - name: ssh is not a raw socket
+    covers: raw-socket
+    facts: { action: shell_exec, program: ssh, risk: medium }
+    expect: { verdict: ask }
+
+  - name: asks before aws s3 cp to a bucket
+    covers: cloud-storage-upload
+    facts: { action: shell_exec, program: aws, subcommand: s3 cp dump.sql s3://x, intent: [network_upload], risk: high }
+    expect: { verdict: ask, rule: cloud-storage-upload }
+  - name: aws s3 ls is not an upload
+    covers: cloud-storage-upload
+    facts: { action: shell_exec, program: aws, subcommand: s3 ls, risk: low }
+    expect: { verdict: allow }
+
+  - name: blocks a fetch with a token in the URL
+    covers: secret-to-network
+    facts: { action: network_fetch, host: collect.example.net, secret_detected: [github_token], risk: low }
+    expect: { verdict: deny, rule: secret-to-network }
+  - name: a fetch without a credential is unaffected
+    covers: secret-to-network
+    facts: { action: network_fetch, host: docs.example.net, risk: low }
+    expect: { verdict: allow }
+  - name: blocks curl with a bearer token
+    covers: secret-in-network-command
+    facts: { action: shell_exec, program: curl, host: api.example.net, secret_detected: [bearer_token], risk: low }
+    expect: { verdict: deny, rule: secret-in-network-command }
+  - name: curl with a token from an environment variable is not a literal credential
+    covers: secret-in-network-command
+    facts: { action: shell_exec, program: curl, host: api.github.com, risk: low }
+    expect: { verdict: allow }

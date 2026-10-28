@@ -1,0 +1,162 @@
+schema: privometry.redactiontest/v1
+description: 'Raw text to redacted text. Inputs may contain {{}}, which runners remove before use so secret scanners do not flag sample tokens.'
+context:
+  home: /home/dev
+  repo_root: /home/dev/work/api
+hash_key: q83vEjRWeJCrze8SNFZ4kKvN7xI0VniQq83vEjRWeJA=
+tests:
+- name: aws access key in env
+  level: redacted
+  input: 'AWS_ACCESS_KEY_ID=AKIA{{}}IOSFODNN7EXAMPLE aws s3 ls'
+  expect: 'AWS_ACCESS_KEY_ID=<aws_key> aws s3 ls'
+- name: aws secret assignment
+  level: redacted
+  input: export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+  expect: 'export AWS_SECRET_ACCESS_KEY=<secret>'
+- name: github token in a header
+  level: redacted
+  input: 'curl -H ''Authorization: Bearer gh{{}}p_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789'' https://api.github.com/user'
+  expect: 'curl -H ''Authorization: Bearer <github_token>'' https://api.github.com/user'
+- name: github fine-grained token
+  level: redacted
+  input: 'gh auth login --with-token github_{{}}pat_11ABCDEFG0123456789_abcdefghijklmnopqrstuvwxyz'
+  expect: 'gh auth login --with-token <github_token>'
+- name: gitlab token
+  level: redacted
+  input: 'glab auth login -t glp{{}}at-AbCdEfGhIjKlMnOpQrSt'
+  expect: 'glab auth login -t <gitlab_token>'
+- name: slack token
+  level: redacted
+  input: 'SLACK_BOT=xo{{}}xb-1234567890-abcdefghijkl node bot.js'
+  expect: 'SLACK_BOT=<slack_token> node bot.js'
+- name: stripe key
+  level: redacted
+  input: 'stripe charges list --api-key sk_{{}}live_4eC39HqLyjWDarjtT1zdp7dc'
+  expect: 'stripe charges list --api-key <stripe_key>'
+- name: anthropic key
+  level: redacted
+  input: 'ANTHROPIC_API_KEY=sk-a{{}}nt-api03-abcdefghijklmnopqrstuvwx python app.py'
+  expect: 'ANTHROPIC_API_KEY=<anthropic_key> python app.py'
+- name: openai project key
+  level: redacted
+  input: 'curl -H "Authorization: Bearer sk-p{{}}roj-abcdefghijklmnopqrstuvwxyz012345"'
+  expect: 'curl -H "Authorization: Bearer <openai_key>"'
+- name: google api key
+  level: redacted
+  input: '?key=AI{{}}zaSyA-1234567890abcdefghijklmnopqrstu'
+  expect: '?key=<google_api_key>'
+- name: npm token
+  level: redacted
+  input: 'npm config set //registry.npmjs.org/:_authToken=npm{{}}_abcdefghijklmnopqrstuvwxyz0123456789'
+  expect: 'npm config set //registry.npmjs.org/:_authToken=<npm_token>'
+- name: jwt
+  level: redacted
+  input: 'TOKEN=ey{{}}JhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U'
+  expect: 'TOKEN=<jwt>'
+- name: private key block
+  level: redacted
+  input: |-
+    echo '-----BEGIN OPENSSH PRIVATE{{}} KEY-----
+    b3BlbnNzaC1rZXktdjEAAAAA
+    -----END OPENSSH PRIVATE KEY-----' > id
+  expect: 'echo ''<private_key>'' > id'
+- name: password flag with equals
+  level: redacted
+  input: mysql --password=hunter2 -u root
+  expect: 'mysql --password=<secret> -u root'
+- name: password flag with space
+  level: redacted
+  input: 'psql --password "s3cr et" -h db'
+  expect: 'psql --password <secret> -h db'
+- name: token flag
+  level: redacted
+  input: vault login -token s.abcdef123
+  expect: 'vault login -token <secret>'
+- name: json secret field
+  level: redacted
+  input: '{"api_key": "abc123", "name": "x"}'
+  expect: '{"api_key": "<secret>", "name": "x"}'
+- name: database url credentials
+  level: redacted
+  input: 'psql postgres://admin:pa55w0rd@db.internal:5432/app'
+  expect: 'psql postgres://<credentials>@db.internal:5432/app'
+- name: presigned url query
+  level: redacted
+  input: 'curl ''https://bucket.s3.amazonaws.com/f.zip?X-Amz-Credential=AKIDEXAMPLE&X-Amz-Signature=abc123&x=1'''
+  expect: 'curl ''https://bucket.s3.amazonaws.com/f.zip?X-Amz-Credential=<redacted>&X-Amz-Signature=<redacted>&x=1'''
+- name: email
+  level: redacted
+  input: 'git commit --author ''Priya <priya.n@acme.com>'''
+  expect: 'git commit --author ''Priya <<email>>'''
+- name: ssh remote is not an email
+  level: redacted
+  input: 'git clone git@github.com:acme/api.git'
+  expect: 'git clone git@github.com:acme/api.git'
+- name: delete outside the repo
+  level: redacted
+  input: rm -rf /home/dev/Downloads/old
+  expect: 'rm -rf ~/<redacted_path>'
+- name: tilde path outside the repo
+  level: redacted
+  input: cat ~/.aws/credentials
+  expect: 'cat ~/<redacted_path>'
+- name: repo path is kept relative
+  level: redacted
+  input: rm -rf /home/dev/work/api/build
+  expect: 'rm -rf <repo>/build'
+- name: repo path written with tilde
+  level: redacted
+  input: ls ~/work/api/src
+  expect: 'ls <repo>/src'
+- name: home itself
+  level: redacted
+  input: rm -rf /home/dev
+  expect: rm -rf ~
+- name: sibling directory is not the home
+  level: redacted
+  input: ls /home/devops/notes
+  expect: 'ls /home/<user>/notes'
+- name: system path is kept
+  level: redacted
+  input: cat /etc/hosts
+  expect: cat /etc/hosts
+- name: 'another user''s home'
+  level: redacted
+  input: cat /Users/sam/.ssh/id_ed25519
+  expect: 'cat /Users/<user>/.ssh/id_ed25519'
+- name: plain command unchanged
+  level: redacted
+  input: go test ./... -run TestVectors
+  expect: go test ./... -run TestVectors
+- name: PWD is not a password
+  level: redacted
+  input: PWD=/tmp make build
+  expect: PWD=/tmp make build
+- name: short sk- word is not a key
+  level: redacted
+  input: echo sk-learn
+  expect: echo sk-learn
+- name: placeholder kept typed
+  level: redacted
+  input: 'GITHUB_TOKEN=gh{{}}p_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789 gh pr list'
+  expect: 'GITHUB_TOKEN=<github_token> gh pr list'
+- name: assignment value stops at a shell operator
+  level: redacted
+  input: SECRET_TOKEN=abc123&& make deploy
+  expect: SECRET_TOKEN=<secret>&& make deploy
+- name: local user hashed
+  level: hashed
+  input: jitendra
+  expect: 'hmac-sha256:cd67849f3ff3196cc3059a92dab36a14eb428605c956069d4af51de13ee31c56'
+- name: hash ignores surrounding space
+  level: hashed
+  input: '  jitendra '
+  expect: 'hmac-sha256:cd67849f3ff3196cc3059a92dab36a14eb428605c956069d4af51de13ee31c56'
+- name: hash is case sensitive
+  level: hashed
+  input: Jitendra
+  expect: 'hmac-sha256:7f6643a340696b324c5748626b3c4cfdfd17d55c80d231a150ec205496bb4c0e'
+- name: repo path hashed
+  level: hashed
+  input: /home/dev/work/api
+  expect: 'hmac-sha256:ee6ef4b7c02025c8cf121aedde88d8fd0136c63d45dab3af416ce8306475284f'

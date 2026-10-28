@@ -1,0 +1,336 @@
+{
+  "schema": "privometry.signaturetest/v1",
+  "tests": [
+    {
+      "name": "adapters-valid",
+      "check": "artifact",
+      "envelope": "envelopes/adapters-valid.json",
+      "keyset": "keyset-v2.json",
+      "role": "release",
+      "payload_type": "application/vnd.privometry.adapters+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "signed by the release key"
+    },
+    {
+      "name": "bundle-key-expired",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-key-expired.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "key's not_after is before verify_at"
+    },
+    {
+      "name": "bundle-key-not-yet-valid",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-key-not-yet-valid.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "key's not_before is after verify_at"
+    },
+    {
+      "name": "bundle-key-valid-before-expiry",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-key-valid-before-expiry.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-05-01T00:00:00.000Z",
+      "expect": "valid",
+      "reason": "same expired key, verified inside its window"
+    },
+    {
+      "name": "bundle-keyid-claims-policy-key",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-keyid-claims-policy-key.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "key ID names the policy key, signature is from another key"
+    },
+    {
+      "name": "bundle-no-signatures",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-no-signatures.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "no signatures"
+    },
+    {
+      "name": "bundle-payload-tampered",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-payload-tampered.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "one payload byte changed after signing"
+    },
+    {
+      "name": "bundle-payload-unpadded-base64",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-payload-unpadded-base64.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "payload must be padded standard base64"
+    },
+    {
+      "name": "bundle-relabeled-as-license",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-relabeled-as-license.json",
+      "keyset": "keyset-v2.json",
+      "role": "license",
+      "payload_type": "application/vnd.privometry.license+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "payload type changed; PAE covers the type"
+    },
+    {
+      "name": "bundle-second-signature-valid",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-second-signature-valid.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "one bad and one good signature"
+    },
+    {
+      "name": "bundle-signed-by-feed-key",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-signed-by-feed-key.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "trusted key, wrong role"
+    },
+    {
+      "name": "bundle-signed-by-unknown-key",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-signed-by-unknown-key.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "key not in the key set"
+    },
+    {
+      "name": "bundle-signed-without-pae",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-signed-without-pae.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "signature over the raw payload instead of PAE"
+    },
+    {
+      "name": "bundle-valid",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-valid.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.bundle+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "signed by the regional policy key"
+    },
+    {
+      "name": "bundle-wrong-payload-type",
+      "check": "artifact",
+      "envelope": "envelopes/bundle-wrong-payload-type.json",
+      "keyset": "keyset-v2.json",
+      "role": "policy",
+      "payload_type": "application/vnd.privometry.license+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "verifier expects a license, envelope holds a bundle"
+    },
+    {
+      "name": "communitypack-detectors-valid",
+      "check": "artifact",
+      "envelope": "envelopes/communitypack-detectors-valid.json",
+      "keyset": "publisher-keys.json",
+      "role": "publisher",
+      "payload_type": "application/vnd.privometry.communitypack+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "community detector pack signed by its publisher's key"
+    },
+    {
+      "name": "communitypack-rules-valid",
+      "check": "artifact",
+      "envelope": "envelopes/communitypack-rules-valid.json",
+      "keyset": "publisher-keys.json",
+      "role": "publisher",
+      "payload_type": "application/vnd.privometry.communitypack+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "community rule pack signed by its publisher's key"
+    },
+    {
+      "name": "communitypack-signed-by-release-key",
+      "check": "artifact",
+      "envelope": "envelopes/communitypack-signed-by-release-key.json",
+      "keyset": "keyset-v2.json",
+      "role": "publisher",
+      "payload_type": "application/vnd.privometry.communitypack+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "trusted key, wrong role: community packs are signed by publisher keys"
+    },
+    {
+      "name": "communitypack-signed-by-unknown-key",
+      "check": "artifact",
+      "envelope": "envelopes/communitypack-signed-by-unknown-key.json",
+      "keyset": "publisher-keys.json",
+      "role": "publisher",
+      "payload_type": "application/vnd.privometry.communitypack+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "key not among the trusted publisher keys"
+    },
+    {
+      "name": "detectorpacks-signed-by-feed-key",
+      "check": "artifact",
+      "envelope": "envelopes/detectorpacks-signed-by-feed-key.json",
+      "keyset": "keyset-v2.json",
+      "role": "release",
+      "payload_type": "application/vnd.privometry.detectorpacks+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "trusted key, wrong role: only release keys may sign detector packs"
+    },
+    {
+      "name": "detectorpacks-valid",
+      "check": "artifact",
+      "envelope": "envelopes/detectorpacks-valid.json",
+      "keyset": "keyset-v2.json",
+      "role": "release",
+      "payload_type": "application/vnd.privometry.detectorpacks+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "detector pack set signed by the release key"
+    },
+    {
+      "name": "entitlements-valid",
+      "check": "artifact",
+      "envelope": "envelopes/entitlements-valid.json",
+      "keyset": "keyset-v2.json",
+      "role": "license",
+      "payload_type": "application/vnd.privometry.entitlements+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "signed by the license key"
+    },
+    {
+      "name": "keyset-rollback",
+      "check": "keyset_update",
+      "envelope": "envelopes/keyset-rollback.json",
+      "keyset": "keyset-v2.json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "version 2 is not newer than the held version 2"
+    },
+    {
+      "name": "keyset-signed-by-policy-key",
+      "check": "keyset_update",
+      "envelope": "envelopes/keyset-signed-by-policy-key.json",
+      "keyset": "keyset-v2.json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "only root keys may sign key sets"
+    },
+    {
+      "name": "keyset-v2-from-root",
+      "check": "keyset_update",
+      "envelope": "envelopes/keyset-v2-from-root.json",
+      "keyset": "trust-root.json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "rotation signed by the pinned root key"
+    },
+    {
+      "name": "keyset-v3-from-new-root",
+      "check": "keyset_update",
+      "envelope": "envelopes/keyset-v3-from-new-root.json",
+      "keyset": "keyset-v2.json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "second rotation signed by the root key added in v2"
+    },
+    {
+      "name": "keyset-v3-skipping-v2",
+      "check": "keyset_update",
+      "envelope": "envelopes/keyset-v3-skipping-v2.json",
+      "keyset": "trust-root.json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "root-b is not trusted until v2 is applied"
+    },
+    {
+      "name": "license-valid",
+      "check": "artifact",
+      "envelope": "envelopes/license-valid.json",
+      "keyset": "keyset-v2.json",
+      "role": "license",
+      "payload_type": "application/vnd.privometry.license+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "license file signed by the license key"
+    },
+    {
+      "name": "release-signed-by-policy-key",
+      "check": "artifact",
+      "envelope": "envelopes/release-signed-by-policy-key.json",
+      "keyset": "keyset-v2.json",
+      "role": "release",
+      "payload_type": "application/vnd.privometry.release+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "invalid",
+      "reason": "trusted key, wrong role: only release keys may sign releases"
+    },
+    {
+      "name": "release-valid",
+      "check": "artifact",
+      "envelope": "envelopes/release-valid.json",
+      "keyset": "keyset-v2.json",
+      "role": "release",
+      "payload_type": "application/vnd.privometry.release+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "release manifest signed by the release key"
+    },
+    {
+      "name": "riskfeed-valid",
+      "check": "artifact",
+      "envelope": "envelopes/riskfeed-valid.json",
+      "keyset": "keyset-v2.json",
+      "role": "feed",
+      "payload_type": "application/vnd.privometry.riskfeed+json",
+      "verify_at": "2026-10-23T12:00:00.000Z",
+      "expect": "valid",
+      "reason": "signed by the feed key"
+    }
+  ]
+}

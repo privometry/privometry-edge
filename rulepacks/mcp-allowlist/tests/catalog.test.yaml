@@ -1,0 +1,28 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: blocks a blocked server
+    covers: blocked-server
+    facts: { action: mcp_call, mcp_server: shell-runner, mcp_tool: run, catalog_status: blocked, risk: medium }
+    expect: { verdict: deny, rule: blocked-server }
+  - name: an approved server is allowed
+    covers: blocked-server
+    facts: { action: mcp_call, mcp_server: github, mcp_tool: list_issues, catalog_status: approved, risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before a pending server
+    covers: unapproved-server
+    facts: { action: mcp_call, mcp_server: notion, mcp_tool: search, catalog_status: unapproved, risk: low }
+    expect: { verdict: ask, rule: unapproved-server }
+  - name: approved writes fall to risk
+    covers: unapproved-server
+    facts: { action: mcp_call, mcp_server: github, mcp_tool: create_issue, catalog_status: approved, risk: medium }
+    expect: { verdict: ask }
+
+  - name: asks before a server the catalog does not know
+    covers: unknown-server
+    facts: { action: mcp_call, mcp_server: random-mcp, mcp_tool: list_items, catalog_status: unknown, risk: low }
+    expect: { verdict: ask, rule: unknown-server }
+  - name: without a catalog nothing matches
+    covers: unknown-server
+    facts: { action: mcp_call, mcp_server: random-mcp, mcp_tool: list_items, risk: low }
+    expect: { verdict: allow }

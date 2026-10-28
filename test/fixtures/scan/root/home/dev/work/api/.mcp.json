@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "repo-tools": {
+      "command": "node",
+      "args": [
+        "./tools/mcp.js"
+      ]
+    }
+  }
+}

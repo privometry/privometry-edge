@@ -1,0 +1,57 @@
+schema: privometry.rules/v1
+rules:
+  - id: infra-destroy
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: [terraform, tofu, terragrunt, pulumi, cdk]
+      subcommand: destroy
+    verdict: ask
+    message: This destroys infrastructure; confirm it.
+  - id: infra-apply-destroy
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: [terraform, tofu, terragrunt]
+      subcommand: apply
+      flags: [-destroy, --destroy]
+    verdict: ask
+    message: apply -destroy destroys infrastructure; confirm it.
+  - id: kubectl-delete-namespace
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: kubectl
+      subcommand: ["delete namespace", "delete namespaces", "delete ns"]
+    verdict: ask
+    message: Deleting a namespace removes everything in it; confirm it.
+  - id: aws-destructive
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: aws
+      subcommand:
+        - s3 rb
+        - rds delete-db-instance
+        - rds delete-db-cluster
+        - dynamodb delete-table
+        - ec2 terminate-instances
+        - cloudformation delete-stack
+    verdict: ask
+    message: This deletes AWS resources; confirm it.
+  - id: gcloud-destructive
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: gcloud
+      subcommand: ["projects delete", "sql instances delete", "container clusters delete", "compute instances delete"]
+    verdict: ask
+    message: This deletes Google Cloud resources; confirm it.
+  - id: az-destructive
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: az
+      subcommand: ["group delete", "sql db delete", "aks delete"]
+    verdict: ask
+    message: This deletes Azure resources; confirm it.

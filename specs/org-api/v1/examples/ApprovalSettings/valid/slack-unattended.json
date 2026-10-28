@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "route": "unattended",
+  "timeout_seconds": 120,
+  "integration_id": "int_01JBH2S4V6X8Z0B2D4F6H8K0N4"
+}

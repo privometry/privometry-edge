@@ -1,0 +1,9 @@
+schema: privometry.detectorpack/v1
+id: acme/internal-tokens
+version: 0.1.0
+title: Acme internal tokens
+description: Acme's own service token format.
+maintainers: [{ name: Acme AppSec }]
+license: Apache-2.0
+min_sensor_version: 0.6.0
+categories: [credential]

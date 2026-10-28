@@ -1,0 +1,12 @@
+schema: privometry.rulepack/v1
+id: privometry/mcp-allowlist
+version: 1.0.0
+title: MCP allowlist
+description: Enforces an organization's MCP server catalog. Blocks servers the catalog blocks and asks before servers it has not approved. Inactive until a catalog exists.
+maintainers:
+  - { name: Privometry maintainers, url: https://github.com/privometry }
+license: Apache-2.0
+min_sensor_version: 0.1.0
+categories: [unapproved_mcp]
+default_fail_modes: { unapproved_mcp: open }
+keywords: [mcp, catalog, shadow-ai]

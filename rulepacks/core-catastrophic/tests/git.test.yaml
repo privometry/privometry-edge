@@ -1,0 +1,53 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: blocks git push --force origin main
+    covers: git-force-push-protected
+    facts: { action: shell_exec, program: git, subcommand: push origin main, flags: [--force], intent: [force_push], risk: critical }
+    expect: { verdict: deny, rule: git-force-push-protected }
+  - name: blocks a +main refspec
+    covers: git-force-push-protected
+    facts: { action: shell_exec, program: git, subcommand: push origin +main, intent: [force_push], risk: critical }
+    expect: { verdict: deny, rule: git-force-push-protected }
+  - name: blocks pushing a local branch onto master
+    covers: git-force-push-protected
+    facts: { action: shell_exec, program: git, subcommand: push upstream feature:master, flags: [-f], intent: [force_push], risk: critical }
+    expect: { verdict: deny, rule: git-force-push-protected }
+  - name: blocks a release branch
+    covers: git-force-push-protected
+    facts: { action: shell_exec, program: git, subcommand: push origin release/2026.10, flags: [--force-with-lease], intent: [force_push], risk: high }
+    expect: { verdict: deny, rule: git-force-push-protected }
+  - name: a branch named domain is not main
+    covers: git-force-push-protected
+    facts: { action: shell_exec, program: git, subcommand: push origin domain, flags: [--force], intent: [force_push], risk: high }
+    expect: { verdict: ask, rule: git-force-push }
+
+  - name: asks for a force push to a feature branch
+    covers: git-force-push
+    facts: { action: shell_exec, program: git, subcommand: push origin feature/login, flags: [--force], intent: [force_push], risk: high }
+    expect: { verdict: ask, rule: git-force-push }
+  - name: asks for a force push with no branch named
+    covers: git-force-push
+    facts: { action: shell_exec, program: git, subcommand: push, flags: [-f], intent: [force_push], risk: high }
+    expect: { verdict: ask, rule: git-force-push }
+  - name: a normal push is not a force push
+    covers: git-force-push
+    facts: { action: shell_exec, program: git, subcommand: push origin main, risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before git reset --hard
+    covers: git-reset-hard
+    facts: { action: shell_exec, program: git, subcommand: reset HEAD~3, flags: [--hard], risk: high }
+    expect: { verdict: ask, rule: git-reset-hard }
+  - name: a soft reset keeps the work
+    covers: git-reset-hard
+    facts: { action: shell_exec, program: git, subcommand: reset HEAD~1, flags: [--soft], risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before git clean -fdx
+    covers: git-clean-force
+    facts: { action: shell_exec, program: git, subcommand: clean, flags: [-f, -d, -x], risk: high }
+    expect: { verdict: ask, rule: git-clean-force }
+  - name: a dry-run clean deletes nothing
+    covers: git-clean-force
+    facts: { action: shell_exec, program: git, subcommand: clean, flags: [-n], risk: none }
+    expect: { verdict: allow }

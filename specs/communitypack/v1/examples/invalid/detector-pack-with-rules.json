@@ -1,0 +1,21 @@
+{
+  "schema": "privometry.communitypack/v1",
+  "kind": "detectors",
+  "id": "example/service-tokens",
+  "version": "1.0.0",
+  "published_at": "2026-10-28T06:00:00.000Z",
+  "files": [
+    {
+      "path": "detectors/tokens.yaml",
+      "content": "schema: privometry.detectors/v1\ndetectors:\n  - id: service-token\n    title: Example service token\n    category: credential\n    kind: pattern\n    severity: high\n    confidence: high\n    secret_type: example_service_token\n    applies_to: [action_argument, file_write, memory_file, agent_config, repo]\n    keywords: [exst_]\n    pattern: '\\b(?P<secret>exst_[a-f0-9]{32})\\b'\n    samples:\n      match: ['EXAMPLE_TOKEN=exst{{}}_0123456789abcdef0123456789abcdef']\n      no_match: ['exst_short', 'EXAMPLE_TOKEN=${EXAMPLE_TOKEN}']\n"
+    },
+    {
+      "path": "pack.yaml",
+      "content": "schema: privometry.detectorpack/v1\nid: example/service-tokens\nversion: 1.0.0\ntitle: Example service tokens\ndescription: An example community detector pack that finds the token format of a fictional service. Publishers copy this folder for their own token formats.\nmaintainers:\n  - { name: Example publisher, url: https://example.com }\nlicense: Apache-2.0\nmin_sensor_version: 0.6.0\ncategories: [credential]\nkeywords: [tokens, example]\n"
+    },
+    {
+      "path": "rules/extra.yaml",
+      "content": "schema: privometry.rules/v1\nrules: []\n"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+schema: privometry.policy/v1
+name: web-app
+allowlist:
+  - detectors: [aws-access-key]
+    paths: [test/*]
+    reason: Fake keys in tests

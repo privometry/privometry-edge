@@ -1,0 +1,9 @@
+{
+  "session_id": "0680dcc7-1196-4b4c-ab97-b272b1a60131",
+  "transcript_path": "/home/dev/.claude/projects/acme-api/0680dcc7.jsonl",
+  "cwd": "/home/dev/work/acme-api",
+  "hook_event_name": "InstructionsLoaded",
+  "file_path": "/home/dev/work/acme-api/CLAUDE.md",
+  "memory_type": "Project",
+  "load_reason": "session_start"
+}

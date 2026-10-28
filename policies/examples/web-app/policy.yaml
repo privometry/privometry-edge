@@ -1,0 +1,40 @@
+# Example repo policy for a Node web app. In a real repo this file lives at
+# .privometry/policy.yaml, with its tests in .privometry/tests/.
+#   privometry policy test policies/examples/web-app/policy.yaml
+schema: privometry.policy/v1
+name: web-app
+description: Lets agents run the app's scripts, keeps production secrets out, and asks before migrations.
+extends:
+  - privometry/core-catastrophic@^1
+  - privometry/secrets@^1
+defaults:
+  unmatched: auto
+rules:
+  - id: allow-node-scripts
+    when:
+      action: shell_exec
+      program: [npm, pnpm]
+      subcommand: [test, lint, build, "run *"]
+    verdict: allow
+  - id: ask-migrations
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: npx
+      subcommand: "prisma migrate *"
+    verdict: ask
+    message: Database migrations need a human.
+  - id: no-production-env
+    category: secrets
+    when:
+      action: [file_read, shell_exec]
+      target_path: "*/.env.production"
+    verdict: deny
+    message: Production secrets stay out of agent sessions.
+overrides:
+  privometry/core-catastrophic:git-force-push: deny
+exceptions:
+  - rule: privometry/secrets:read-env-file
+    target_path: "*/.env.test"
+    reason: Test fixtures only, no real secrets
+    expires_at: 2027-06-30T00:00:00Z

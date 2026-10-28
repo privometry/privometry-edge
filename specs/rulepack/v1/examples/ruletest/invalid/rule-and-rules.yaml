@@ -1,0 +1,10 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: blocks rm -rf on the home directory
+    covers: home-recursive-delete
+    facts: { action: shell_exec, intent: [recursive_delete], path_class: home }
+    expect: { verdict: deny, rule: home-recursive-delete, rules: [privometry/core-catastrophic:home-recursive-delete] }
+  - name: allows deleting the build folder
+    covers: home-recursive-delete
+    facts: { action: shell_exec, intent: [recursive_delete], path_class: repo, target_path: /home/dev/api/build, repo: github.com/acme/api }
+    expect: { verdict: allow }

@@ -1,0 +1,5 @@
+{
+  "provider": "razorpay",
+  "checkout_url": "https://rzp.io/i/AbCdEf123",
+  "reference": "sub_OdQ9vGd1Bn2kRx"
+}

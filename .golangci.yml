@@ -1,0 +1,22 @@
+version: "2"
+linters:
+  enable:
+    - errorlint
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+  exclusions:
+    presets:
+      - std-error-handling
+      - common-false-positives
+    rules:
+      # Test setup writes fixtures into temporary directories; a failed write fails the test anyway.
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+formatters:
+  enable:
+    - gofmt
+    - goimports

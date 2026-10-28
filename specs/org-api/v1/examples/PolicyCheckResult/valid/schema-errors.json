@@ -1,0 +1,13 @@
+{
+  "valid": false,
+  "errors": [
+    {
+      "pointer": "/rules/0/when/programme",
+      "detail": "property 'programme' is not allowed"
+    },
+    {
+      "pointer": "/rules/1",
+      "detail": "required property 'message' not found"
+    }
+  ]
+}

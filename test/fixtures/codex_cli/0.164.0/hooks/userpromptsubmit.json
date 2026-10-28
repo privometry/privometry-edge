@@ -1,0 +1,10 @@
+{
+  "session_id": "01a16d8f-6680-7f01-8c3d-a6d7d56cc796",
+  "turn_id": "01a16d8f-6b14-7dd2-84dd-6de1eaaa87f0",
+  "transcript_path": null,
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "UserPromptSubmit",
+  "model": "gpt-6-sol",
+  "permission_mode": "bypassPermissions",
+  "prompt": "Do three things in order. 1) Run the shell command: ls -la 2) Add a function sub(a, b) that returns a - b to calc.py. 3) Call the tickets MCP tool lookup_ticket with id T-1042 and tell me the ticket status."
+}

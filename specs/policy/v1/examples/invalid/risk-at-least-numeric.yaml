@@ -1,0 +1,9 @@
+schema: privometry.policy/v1
+name: bad
+rules:
+  - id: r1
+    when:
+      action: shell_exec
+      risk_at_least: 3
+    verdict: deny
+    message: No.

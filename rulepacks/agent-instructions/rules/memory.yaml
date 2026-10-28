@@ -1,0 +1,37 @@
+schema: privometry.rules/v1
+rules:
+  - id: ask-instruction-edit
+    description: An agent editing its own instruction files (CLAUDE.md, AGENTS.md, rules folders), which every later session obeys. Agents' automatic memory folders are left to the agent, except after injection.
+    category: other
+    when:
+      action: [file_write, file_delete, shell_exec]
+      target_class: memory_file
+    unless:
+      target_path: ["*/.claude/projects/*/memory/*", "*/.codex/memories/*"]
+    verdict: ask
+    message: The agent wants to change its own instructions.
+  - id: block-memory-edit-after-injection
+    description: Memory or instruction edits after the session read content flagged as injected instructions, the usual way a prompt injection persists.
+    category: other
+    when:
+      action: [file_write, file_delete, shell_exec]
+      target_class: memory_file
+      injection_seen: true
+    verdict: deny
+    message: This session read suspicious instructions, so memory and instruction edits are blocked. Start a new session to edit them.
+  - id: ask-safety-weakening-write
+    description: Writing text that tells agents to skip approvals, switch off hooks or ignore earlier instructions, into any file.
+    category: other
+    when:
+      action: [file_write, mcp_call]
+      injection_detected: [medium, high]
+    verdict: ask
+    message: The content tells agents to skip approvals or ignore their instructions.
+  - id: ask-hidden-content-write
+    description: Writing text a reviewer would not see, such as invisible characters or instructions in HTML comments.
+    category: other
+    when:
+      action: [file_write, mcp_call]
+      hidden_content: true
+    verdict: ask
+    message: The content hides text from people reading it.

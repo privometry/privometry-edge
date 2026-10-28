@@ -1,0 +1,11 @@
+schema: privometry.rulepack/v1
+id: privometry/agent-instructions
+version: 1.0.0
+title: Agent instructions and memory
+description: Protects the files agents load as standing instructions and memory, such as CLAUDE.md, AGENTS.md and Cursor rules, which shape every later session. Asks before an agent edits them, blocks edits after the session read injected instructions, and asks before writes that carry hidden or safety-weakening text.
+maintainers:
+  - { name: Privometry maintainers, url: https://github.com/privometry }
+license: Apache-2.0
+min_sensor_version: 0.6.0
+categories: [other]
+keywords: [memory, instructions, prompt-injection, persistence]

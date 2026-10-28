@@ -1,0 +1,10 @@
+schema: privometry.detectors/v1
+detectors:
+  - id: skip-approvals
+    title: Skip approvals
+    category: safety_weakening
+    kind: pattern
+    severity: high
+    confidence: medium
+    applies_to: [memory_file]
+    samples: { match: [a], no_match: [b] }

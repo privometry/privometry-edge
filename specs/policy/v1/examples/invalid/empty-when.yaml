@@ -1,0 +1,7 @@
+schema: privometry.policy/v1
+name: bad
+rules:
+  - id: r1
+    when: {}
+    verdict: deny
+    message: No.

@@ -1,0 +1,20 @@
+{
+  "display_name": "Meera Nair",
+  "credential": {
+    "type": "cli_key",
+    "label": "Meera's MacBook Pro",
+    "algorithm": "ES256",
+    "public_key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6/A6bjaCS9Vyi8HKN0pTQNHp0+DvUCRtpFOdJFAPo/011/BxIy2AVraia0/ivUSWM6Uw+sbpyxnEd6jr/GNFNg==",
+    "protection": "secure_enclave",
+    "proof": {
+      "payload": "eyJwdXJwb3NlIjoicmVnaXN0ZXIiLCJhdWRpZW5jZSI6Imh0dHBzOi8vaW4uYXBpLnByaXZvbWV0cnkuZGV2L2FjY291bnQvdjEiLCJjaGFsbGVuZ2UiOiJuajgtU1NMMlFsRy1sejB6aEd2cVN4WFRJRDNVbDg2d1Ytbmd4WGZOS2dvIiwicmVnaXN0cmF0aW9uX2lkIjoicmVnXzAxSkJBN1EzWDVaOEMxRTRHNko5TTJQNVI4IiwicHVibGljX2tleV9zaGEyNTYiOiJzaGEyNTY6OGE5MmExMTFhNDE3ZDg0MGM1MjgyOTUyZTBkZDg5ZDg0NTA1ODk2Y2QxZTFjZWIwNWMzYTYwMjc2Y2MzNTgwMCIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMjdUMTA6MTY6MDQuMTE4WiJ9",
+      "payloadType": "application/vnd.privometry.bundle+json",
+      "signatures": [
+        {
+          "keyid": "sha256:8a92a111a417d840c5282952e0dd89d84505896cd1e1ceb05c3a60276cc35800",
+          "sig": "MEUCIBtSn/PiqZOagBcZuhU3pI3mrfjYoWvs4BgW7YFNuilQAiEA2mfnUz2mtIlftyLQCL4V2w1IvJeRrAEySyeN9G2xUsY="
+        }
+      ]
+    }
+  }
+}

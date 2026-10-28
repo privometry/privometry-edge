@@ -1,0 +1,11 @@
+{
+  "type": "jira",
+  "name": "Security board",
+  "secret": "jira-api-token-from-atlassian",
+  "config": {
+    "base_url": "https://acme.atlassian.net",
+    "email": "secbot@acme.example",
+    "project_key": "SEC",
+    "min_severity": "high"
+  }
+}

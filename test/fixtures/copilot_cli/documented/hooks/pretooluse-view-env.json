@@ -1,0 +1,7 @@
+{
+  "sessionId": "5f0d2c7e-91a3-4b6e-8d2f-3a4b5c6d7e8f",
+  "timestamp": 1793181600000,
+  "cwd": "/home/dev/acme-api",
+  "toolName": "view",
+  "toolArgs": "{\"path\": \"/home/dev/acme-api/.env\"}"
+}

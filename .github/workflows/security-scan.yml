@@ -1,0 +1,29 @@
+name: Privometry scan
+
+# The repository's own gate, run with its own action: validates
+# .privometry/policy.yaml, flags changed agent config, hook, MCP and memory
+# files, scans every changed file with the content detectors, and fails on a
+# high or critical finding. The SARIF report goes to code scanning.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: ./action
+        with:
+          fail-on: high
+          upload-sarif: "true"

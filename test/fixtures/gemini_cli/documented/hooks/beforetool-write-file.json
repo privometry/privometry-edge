@@ -1,0 +1,12 @@
+{
+  "session_id": "0b8f9a12-3c4d-4e5f-8a6b-7c8d9e0f1a2b",
+  "transcript_path": "/home/dev/.gemini/tmp/acme-api/chats/session-2026-10-28T10-00-0b8f9a12.json",
+  "cwd": "/home/dev/acme-api",
+  "timestamp": "2026-10-28T10:00:00.000Z",
+  "hook_event_name": "BeforeTool",
+  "tool_name": "write_file",
+  "tool_input": {
+    "file_path": "/home/dev/acme-api/src/util.ts",
+    "content": "export const add = (a: number, b: number) => a + b;\n"
+  }
+}

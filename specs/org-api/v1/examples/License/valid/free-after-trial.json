@@ -1,0 +1,42 @@
+{
+  "edition": "free",
+  "state": "active",
+  "features": {
+    "local_guard": true,
+    "scanner": true,
+    "local_timeline": true,
+    "community_feed": true,
+    "cloud_sync": false,
+    "shared_policies": false,
+    "inventory": false,
+    "findings_basic": false,
+    "approvals": false,
+    "curated_feed": false,
+    "ticketing_sync": false,
+    "sso_scim": false,
+    "mdm_rollout": false,
+    "managed_hooks": false,
+    "tamper_detection": false,
+    "governance": false,
+    "policy_simulation": false,
+    "kill_switch": false,
+    "audit_replay": false,
+    "compliance_reports": false,
+    "siem_export": false,
+    "mcp_gateway": false,
+    "self_hosted": false
+  },
+  "limits": {
+    "seats": null,
+    "retention_days": 0,
+    "events_per_day": 0,
+    "devices_per_user": null
+  },
+  "valid_from": "2026-11-10T09:00:00.000Z",
+  "grace_days": 0,
+  "seats": {
+    "active": 0,
+    "enrollment_blocked": true
+  },
+  "offers": []
+}

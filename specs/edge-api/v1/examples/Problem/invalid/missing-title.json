@@ -1,0 +1,5 @@
+{
+  "type": "https://privometry.dev/problems/rate-limited",
+  "status": 429,
+  "detail": "Retry after 30 seconds."
+}

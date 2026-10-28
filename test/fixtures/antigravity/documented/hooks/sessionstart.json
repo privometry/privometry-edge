@@ -1,0 +1,9 @@
+{
+  "conversationId": "c1f0a2b4-7d3e-4c1a-9b8e-2f6d5a4c3b21",
+  "workspacePaths": [
+    "/home/dev/acme-api"
+  ],
+  "transcriptPath": "/home/dev/.gemini/antigravity-cli/brain/c1f0a2b4/transcript.jsonl",
+  "artifactDirectoryPath": "/home/dev/.gemini/antigravity-cli/brain/c1f0a2b4",
+  "modelName": "gemini-3-pro"
+}

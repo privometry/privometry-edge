@@ -1,0 +1,362 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/policy/v1/bundle.schema.json",
+  "title": "Privometry policy bundle v1",
+  "description": "What the policy service sends to devices and gateways: DSSE payloadType application/vnd.privometry.bundle+json, signed with the regional policy key. Devices reject a version lower than the one they hold, and keep enforcing an expired bundle while raising a health finding. At most 5 MB.",
+  "type": "object",
+  "required": [
+    "schema",
+    "bundle_id",
+    "version",
+    "org_id",
+    "created_at",
+    "expires_at",
+    "defaults",
+    "cedar_policies",
+    "cedar_monitor_policies",
+    "rules",
+    "catalog",
+    "entitlements"
+  ],
+  "properties": {
+    "schema": {
+      "const": "privometry.bundle/v1"
+    },
+    "bundle_id": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/bundle_id"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "org_id": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/org_id"
+    },
+    "created_at": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+    },
+    "expires_at": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+    },
+    "defaults": {
+      "type": "object",
+      "required": [
+        "unmatched",
+        "fail_modes"
+      ],
+      "properties": {
+        "unmatched": {
+          "enum": [
+            "auto",
+            "allow",
+            "ask"
+          ]
+        },
+        "fail_modes": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/rule_category"
+          },
+          "additionalProperties": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/fail_mode"
+          }
+        }
+      }
+    },
+    "cedar_policies": {
+      "type": "string",
+      "description": "The organization layer's own rules compiled to Cedar and validated against privometry.cedarschema before signing. Devices compile the merged policy themselves from sources."
+    },
+    "cedar_monitor_policies": {
+      "type": "string",
+      "description": "Compiled monitor set; its result is recorded as would_verdict."
+    },
+    "rules": {
+      "type": "array",
+      "description": "Metadata for every compiled rule, keyed by the Cedar @id annotation.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "layer",
+          "verdict",
+          "category",
+          "mode",
+          "fail_mode"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "policy.schema.json#/$defs/qualified_rule_ref"
+          },
+          "layer": {
+            "enum": [
+              "builtin",
+              "repo",
+              "user",
+              "org"
+            ]
+          },
+          "verdict": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/verdict"
+          },
+          "category": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/rule_category"
+          },
+          "mode": {
+            "enum": [
+              "enforce",
+              "monitor"
+            ]
+          },
+          "fail_mode": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/fail_mode"
+          },
+          "message": {
+            "$ref": "policy.schema.json#/$defs/message"
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "overridable": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string",
+            "description": "Index into sources, as <name>@<version>."
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "verdict": {
+                  "enum": [
+                    "ask",
+                    "deny"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "message"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "catalog": {
+      "type": "object",
+      "required": [
+        "entries"
+      ],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "kind",
+              "name",
+              "status"
+            ],
+            "properties": {
+              "component_id": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/component_id"
+              },
+              "kind": {
+                "enum": [
+                  "mcp_server",
+                  "skill",
+                  "plugin",
+                  "ide_extension",
+                  "agent"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "match": {
+                "type": "object",
+                "description": "How the edge recognizes a local item when it has no component_id. Globs as in policy files.",
+                "minProperties": 1,
+                "properties": {
+                  "transport": {
+                    "enum": [
+                      "stdio",
+                      "http"
+                    ]
+                  },
+                  "command": {
+                    "$ref": "policy.schema.json#/$defs/glob"
+                  },
+                  "url": {
+                    "$ref": "policy.schema.json#/$defs/glob"
+                  },
+                  "package": {
+                    "$ref": "policy.schema.json#/$defs/glob"
+                  }
+                }
+              },
+              "status": {
+                "enum": [
+                  "approved",
+                  "blocked"
+                ]
+              },
+              "versions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Approved versions; empty or absent means any."
+              },
+              "risk_tier": {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "critical"
+                ]
+              },
+              "expires_at": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+              }
+            }
+          }
+        }
+      }
+    },
+    "entitlements": {
+      "$ref": "../../common/v1/dsse.schema.json",
+      "description": "The organization's entitlements, signed separately with the license key (payloadType application/vnd.privometry.entitlements+json)."
+    },
+    "trusted_publishers": {
+      "type": "array",
+      "description": "Rule pack publisher keys the organization trusts in addition to Privometry's release key.",
+      "items": {
+        "type": "object",
+        "required": [
+          "publisher",
+          "public_key"
+        ],
+        "properties": {
+          "publisher": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "public_key": {
+            "$ref": "../../common/v1/keyset.schema.json#/$defs/public_key"
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "description": "The organization layer's policy files (layer org). Each device merges them with its built-in packs and local policies.",
+      "items": {
+        "type": "object",
+        "required": [
+          "layer",
+          "name",
+          "content"
+        ],
+        "properties": {
+          "layer": {
+            "enum": [
+              "builtin",
+              "repo",
+              "user",
+              "org"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ext": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/ext"
+    },
+    "privacy": {
+      "type": "object",
+      "description": "The organization's capture settings. Absent means the defaults: command text and paths redacted, local usernames and repo paths hashed in the cloud; clear locally.",
+      "properties": {
+        "upload_levels": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/redaction_map",
+          "description": "Privacy level per field for uploaded events, overriding the defaults."
+        },
+        "local_capture": {
+          "enum": [
+            "clear",
+            "redacted"
+          ],
+          "description": "What the local timeline stores in target_clear."
+        },
+        "exclusions": {
+          "type": "array",
+          "items": {
+            "$ref": "policy.schema.json#/$defs/glob"
+          },
+          "description": "Paths or repos whose events upload with action.target omitted."
+        },
+        "hash_key_id": {
+          "type": "string",
+          "pattern": "^hk_[0-9A-HJKMNP-TV-Z]{26}$",
+          "description": "Which organization hash key (delivered at enrollment) hashed fields use."
+        }
+      },
+      "additionalProperties": false
+    },
+    "approvals": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "route",
+        "timeout_seconds"
+      ],
+      "additionalProperties": false,
+      "description": "Remote approvals (PRD CP-21; docs/spikes/remote-approvals.md). When enabled, asks that should go remote are denied at once with a message, an approval is requested in Slack or Teams, and the next attempt of the same action in the same session is allowed once if it is approved.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "route": {
+          "enum": [
+            "unattended",
+            "all"
+          ],
+          "description": "unattended: asks from non-interactive sessions and from agents that cannot ask. all: every ask."
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 300
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "properties": {
+        "entitlements": {
+          "properties": {
+            "payloadType": {
+              "const": "application/vnd.privometry.entitlements+json"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

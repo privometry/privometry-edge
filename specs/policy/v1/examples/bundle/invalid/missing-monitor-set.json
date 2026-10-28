@@ -1,0 +1,92 @@
+{
+  "bundle_id": "bnd_01JAB1QZ0000000000000000AB",
+  "catalog": {
+    "entries": [
+      {
+        "component_id": "mcp_01J8MCPGH0000000000000000A",
+        "kind": "mcp_server",
+        "match": {
+          "package": "@modelcontextprotocol/server-github",
+          "transport": "stdio"
+        },
+        "name": "github",
+        "risk_tier": "medium",
+        "status": "approved"
+      },
+      {
+        "kind": "mcp_server",
+        "match": {
+          "command": "*mcp-shell-runner*"
+        },
+        "name": "shell-runner",
+        "status": "blocked"
+      }
+    ]
+  },
+  "cedar_policies": "// Expected compiler output for examples/valid/acme-default.yaml loaded as the\n// organization layer. Only the file's own rules appear here; extended packs,\n// overrides and exceptions are applied when the bundle is assembled.\n\n@id(\"acme-default:no-terraform-destroy\")\n@verdict(\"deny\")\n@layer(\"org\")\n@category(\"catastrophic\")\nforbid (principal, action == Privometry::Action::\"shell_exec\", resource)\nwhen {\n  context.program == \"terraform\" &&\n  (context.subcommand == \"destroy\" || context.subcommand like \"destroy *\")\n};\n\n@id(\"acme-default:allow-tests\")\n@verdict(\"allow\")\n@layer(\"org\")\n@category(\"other\")\npermit (principal, action == Privometry::Action::\"shell_exec\", resource)\nwhen {\n  [\"npm\", \"pnpm\", \"go\", \"mvn\", \"gradle\"].contains(context.program) &&\n  (context.subcommand == \"test\" || context.subcommand like \"test *\" ||\n   context.subcommand == \"run test\" || context.subcommand like \"run test *\")\n};\n\n@id(\"acme-default:ask-untrusted-network\")\n@verdict(\"ask\")\n@layer(\"org\")\n@category(\"other\")\npermit (principal, action == Privometry::Action::\"network_fetch\", resource)\nwhen { context.untrusted_input_seen }\nunless { context.host like \"*.github.com\" || context.host == \"registry.npmjs.org\" };\n",
+  "created_at": "2026-10-23T08:00:00.000Z",
+  "defaults": {
+    "fail_modes": {
+      "catastrophic": "closed",
+      "exfiltration": "ask",
+      "other": "open",
+      "secrets": "ask",
+      "unapproved_mcp": "open"
+    },
+    "unmatched": "auto"
+  },
+  "entitlements": {
+    "payloadType": "application/vnd.privometry.entitlements+json",
+    "payload": "ewogICJzY2hlbWEiOiAicHJpdm8uZW50aXRsZW1lbnRzL3YxIiwKICAib3JnX2lkIjogIm9yZ18wMUpBMDAwMDAwMDAwMDAwMDAwMDAwMDAwMSIsCiAgImVkaXRpb24iOiAidGVhbSIsCiAgImZlYXR1cmVzIjogewogICAgImxvY2FsX2d1YXJkIjogdHJ1ZSwKICAgICJzY2FubmVyIjogdHJ1ZSwKICAgICJsb2NhbF90aW1lbGluZSI6IHRydWUsCiAgICAiY29tbXVuaXR5X2ZlZWQiOiB0cnVlLAogICAgImNsb3VkX3N5bmMiOiB0cnVlLAogICAgInNoYXJlZF9wb2xpY2llcyI6IHRydWUsCiAgICAiaW52ZW50b3J5IjogdHJ1ZSwKICAgICJmaW5kaW5nc19iYXNpYyI6IHRydWUsCiAgICAiYXBwcm92YWxzIjogdHJ1ZSwKICAgICJjdXJhdGVkX2ZlZWQiOiB0cnVlLAogICAgInRpY2tldGluZ19zeW5jIjogdHJ1ZSwKICAgICJzc29fc2NpbSI6IGZhbHNlLAogICAgIm1kbV9yb2xsb3V0IjogZmFsc2UsCiAgICAibWFuYWdlZF9ob29rcyI6IGZhbHNlLAogICAgInRhbXBlcl9kZXRlY3Rpb24iOiBmYWxzZSwKICAgICJnb3Zlcm5hbmNlIjogZmFsc2UsCiAgICAicG9saWN5X3NpbXVsYXRpb24iOiBmYWxzZSwKICAgICJraWxsX3N3aXRjaCI6IGZhbHNlLAogICAgImF1ZGl0X3JlcGxheSI6IGZhbHNlLAogICAgImNvbXBsaWFuY2VfcmVwb3J0cyI6IGZhbHNlLAogICAgInNpZW1fZXhwb3J0IjogZmFsc2UsCiAgICAibWNwX2dhdGV3YXkiOiBmYWxzZSwKICAgICJzZWxmX2hvc3RlZCI6IGZhbHNlCiAgfSwKICAibGltaXRzIjogewogICAgInNlYXRzIjogNTAsCiAgICAicmV0ZW50aW9uX2RheXMiOiA5MCwKICAgICJldmVudHNfcGVyX2RheSI6IG51bGwsCiAgICAiZGV2aWNlc19wZXJfdXNlciI6IDMKICB9LAogICJ2YWxpZF9mcm9tIjogIjIwMjYtMTAtMDFUMDA6MDA6MDAuMDAwWiIsCiAgInZhbGlkX3VudGlsIjogIjIwMjctMTAtMDFUMDA6MDA6MDAuMDAwWiIsCiAgImdyYWNlX2RheXMiOiAxNSwKICAicG9zdF9leHBpcnlfcmV0ZW50aW9uX2RheXMiOiAzMCwKICAic3RhdGUiOiAiYWN0aXZlIiwKICAiaXNzdWVkX2F0IjogIjIwMjYtMTAtMjNUMDk6MDA6MDAuMDAwWiIsCiAgImtleV9pZCI6ICJsaWNlbnNlOmluLTE6OGExZjBjMmU3YjE0ZDY4NSIKfQo=",
+    "signatures": [
+      {
+        "keyid": "license:test:847e4b770fed8628",
+        "sig": "hqqB9nEwFHd9VlaDfm3hq4QVGvh6dOE3ZLHCgGql2TMGICB/BGuNU3n6t9vJD2D0cAK7++/R08JbgFq+AUhmAQ=="
+      }
+    ]
+  },
+  "expires_at": "2026-11-22T08:00:00.000Z",
+  "org_id": "org_01JA0000000000000000000001",
+  "rules": [
+    {
+      "category": "catastrophic",
+      "fail_mode": "closed",
+      "id": "acme-default:no-terraform-destroy",
+      "layer": "org",
+      "locked": true,
+      "message": "Run terraform destroy from CI, not from an agent.",
+      "mode": "enforce",
+      "source": "acme-default@7",
+      "verdict": "deny"
+    },
+    {
+      "category": "other",
+      "fail_mode": "open",
+      "id": "acme-default:allow-tests",
+      "layer": "org",
+      "mode": "enforce",
+      "source": "acme-default@7",
+      "verdict": "allow"
+    },
+    {
+      "category": "other",
+      "fail_mode": "open",
+      "id": "acme-default:ask-untrusted-network",
+      "layer": "org",
+      "message": "The agent read untrusted content; confirm this download.",
+      "mode": "enforce",
+      "source": "acme-default@7",
+      "verdict": "ask"
+    }
+  ],
+  "schema": "privometry.bundle/v1",
+  "sources": [
+    {
+      "content": "# The organization policy from Contracts v1, unchanged in substance.\nschema: privometry.policy/v1\nname: acme-default\nextends:\n  - privometry/core-catastrophic@^1\n  - privometry/secrets@^1\ndefaults:\n  mode: enforce\n  unmatched: auto\n  fail_modes:\n    catastrophic: closed\n    secrets: ask\nrules:\n  - id: no-terraform-destroy\n    category: catastrophic\n    when:\n      action: shell_exec\n      program: terraform\n      subcommand: destroy\n    verdict: deny\n    message: Run terraform destroy from CI, not from an agent.\n    locked: true\n  - id: allow-tests\n    when:\n      action: shell_exec\n      program: [npm, pnpm, go, mvn, gradle]\n      subcommand: [test, \"run test\"]\n    verdict: allow\n  - id: ask-untrusted-network\n    when:\n      action: network_fetch\n      untrusted_input_seen: true\n    unless:\n      host: [\"*.github.com\", \"registry.npmjs.org\"]\n    verdict: ask\n    message: The agent read untrusted content; confirm this download.\noverrides:\n  privometry/core-catastrophic:git-force-push: deny\nexceptions:\n  - rule: privometry/secrets:read-env-file\n    target_path: \"*/.env.example\"\n    reason: Example file with no real secrets\n    expires_at: 2026-12-31T00:00:00Z\n    approved_by: appsec@acme.com\n",
+      "layer": "org",
+      "name": "acme-default",
+      "version": "7"
+    }
+  ],
+  "version": 42
+}

@@ -1,0 +1,81 @@
+{
+  "schema": "privometry.adapter/v1",
+  "agent": "claude_code",
+  "display_name": "Claude Code",
+  "versions": ">=2.1.295 <3.0.0",
+  "detect": {
+    "binaries": [
+      "claude"
+    ]
+  },
+  "config_tiers": [
+    {
+      "tier": "user",
+      "format": "json",
+      "holds": [
+        "hooks"
+      ],
+      "paths": {
+        "any": [
+          "~/.claude/settings.json"
+        ]
+      }
+    }
+  ],
+  "hooks": {
+    "registration": "claude_settings",
+    "install": {
+      "free": {
+        "tier": "user",
+        "paths": {
+          "any": [
+            "~/.claude/settings.json"
+          ]
+        }
+      }
+    },
+    "events": [
+      {
+        "name": "PreToolUse",
+        "role": "pre_tool",
+        "matcher": "*",
+        "verdicts": [
+          "allow",
+          "ask",
+          "deny"
+        ],
+        "request": {
+          "session_id": "/session_id",
+          "tool_name": "/tool_name",
+          "tool_input": "/tool_input"
+        },
+        "responses": {
+          "allow": {
+            "exit_code": 0,
+            "stdout": {
+              "permissionDecision": "allow",
+              "reason": "{message}"
+            }
+          },
+          "ask": {
+            "exit_code": 0,
+            "stdout": {
+              "permissionDecision": "ask",
+              "reason": "{message}"
+            }
+          },
+          "deny": {
+            "exit_code": 0,
+            "stdout": {
+              "permissionDecision": "deny",
+              "reason": "{message}"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "tool_kinds": {
+    "Bash": "shell_exec"
+  }
+}

@@ -1,0 +1,36 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: blocks rm -rf on the home directory
+    covers: home-recursive-delete
+    facts: { action: shell_exec, program: rm, flags: [-r, -f], intent: [recursive_delete], path_class: home, target_path: /home/dev, risk: critical }
+    expect: { verdict: deny, rule: home-recursive-delete }
+  - name: blocks a file tool deleting a home folder recursively
+    covers: home-recursive-delete
+    facts: { action: file_delete, intent: [recursive_delete], path_class: home, target_path: /home/dev/Documents, risk: critical }
+    expect: { verdict: deny, rule: home-recursive-delete }
+  - name: allows deleting the build folder in the repo
+    covers: home-recursive-delete
+    facts: { action: shell_exec, program: rm, flags: [-r, -f], intent: [recursive_delete], path_class: repo, target_path: /home/dev/api/build, repo: github.com/acme/api, risk: low }
+    expect: { verdict: allow }
+  - name: a plain delete in home is not recursive
+    covers: home-recursive-delete
+    facts: { action: shell_exec, program: rm, path_class: home, target_path: /home/dev/notes.txt, risk: medium }
+    expect: { verdict: ask }
+
+  - name: blocks rm -rf /
+    covers: system-recursive-delete
+    facts: { action: shell_exec, program: rm, flags: [-r, -f], intent: [recursive_delete], path_class: system, target_path: /, risk: critical }
+    expect: { verdict: deny, rule: system-recursive-delete }
+  - name: recursive delete in temp is not a system delete
+    covers: system-recursive-delete
+    facts: { action: shell_exec, program: rm, flags: [-r], intent: [recursive_delete], path_class: temp, target_path: /tmp/build-cache, risk: low }
+    expect: { verdict: allow }
+
+  - name: blocks deleting ~/.ssh
+    covers: secret-store-recursive-delete
+    facts: { action: shell_exec, program: rm, flags: [-r, -f], intent: [recursive_delete], path_class: secret_store, target_path: /home/dev/.ssh, risk: critical }
+    expect: { verdict: deny, rule: secret-store-recursive-delete }
+  - name: reading a secret store is not a delete
+    covers: secret-store-recursive-delete
+    facts: { action: file_read, intent: [secret_read], path_class: secret_store, target_path: /home/dev/.aws/credentials, risk: high }
+    expect: { verdict: ask }

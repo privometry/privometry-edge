@@ -1,0 +1,9 @@
+schema: privometry.rules/v1
+rules:
+  - id: db-drop
+    description: Dropping a database, schema or table, detected by the extractors from SQL, CLIs and ORM commands.
+    category: catastrophic
+    when:
+      intent: db_drop
+    verdict: deny
+    message: Dropping a database or table is blocked; run it yourself if you mean it.

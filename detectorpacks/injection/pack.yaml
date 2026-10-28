@@ -1,0 +1,11 @@
+schema: privometry.detectorpack/v1
+id: privometry/injection
+version: 1.1.0
+title: Injected and safety-weakening instructions
+description: Finds text aimed at redirecting an agent, instructions to skip approvals or switch off protection, and instructions to send secrets out, in memory and instruction files, skills, tool descriptions and content agents read or write.
+maintainers:
+  - { name: Privometry maintainers, url: https://github.com/privometry }
+license: Apache-2.0
+min_sensor_version: 0.6.0
+categories: [injected_instructions, safety_weakening, exfiltration]
+keywords: [prompt-injection, memory, instructions]

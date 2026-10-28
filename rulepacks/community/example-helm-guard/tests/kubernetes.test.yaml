@@ -1,0 +1,18 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: asks before helm uninstall
+    covers: helm-uninstall
+    facts: { action: shell_exec, program: helm, subcommand: uninstall payments, risk: medium }
+    expect: { verdict: ask, rule: helm-uninstall }
+  - name: helm list is not covered
+    covers: helm-uninstall
+    facts: { action: shell_exec, program: helm, subcommand: list, risk: low }
+    expect: { verdict: allow }
+  - name: asks before draining a node
+    covers: kubectl-drain
+    facts: { action: shell_exec, program: kubectl, subcommand: drain node-7, flags: [--ignore-daemonsets], risk: medium }
+    expect: { verdict: ask, rule: kubectl-drain }
+  - name: kubectl get nodes is not covered
+    covers: kubectl-drain
+    facts: { action: shell_exec, program: kubectl, subcommand: get nodes, risk: low }
+    expect: { verdict: allow }

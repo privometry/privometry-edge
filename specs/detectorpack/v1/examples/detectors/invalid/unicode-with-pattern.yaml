@@ -1,0 +1,12 @@
+schema: privometry.detectors/v1
+detectors:
+  - id: invisible
+    title: Invisible characters
+    category: hidden_content
+    kind: unicode
+    severity: high
+    confidence: high
+    applies_to: [memory_file]
+    unicode: [zero_width]
+    pattern: 'x'
+    samples: { match: [a], no_match: [b] }

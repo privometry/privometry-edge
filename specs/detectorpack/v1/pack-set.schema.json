@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/detectorpack/v1/pack-set.schema.json",
+  "title": "Privometry detector pack set v1",
+  "description": "Privometry's detector packs released together, so detectors change without a binary release: DSSE payloadType application/vnd.privometry.detectorpacks+json, signed with the release key. Each pack is its pack.yaml manifest and the documents of its detectors/ folder, as JSON. Devices reject a set_version not higher than the one they hold or the one built into them, keep their built-in pack for any pack whose min_sensor_version is above their own version, and reject the whole set if any detector's samples fail.",
+  "type": "object",
+  "required": ["schema", "set_version", "published_at", "packs"],
+  "properties": {
+    "schema": { "const": "privometry.detectorpack_set/v1" },
+    "set_version": { "type": "integer", "minimum": 1 },
+    "published_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+    "packs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["manifest", "detectors"],
+        "properties": {
+          "manifest": { "$ref": "pack.schema.json" },
+          "detectors": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "detectors.schema.json" },
+            "description": "The files of the pack's detectors/ folder, in file name order."
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+schema: privometry.rulepack/v1
+id: acme/payments-guardrails
+version: 2.3.0
+title: Payments guardrails
+description: Private rules shared across Acme payment teams.
+maintainers:
+  - { name: Acme AppSec, email: appsec@acme.com, url: https://acme.example/appsec }
+license: LicenseRef-Acme-Internal
+min_sensor_version: 0.4.0
+categories: [catastrophic, secrets]
+default_fail_modes: { catastrophic: closed, secrets: ask }
+homepage: https://acme.example/privometry-packs
+keywords: [payments, pci]

@@ -1,0 +1,15 @@
+schema: privometry.detectors/v1
+detectors:
+  - id: service-token
+    title: Example service token
+    category: credential
+    kind: pattern
+    severity: high
+    confidence: high
+    secret_type: example_service_token
+    applies_to: [action_argument, file_write, memory_file, agent_config, repo]
+    keywords: [exst_]
+    pattern: '\b(?P<secret>exst_[a-f0-9]{32})\b'
+    samples:
+      match: ['EXAMPLE_TOKEN=exst{{}}_0123456789abcdef0123456789abcdef']
+      no_match: ['exst_short', 'EXAMPLE_TOKEN=${EXAMPLE_TOKEN}']

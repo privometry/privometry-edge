@@ -1,0 +1,12 @@
+schema: privometry.detectors/v1
+detectors:
+  - id: secret-assignment
+    title: Secret assignment
+    category: credential
+    kind: entropy
+    severity: medium
+    confidence: medium
+    secret_type: generic_secret
+    applies_to: [file_write]
+    pattern: 'secret=(?P<secret>\\S+)'
+    samples: { match: [a], no_match: [b] }

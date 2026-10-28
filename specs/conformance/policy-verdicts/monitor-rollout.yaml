@@ -1,0 +1,28 @@
+schema: privometry.verdicttest/v1
+policies: ../../policy/v1/examples/compiled/monitor-rollout.cedar
+monitor_policies: ../../policy/v1/examples/compiled/monitor-rollout.monitor.cedar
+unmatched: auto
+tests:
+  - name: package install proceeds and records would-ask
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/web
+      action: shell_exec
+      facts: { program: npm, subcommand: install left-pad, intent: [package_install], risk: low }
+    expect: { verdict: allow, would_verdict: ask, rule_ids: [], would_rule_ids: [q4-rollout:ask-package-installs] }
+
+  - name: upload to an unknown host is denied by the enforce rule
+    request:
+      agent: { product: cursor }
+      repo: github.com/acme/web
+      action: shell_exec
+      facts: { program: curl, intent: [network_upload], host: transfer.example.org, risk: high }
+    expect: { verdict: deny, rule_ids: [q4-rollout:deny-uploads-to-unknown-hosts] }
+
+  - name: upload to S3 is not covered by the deny rule
+    request:
+      agent: { product: cursor }
+      repo: github.com/acme/web
+      action: shell_exec
+      facts: { program: aws, subcommand: s3 cp, intent: [network_upload], host: acme-artifacts.s3.amazonaws.com, risk: medium }
+    expect: { verdict: ask, rule_ids: [] }

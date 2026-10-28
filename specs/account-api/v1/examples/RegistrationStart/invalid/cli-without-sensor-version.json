@@ -1,0 +1,10 @@
+{
+  "email": "meera@acme.example",
+  "purpose": "add_device",
+  "org_slug": "acme",
+  "client": {
+    "kind": "cli",
+    "os": "linux",
+    "arch": "amd64"
+  }
+}

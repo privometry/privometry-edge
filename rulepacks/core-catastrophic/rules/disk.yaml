@@ -1,0 +1,25 @@
+schema: privometry.rules/v1
+rules:
+  - id: disk-format
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: [mkfs, "mkfs.*", wipefs]
+    verdict: deny
+    message: Formatting or wiping a disk is blocked.
+  - id: disk-erase-macos
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: diskutil
+      subcommand: [eraseDisk, eraseVolume, partitionDisk, secureErase, zeroDisk]
+    verdict: deny
+    message: Erasing a disk is blocked.
+  - id: dd-to-device
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: dd
+      subcommand: "*of=/dev/*"
+    verdict: deny
+    message: Writing directly to a device with dd is blocked.

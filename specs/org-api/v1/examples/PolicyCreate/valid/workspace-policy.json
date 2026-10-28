@@ -1,0 +1,7 @@
+{
+  "content": "# New rules start in monitor mode: they record would_verdict and never block.\nschema: privometry.policy/v1\nname: q4-rollout\ndefaults:\n  mode: monitor\nrules:\n  - id: ask-package-installs\n    when:\n      action: shell_exec\n      intent: package_install\n    verdict: ask\n    message: Confirm this package install.\n  - id: deny-uploads-to-unknown-hosts\n    category: exfiltration\n    when:\n      action: [shell_exec, network_fetch]\n      intent: network_upload\n    unless:\n      host: [\"*.acme.com\", \"*.amazonaws.com\"]\n    verdict: deny\n    message: Uploads go to Acme or AWS hosts only.\n    mode: enforce\n",
+  "scope": {
+    "type": "workspace",
+    "workspace_id": "wsp_01JBAC3E5G7J9M1P3R5T7W9Y1A"
+  }
+}

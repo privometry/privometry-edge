@@ -1,0 +1,93 @@
+{
+  "schema": "privometry.bundle/v1",
+  "bundle_id": "bnd_01JAB1QZ0000000000000000AB",
+  "version": 42,
+  "org_id": "org_01JA0000000000000000000001",
+  "created_at": "2026-10-23T08:00:00.000Z",
+  "expires_at": "2026-11-22T08:00:00.000Z",
+  "defaults": {
+    "unmatched": "auto",
+    "fail_modes": {
+      "catastrophic": "closed",
+      "exfiltration": "ask",
+      "other": "open",
+      "secrets": "ask",
+      "unapproved_mcp": "open"
+    }
+  },
+  "cedar_policies": "// Expected compiler output for examples/valid/acme-default.yaml loaded as the\n// organization layer. Only the file's own rules appear here; extended packs,\n// overrides and exceptions are applied when the bundle is assembled.\n\n@id(\"acme-default:no-terraform-destroy\")\n@verdict(\"deny\")\n@layer(\"org\")\n@category(\"catastrophic\")\nforbid (principal, action == Privometry::Action::\"shell_exec\", resource)\nwhen {\n  context.program == \"terraform\" \u0026\u0026\n  (context.subcommand == \"destroy\" || context.subcommand like \"destroy *\")\n};\n\n@id(\"acme-default:allow-tests\")\n@verdict(\"allow\")\n@layer(\"org\")\n@category(\"other\")\npermit (principal, action == Privometry::Action::\"shell_exec\", resource)\nwhen {\n  [\"npm\", \"pnpm\", \"go\", \"mvn\", \"gradle\"].contains(context.program) \u0026\u0026\n  (context.subcommand == \"test\" || context.subcommand like \"test *\" ||\n   context.subcommand == \"run test\" || context.subcommand like \"run test *\")\n};\n\n@id(\"acme-default:ask-untrusted-network\")\n@verdict(\"ask\")\n@layer(\"org\")\n@category(\"other\")\npermit (principal, action == Privometry::Action::\"network_fetch\", resource)\nwhen { context.untrusted_input_seen }\nunless { context.host like \"*.github.com\" || context.host == \"registry.npmjs.org\" };\n",
+  "cedar_monitor_policies": "",
+  "rules": [
+    {
+      "id": "acme-default:no-terraform-destroy",
+      "layer": "org",
+      "verdict": "deny",
+      "category": "catastrophic",
+      "mode": "enforce",
+      "fail_mode": "closed",
+      "message": "Run terraform destroy from CI, not from an agent.",
+      "locked": true,
+      "source": "acme-default@7"
+    },
+    {
+      "id": "acme-default:allow-tests",
+      "layer": "org",
+      "verdict": "allow",
+      "category": "other",
+      "mode": "enforce",
+      "fail_mode": "open",
+      "source": "acme-default@7"
+    },
+    {
+      "id": "acme-default:ask-untrusted-network",
+      "layer": "org",
+      "verdict": "ask",
+      "category": "other",
+      "mode": "enforce",
+      "fail_mode": "open",
+      "message": "The agent read untrusted content; confirm this download.",
+      "source": "acme-default@7"
+    }
+  ],
+  "catalog": {
+    "entries": [
+      {
+        "component_id": "mcp_01J8MCPGH0000000000000000A",
+        "kind": "mcp_server",
+        "name": "github",
+        "match": {
+          "transport": "stdio",
+          "package": "@modelcontextprotocol/server-github"
+        },
+        "status": "approved",
+        "risk_tier": "medium"
+      },
+      {
+        "kind": "mcp_server",
+        "name": "shell-runner",
+        "match": {
+          "command": "*mcp-shell-runner*"
+        },
+        "status": "blocked"
+      }
+    ]
+  },
+  "entitlements": {
+    "payloadType": "application/vnd.privometry.entitlements+json",
+    "payload": "ewogICJzY2hlbWEiOiAicHJpdm9tZXRyeS5lbnRpdGxlbWVudHMvdjEiLAogICJvcmdfaWQiOiAib3JnXzAxSkEwMDAwMDAwMDAwMDAwMDAwMDAwMDAxIiwKICAiZWRpdGlvbiI6ICJ0ZWFtIiwKICAiZmVhdHVyZXMiOiB7CiAgICAibG9jYWxfZ3VhcmQiOiB0cnVlLAogICAgInNjYW5uZXIiOiB0cnVlLAogICAgImxvY2FsX3RpbWVsaW5lIjogdHJ1ZSwKICAgICJjb21tdW5pdHlfZmVlZCI6IHRydWUsCiAgICAiY2xvdWRfc3luYyI6IHRydWUsCiAgICAic2hhcmVkX3BvbGljaWVzIjogdHJ1ZSwKICAgICJpbnZlbnRvcnkiOiB0cnVlLAogICAgImZpbmRpbmdzX2Jhc2ljIjogdHJ1ZSwKICAgICJhcHByb3ZhbHMiOiB0cnVlLAogICAgImN1cmF0ZWRfZmVlZCI6IHRydWUsCiAgICAidGlja2V0aW5nX3N5bmMiOiB0cnVlLAogICAgInNzb19zY2ltIjogZmFsc2UsCiAgICAibWRtX3JvbGxvdXQiOiBmYWxzZSwKICAgICJtYW5hZ2VkX2hvb2tzIjogZmFsc2UsCiAgICAidGFtcGVyX2RldGVjdGlvbiI6IGZhbHNlLAogICAgImdvdmVybmFuY2UiOiBmYWxzZSwKICAgICJwb2xpY3lfc2ltdWxhdGlvbiI6IGZhbHNlLAogICAgImtpbGxfc3dpdGNoIjogZmFsc2UsCiAgICAiYXVkaXRfcmVwbGF5IjogZmFsc2UsCiAgICAiY29tcGxpYW5jZV9yZXBvcnRzIjogZmFsc2UsCiAgICAic2llbV9leHBvcnQiOiBmYWxzZSwKICAgICJtY3BfZ2F0ZXdheSI6IGZhbHNlLAogICAgInNlbGZfaG9zdGVkIjogZmFsc2UKICB9LAogICJsaW1pdHMiOiB7CiAgICAic2VhdHMiOiA1MCwKICAgICJyZXRlbnRpb25fZGF5cyI6IDkwLAogICAgImV2ZW50c19wZXJfZGF5IjogbnVsbCwKICAgICJkZXZpY2VzX3Blcl91c2VyIjogMwogIH0sCiAgInZhbGlkX2Zyb20iOiAiMjAyNi0xMC0wMVQwMDowMDowMC4wMDBaIiwKICAidmFsaWRfdW50aWwiOiAiMjAyNy0xMC0wMVQwMDowMDowMC4wMDBaIiwKICAiZ3JhY2VfZGF5cyI6IDE1LAogICJwb3N0X2V4cGlyeV9yZXRlbnRpb25fZGF5cyI6IDMwLAogICJzdGF0ZSI6ICJhY3RpdmUiLAogICJpc3N1ZWRfYXQiOiAiMjAyNi0xMC0yM1QwOTowMDowMC4wMDBaIiwKICAia2V5X2lkIjogImxpY2Vuc2U6aW4tMTo4YTFmMGMyZTdiMTRkNjg1Igp9Cg==",
+    "signatures": [
+      {
+        "keyid": "license:test:d0c6eb55271105f3",
+        "sig": "mp3o6mwmD2ZpfdrFGfvXLr5etl0kEcet7HS4AbRlup2z24K1XgqXrGjtkyFOoJ02ddTgU3tilBUVKvJHrUAgAw=="
+      }
+    ]
+  },
+  "sources": [
+    {
+      "layer": "org",
+      "name": "acme-default",
+      "version": "7",
+      "content": "# The organization policy from Contracts v1, unchanged in substance.\nschema: privometry.policy/v1\nname: acme-default\nextends:\n  - privometry/core-catastrophic@^1\n  - privometry/secrets@^1\ndefaults:\n  mode: enforce\n  unmatched: auto\n  fail_modes:\n    catastrophic: closed\n    secrets: ask\nrules:\n  - id: no-terraform-destroy\n    category: catastrophic\n    when:\n      action: shell_exec\n      program: terraform\n      subcommand: destroy\n    verdict: deny\n    message: Run terraform destroy from CI, not from an agent.\n    locked: true\n  - id: allow-tests\n    when:\n      action: shell_exec\n      program: [npm, pnpm, go, mvn, gradle]\n      subcommand: [test, \"run test\"]\n    verdict: allow\n  - id: ask-untrusted-network\n    when:\n      action: network_fetch\n      untrusted_input_seen: true\n    unless:\n      host: [\"*.github.com\", \"registry.npmjs.org\"]\n    verdict: ask\n    message: The agent read untrusted content; confirm this download.\noverrides:\n  privometry/core-catastrophic:git-force-push: deny\nexceptions:\n  - rule: privometry/secrets:read-env-file\n    target_path: \"*/.env.example\"\n    reason: Example file with no real secrets\n    expires_at: 2026-12-31T00:00:00Z\n    approved_by: appsec@acme.com\n"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+schema: privometry.rules/v1
+rules:
+  - id: blocked-server
+    category: unapproved_mcp
+    when:
+      action: mcp_call
+      catalog_status: blocked
+    verdict: deny
+    message: This MCP server is blocked by your organization.
+  - id: unapproved-server
+    description: In the catalog but not approved, for example a pending request.
+    category: unapproved_mcp
+    when:
+      action: mcp_call
+      catalog_status: unapproved
+    verdict: ask
+    message: This MCP server is not approved yet.
+  - id: unknown-server
+    description: Not in the catalog at all (shadow MCP). Only set when the organization has a catalog.
+    category: unapproved_mcp
+    when:
+      action: mcp_call
+      catalog_status: unknown
+    verdict: ask
+    message: This MCP server is not in your organization's catalog; you can request it.

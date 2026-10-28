@@ -1,0 +1,35 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: npm run build is allowed
+    covers: allow-node-scripts
+    facts: { action: shell_exec, program: npm, subcommand: run build, risk: low }
+    expect: { verdict: allow, rule: allow-node-scripts }
+  - name: npm install still asks
+    covers: allow-node-scripts
+    facts: { action: shell_exec, program: npm, subcommand: install left-pad, intent: [package_install], risk: medium }
+    expect: { verdict: ask }
+
+  - name: prisma migrations ask
+    covers: ask-migrations
+    facts: { action: shell_exec, program: npx, subcommand: prisma migrate dev, intent: [package_install], risk: medium }
+    expect: { verdict: ask, rule: ask-migrations }
+  - name: prisma generate is not a migration
+    covers: ask-migrations
+    facts: { action: shell_exec, program: npx, subcommand: prisma generate, intent: [package_install], risk: medium }
+    expect: { verdict: ask }
+
+  - name: reading .env.production is blocked
+    covers: no-production-env
+    facts: { action: file_read, intent: [secret_read], path_class: repo, target_path: /home/dev/web/.env.production, risk: high }
+    expect: { verdict: deny, rule: no-production-env }
+  - name: .env.test is excepted from the secrets pack, so only its risk asks
+    covers: no-production-env
+    facts: { action: file_read, intent: [secret_read], path_class: repo, target_path: /home/dev/web/.env.test, risk: high }
+    expect: { verdict: ask, rules: [] }
+  - name: other .env files still hit the secrets pack
+    facts: { action: file_read, intent: [secret_read], path_class: repo, target_path: /home/dev/web/.env.local, risk: high }
+    expect: { verdict: ask, rules: [privometry/secrets:read-env-file] }
+
+  - name: the override turns the pack's force-push ask into deny
+    facts: { action: shell_exec, program: git, subcommand: push origin feature, flags: [--force], intent: [force_push], risk: critical }
+    expect: { verdict: deny, rules: [privometry/core-catastrophic:git-force-push] }

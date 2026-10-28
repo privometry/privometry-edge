@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/communitypack/v1/communitypack.schema.json",
+  "title": "Privometry community pack v1",
+  "description": "A rule pack or detector pack published by someone other than Privometry. It travels as the payload of a DSSE envelope (payloadType application/vnd.privometry.communitypack+json) signed by a key with role publisher whose name is the pack's publisher: publisher:<publisher>:<hex> may sign <publisher>/<name> and nothing else. The publisher privometry is reserved for Privometry's own packs, which ship in the sensor or in sets signed by the release key. A sensor installs a pack only after verifying the signature against keys its user trusted with privometry trust add, checking that pack.yaml has the same id and version as the envelope, and running the pack's own tests (rule packs) or samples (detector packs). It refuses an older version than the one installed.",
+  "type": "object",
+  "required": [
+    "schema",
+    "kind",
+    "id",
+    "version",
+    "published_at",
+    "files"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "privometry.communitypack/v1"
+    },
+    "kind": {
+      "enum": [
+        "rules",
+        "detectors"
+      ],
+      "description": "rules: a privometry.rulepack/v1 folder; policies opt in with extends. detectors: a privometry.detectorpack/v1 folder; its detectors run with the built-in ones and feed the content facts."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 100,
+      "not": {
+        "pattern": "^privometry/"
+      },
+      "description": "<publisher>/<name>, the same as in pack.yaml."
+    },
+    "version": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/semver"
+    },
+    "published_at": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+    },
+    "files": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 200,
+      "description": "The pack folder. Paths are unique; the sensor checks this.",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "content"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^(pack\\.yaml|README\\.md|(rules|tests|detectors)/[A-Za-z0-9][A-Za-z0-9_-]{0,63}(\\.test)?\\.yaml)$"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 262144
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "A rule pack holds pack.yaml, README.md, rules/*.yaml and tests/*.test.yaml.",
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "rules"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "files": {
+            "items": {
+              "properties": {
+                "path": {
+                  "pattern": "^(pack\\.yaml|README\\.md|rules/[^/]+\\.yaml|tests/[^/]+\\.test\\.yaml)$",
+                  "not": {
+                    "pattern": "^rules/.*\\.test\\.yaml$"
+                  }
+                }
+              }
+            },
+            "allOf": [
+              {
+                "contains": {
+                  "properties": {
+                    "path": {
+                      "const": "pack.yaml"
+                    }
+                  }
+                }
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "path": {
+                      "const": "README.md"
+                    }
+                  }
+                }
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "path": {
+                      "pattern": "^rules/"
+                    }
+                  }
+                }
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "path": {
+                      "pattern": "^tests/"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "description": "A detector pack holds pack.yaml, an optional README.md and detectors/*.yaml.",
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "detectors"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "files": {
+            "items": {
+              "properties": {
+                "path": {
+                  "pattern": "^(pack\\.yaml|README\\.md|detectors/[^/]+\\.yaml)$",
+                  "not": {
+                    "pattern": "\\.test\\.yaml$"
+                  }
+                }
+              }
+            },
+            "allOf": [
+              {
+                "contains": {
+                  "properties": {
+                    "path": {
+                      "const": "pack.yaml"
+                    }
+                  }
+                }
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "path": {
+                      "pattern": "^detectors/"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

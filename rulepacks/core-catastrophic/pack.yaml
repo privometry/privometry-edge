@@ -1,0 +1,12 @@
+schema: privometry.rulepack/v1
+id: privometry/core-catastrophic
+version: 1.0.0
+title: Core catastrophic actions
+description: Blocks or asks before actions that destroy data, history or infrastructure in one step, such as recursive deletes outside the repo, force pushes to protected branches, database drops and disk wipes.
+maintainers:
+  - { name: Privometry maintainers, url: https://github.com/privometry }
+license: Apache-2.0
+min_sensor_version: 0.1.0
+categories: [catastrophic]
+default_fail_modes: { catastrophic: closed }
+keywords: [delete, git, database, infrastructure, disk]

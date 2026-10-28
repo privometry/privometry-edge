@@ -1,0 +1,32 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: blocks mkfs.ext4
+    covers: disk-format
+    facts: { action: shell_exec, program: mkfs.ext4, subcommand: /dev/sdb1, risk: critical }
+    expect: { verdict: deny, rule: disk-format }
+  - name: blocks wipefs
+    covers: disk-format
+    facts: { action: shell_exec, program: wipefs, subcommand: /dev/sdb, flags: [-a], risk: critical }
+    expect: { verdict: deny, rule: disk-format }
+  - name: listing disks is not formatting
+    covers: disk-format
+    facts: { action: shell_exec, program: lsblk, risk: none }
+    expect: { verdict: allow }
+
+  - name: blocks diskutil eraseDisk
+    covers: disk-erase-macos
+    facts: { action: shell_exec, program: diskutil, subcommand: eraseDisk APFS Blank disk2, risk: critical }
+    expect: { verdict: deny, rule: disk-erase-macos }
+  - name: diskutil list is harmless
+    covers: disk-erase-macos
+    facts: { action: shell_exec, program: diskutil, subcommand: list, risk: none }
+    expect: { verdict: allow }
+
+  - name: blocks dd onto a device
+    covers: dd-to-device
+    facts: { action: shell_exec, program: dd, subcommand: if=image.iso of=/dev/disk2 bs=4m, risk: critical }
+    expect: { verdict: deny, rule: dd-to-device }
+  - name: dd into a file is allowed
+    covers: dd-to-device
+    facts: { action: shell_exec, program: dd, subcommand: if=/dev/zero of=./blank.img bs=1m count=10, risk: low }
+    expect: { verdict: allow }

@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/rulepack/v1/ruletest.schema.json",
+  "title": "Privometry rule pack test vectors v1",
+  "description": "A file in a pack's tests/ folder. Each test gives the facts the extractors would produce and the expected outcome when the pack's rules are evaluated alone with defaults.unmatched: auto. Every rule needs at least one test that covers it and matches, and one that covers it and does not.",
+  "type": "object",
+  "required": [
+    "schema",
+    "tests"
+  ],
+  "properties": {
+    "schema": {
+      "const": "privometry.ruletest/v1"
+    },
+    "tests": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "facts",
+          "expect"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "covers": {
+            "$ref": "../../policy/v1/policy.schema.json#/$defs/kebab_id",
+            "description": "The rule this test exercises. A test covering a rule is a match test when expect.rule names it, and a non-match test otherwise."
+          },
+          "facts": {
+            "$ref": "#/$defs/facts"
+          },
+          "expect": {
+            "type": "object",
+            "required": [
+              "verdict"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "verdict": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/verdict"
+              },
+              "rule": {
+                "$ref": "../../policy/v1/policy.schema.json#/$defs/kebab_id",
+                "description": "The pack rule that must determine the verdict. Omitted means no pack rule matches and the unmatched default decides."
+              },
+              "rules": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "../../policy/v1/policy.schema.json#/$defs/qualified_rule_ref"
+                },
+                "description": "The exact set of rules that must determine the verdict, as qualified IDs (<pack-or-policy>:<rule-id>). An empty list means no rule may match, so the unmatched default decides. Useful in policy tests, where packs and the policy are evaluated together."
+              }
+            },
+            "not": {
+              "required": [
+                "rule",
+                "rules"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "facts": {
+      "type": "object",
+      "description": "Concrete extractor output, not patterns. Facts left out take their empty value; risk defaults to none, and the resource is the machine unless repo is set.",
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/action_kind"
+        },
+        "intent": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/intent"
+          }
+        },
+        "category": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/rule_category"
+          }
+        },
+        "risk": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/risk"
+        },
+        "program": {
+          "type": "string"
+        },
+        "subcommand": {
+          "type": "string"
+        },
+        "flags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "path_class": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/path_class"
+        },
+        "target_path": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "mcp_server": {
+          "type": "string"
+        },
+        "mcp_tool": {
+          "type": "string"
+        },
+        "catalog_status": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/catalog_status"
+        },
+        "untrusted_input_seen": {
+          "type": "boolean"
+        },
+        "secret_detected": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "maxLength": 64
+          }
+        },
+        "injection_detected": {
+          "enum": [
+            "none",
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "injection_seen": {
+          "type": "boolean"
+        },
+        "hidden_content": {
+          "type": "boolean"
+        },
+        "target_class": {
+          "enum": [
+            "memory_file",
+            "agent_config",
+            "code",
+            "other"
+          ]
+        },
+        "agent": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+        },
+        "repo": {
+          "type": "string",
+          "description": "Repo remote; omit to evaluate against the machine."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,129 @@
+name: Release
+
+# A v* tag builds the release, signs it with the release key, and publishes
+# it. The release key is the PRIVOMETRY_RELEASE_KEY secret of the "release"
+# environment (with PRIVOMETRY_RELEASE_KEY_NAME as an environment variable),
+# which only the sign job can read: protect the environment with required
+# reviewers and allow only v* tags to use it. Nothing else in this workflow
+# sees the key, and the job that holds it has no write access to the repo.
+#
+# A manual run with a tag re-signs that release's manifest with a fresh
+# expiry: devices refuse an expired release.json.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release tag to re-sign, for example v0.5.0
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean --skip=publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/checksums.txt
+          if-no-files-found: error
+
+  sign:
+    needs: build
+    if: ${{ !cancelled() && (needs.build.result == 'success' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Fetch the build
+        if: github.event_name == 'push'
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Fetch the published release
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir dist
+          gh release download "$TAG" --dir dist --pattern 'privometry_*' --pattern checksums.txt
+          gh release view "$TAG" --json publishedAt --jq .publishedAt > dist/released-at
+      - name: Sign
+        env:
+          KEY: ${{ secrets.PRIVOMETRY_RELEASE_KEY }}
+          KEY_NAME: ${{ vars.PRIVOMETRY_RELEASE_KEY_NAME }}
+        run: |
+          if [ -z "$KEY" ] || [ -z "$KEY_NAME" ]; then
+            echo "::error::The release environment needs the PRIVOMETRY_RELEASE_KEY secret and the PRIVOMETRY_RELEASE_KEY_NAME variable (scripts/release-keygen)."
+            exit 1
+          fi
+          key="$RUNNER_TEMP/release.seed"
+          trap 'rm -f "$key"' EXIT
+          (umask 077 && printf '%s\n' "$KEY" > "$key")
+          released=()
+          if [ -f dist/released-at ]; then released=(-released-at "$(cat dist/released-at)"); fi
+          go run ./scripts/release-manifest -version "$TAG" -dist dist -key "$key" -name "$KEY_NAME" "${released[@]}"
+          mkdir signed
+          mv dist/release.json signed/
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            go run ./scripts/sign-definitions -key "$key" -name "$KEY_NAME" -out signed
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed
+          path: signed/
+          if-no-files-found: error
+
+  publish:
+    needs: sign
+    if: ${{ !cancelled() && needs.sign.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+      - name: Publish the release
+        if: github.event_name == 'push'
+        run: |
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$TAG" --generate-notes \
+            out/dist/* out/signed/*
+      - name: Replace the manifest
+        if: github.event_name == 'workflow_dispatch'
+        run: gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber out/signed/release.json

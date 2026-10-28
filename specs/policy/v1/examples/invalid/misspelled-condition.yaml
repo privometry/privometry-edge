@@ -1,0 +1,9 @@
+schema: privometry.policy/v1
+name: bad
+rules:
+  - id: r1
+    when:
+      action: shell_exec
+      programme: terraform
+    verdict: deny
+    message: No.

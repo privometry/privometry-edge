@@ -1,0 +1,31 @@
+# Fixtures
+
+Real agent config files and hook payloads, organized as `<agent>/<version>/<kind>/`. A `documented/` folder instead of a version holds payloads built from vendor documentation, used until real ones are recorded; an adapter whose only fixtures are documented has `verified: []`. Adapter tests parse every file here, so a vendor change that breaks parsing fails CI (see Contracts v1, "Adapter fixtures").
+
+| Path | Source | Recorded |
+|---|---|---|
+| `claude_code/2.1.304/hooks/` | Headless session with `scripts/hook-recorder` on every event | 2026-10-23 |
+| `codex_cli/0.164.0/hooks/` | Three `codex exec` sessions with `scripts/hook-recorder` on every event: shell commands, `apply_patch` (update and add), a local stdio MCP tool, and `rm -rf build .` stopped by the read-only sandbox | 2026-10-24 |
+| `gemini_cli/documented/hooks/` | Constructed from the Gemini CLI hooks and tools references (field names, `tool_input` keys, `mcp_context`); not recorded. Replace with a recorded `gemini_cli/<version>/` once a signed-in session is available | — |
+| `copilot_cli/documented/hooks/` | Constructed from the GitHub Copilot CLI hooks reference (camelCase events, `toolArgs` as a JSON string); tool argument names are unverified. Replace with a recorded `copilot_cli/<version>/` | — |
+| `antigravity/documented/hooks/` | Constructed from the Antigravity hooks reference (named hooks, camelCase payloads, `toolCall.name` and `toolCall.args`, `workspacePaths`); not recorded. Replace with a recorded `antigravity/<version>/` | — |
+
+Recording a new version, without touching the agent's user-level config:
+
+```bash
+go run ./scripts/hook-recorder setup -agent gemini_cli -project ~/scratch/rec-gemini
+```
+
+`setup` copies the recorder to a temporary folder and registers it for every hook event in the definition, in the agent's project-level hooks file inside the throwaway project (it refuses the home folder and a project that already has one). Start the agent there, trust the folder if it asks, and do what `setup` lists. Then:
+
+```bash
+go run ./scripts/hook-recorder sanitize -agent gemini_cli -version 0.12.0 -in <recordings folder> -project ~/scratch/rec-gemini
+```
+
+`sanitize` writes `<agent>/<version>/hooks/<event>-<tool>.json`, replacing the project, home folder, user name and host name with the placeholders below, and flags payloads that look like they hold a secret. Read every file before adding it.
+
+Rules:
+
+- Sanitize before committing: home directory becomes `/home/dev`, project paths `/home/dev/acme-api`, and nothing machine- or person-specific remains.
+- Never commit secrets, real prompts with private content, or real MCP server URLs.
+- Keep payloads byte-for-byte otherwise, including undocumented fields.

@@ -1,0 +1,142 @@
+# Shipped adapter definition. Validated against specs/adapter/v1 by internal/adapters/registry tests.
+# Based on the Antigravity hooks, rules, MCP and permissions documentation;
+# the fixtures in test/fixtures/antigravity/documented are built from it, not
+# recorded. Covers the agy CLI, the desktop app and the IDE, which share the
+# global hooks file.
+schema: privometry.adapter/v1
+agent: antigravity
+display_name: Antigravity
+versions: ">=1.1.21 <2.0.0"
+verified: []
+detect:
+  binaries: [agy]
+  processes: [agy, Antigravity]
+  app_bundles:
+    macos: ["/Applications/Antigravity.app"]
+  version_cmd: [agy, --version]
+  # Turns hooks off entirely: Privometry sees nothing the agent does.
+  bypass_flags: [--dangerously-skip-permissions]
+config_tiers:
+  - tier: user
+    format: json
+    holds: [hooks]
+    paths: { any: ["~/.gemini/config/hooks.json"] }
+  - tier: project
+    format: json
+    holds: [hooks]
+    paths: { any: [".agents/hooks.json"] }
+    requires_trust: true
+  - tier: user
+    format: json
+    holds: [settings, permissions]
+    paths: { any: ["~/.gemini/antigravity-cli/settings.json"] }
+  - tier: user
+    format: markdown
+    holds: [skills]
+    paths: { any: ["~/.gemini/config/skills/*/SKILL.md", "~/.gemini/antigravity-cli/skills/*/SKILL.md"] }
+  - tier: project
+    format: markdown
+    holds: [skills]
+    paths: { any: [".agents/skills/*/SKILL.md"] }
+mcp_sources:
+  - tier: user
+    format: json
+    paths: { any: ["~/.gemini/config/mcp_config.json"] }
+    pointer: /mcpServers
+  - tier: project
+    format: json
+    paths: { any: [".agents/mcp_config.json"] }
+    pointer: /mcpServers
+memory_files:
+  - tier: user
+    kind: instructions
+    format: markdown
+    imports: true
+    paths: { any: ["~/.gemini/AGENTS.md", "~/.gemini/GEMINI.md", "~/.gemini/config/AGENTS.md", "~/.gemini/config/GEMINI.md"] }
+  - tier: user
+    kind: rules
+    format: markdown
+    paths: { any: ["~/.gemini/config/rules/*.md", "~/.gemini/antigravity-cli/rules/*.md"] }
+    note: Each rule file needs frontmatter with a trigger (always_on, model_decision, glob or manual); files without it are ignored.
+  - tier: project
+    kind: instructions
+    format: markdown
+    imports: true
+    nested: true
+    paths: { any: ["AGENTS.md", "GEMINI.md", ".agents/AGENTS.md", ".agents/GEMINI.md"] }
+    note: Loaded for the folder of every file the agent reads or edits, up to the workspace root.
+  - tier: project
+    kind: rules
+    format: markdown
+    paths: { any: [".agents/rules/*.md"] }
+hooks:
+  registration: antigravity_hooks
+  install:
+    free:
+      tier: user
+      paths: { any: ["~/.gemini/config/hooks.json"] }
+  timeout_seconds: 10
+  fail_closed_option: null
+  trust: { required: false }
+  events:
+    # camelCase payloads; the working folder is the first workspace path.
+    - name: PreToolUse
+      role: pre_tool
+      matcher: "*"
+      verdicts: [allow, ask, deny]
+      request: &tool_request
+        session_id: /conversationId
+        tool_name: /toolCall/name
+        tool_input: /toolCall/args
+        cwd: /workspacePaths/0
+      responses:
+        allow: { exit_code: 0, stdout: { decision: allow } }
+        # force_ask: ask also skips the prompt when the person once chose "Always Allow".
+        ask: { exit_code: 0, stdout: { decision: force_ask, reason: "{message}" } }
+        deny: { exit_code: 0, stdout: { decision: deny, reason: "{message}" } }
+    # Carries no tool output, only an error when the tool failed; the
+    # documentation shows {} as its reply.
+    - name: PostToolUse
+      role: post_tool
+      matcher: "*"
+      verdicts: []
+      request: *tool_request
+      responses:
+        none: { exit_code: 0, stdout: {} }
+    - name: SessionStart
+      role: session_start
+      verdicts: []
+      request: { session_id: /conversationId, cwd: /workspacePaths/0 }
+      responses:
+        none: { exit_code: 0, stdout: {} }
+tool_kinds:
+  run_command: shell_exec
+  view_file: file_read
+  list_dir: file_read
+  find_by_name: file_read
+  grep_search: file_read
+  write_to_file: file_write
+  replace_file_content: file_write
+  multi_replace_file_content: file_write
+  read_url_content: network_fetch
+  search_web: web_search
+  invoke_subagent: subagent_spawn
+  "*": other
+tool_targets:
+  run_command: { command: /CommandLine }
+  view_file: { path: /AbsolutePath }
+  list_dir: { path: /DirectoryPath }
+  find_by_name: { path: /SearchDirectory }
+  grep_search: { path: /SearchPath }
+  write_to_file: { path: /TargetFile, content: /CodeContent }
+  replace_file_content: { path: /TargetFile, content: /ReplacementContent }
+  multi_replace_file_content: { path: /TargetFile, content: /ReplacementChunks }
+  read_url_content: { url: /Url }
+  search_web: { query: /query }
+posture_checks: [auto_approve_mode, project_mcp_server, unpinned_mcp_server, project_hook, secret_in_config]
+notes:
+  - The global hooks file is shared by the agy CLI, the desktop app and the IDE, so one install covers all three. Workspace hooks load only in trusted folders.
+  - A PreToolUse hook that crashes, times out or exits non-zero blocks the call (reported from testing with agy 1.1.21, not documented).
+  - --dangerously-skip-permissions skips PreToolUse hooks entirely.
+  - MCP tools appear under their own names, without the server, so MCP calls are classified as other.
+  - Hooks run with only allowed environment variables; privometry-hook finds the home folder from the account database when HOME is missing.

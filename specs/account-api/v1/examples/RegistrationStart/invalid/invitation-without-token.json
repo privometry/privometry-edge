@@ -1,0 +1,7 @@
+{
+  "email": "ravi@acme.example",
+  "purpose": "accept_invitation",
+  "client": {
+    "kind": "browser"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "schema": "privometry.communitypack/v1",
+  "kind": "rules",
+  "id": "privometry/helm-guard",
+  "version": "1.0.0",
+  "published_at": "2026-10-28T06:00:00.000Z",
+  "files": [
+    {
+      "path": "README.md",
+      "content": "# example/helm-guard\n\nAn example community rule pack, used by the tests and as a template. It is not\nshipped in the sensor.\n\n| Rule | Verdict | When |\n|---|---|---|\n| `helm-uninstall` | ask | `helm uninstall` or `helm delete` |\n| `kubectl-drain` | ask | `kubectl drain` or `kubectl cordon` |\n\nUse it from a policy once it is installed:\n\n```yaml\nextends: [example/helm-guard@^1]\n```\n"
+    },
+    {
+      "path": "pack.yaml",
+      "content": "schema: privometry.rulepack/v1\nid: example/helm-guard\nversion: 1.0.0\ntitle: Helm and node guard (example)\ndescription: An example community pack. Asks before an agent uninstalls a Helm release or drains a Kubernetes node. Publishers copy this folder, change the publisher and name, and sign it with privometry packs sign.\nmaintainers:\n  - { name: Example publisher, url: https://example.com }\nlicense: Apache-2.0\nmin_sensor_version: 0.6.0\ncategories: [catastrophic]\ndefault_fail_modes: { catastrophic: ask }\nkeywords: [kubernetes, helm, example]\n"
+    },
+    {
+      "path": "rules/kubernetes.yaml",
+      "content": "schema: privometry.rules/v1\nrules:\n  - id: helm-uninstall\n    description: Removing a Helm release deletes everything it installed.\n    category: catastrophic\n    when:\n      action: shell_exec\n      program: helm\n      subcommand: [uninstall, delete]\n    verdict: ask\n    message: This removes a Helm release and everything it installed; confirm it.\n  - id: kubectl-drain\n    description: Draining or cordoning a node moves workloads off it.\n    category: catastrophic\n    when:\n      action: shell_exec\n      program: kubectl\n      subcommand: [drain, cordon]\n    verdict: ask\n    message: This takes a Kubernetes node out of service; confirm it.\n"
+    },
+    {
+      "path": "tests/kubernetes.test.yaml",
+      "content": "schema: privometry.ruletest/v1\ntests:\n  - name: asks before helm uninstall\n    covers: helm-uninstall\n    facts: { action: shell_exec, program: helm, subcommand: uninstall payments, risk: medium }\n    expect: { verdict: ask, rule: helm-uninstall }\n  - name: helm list is not covered\n    covers: helm-uninstall\n    facts: { action: shell_exec, program: helm, subcommand: list, risk: low }\n    expect: { verdict: allow }\n  - name: asks before draining a node\n    covers: kubectl-drain\n    facts: { action: shell_exec, program: kubectl, subcommand: drain node-7, flags: [--ignore-daemonsets], risk: medium }\n    expect: { verdict: ask, rule: kubectl-drain }\n  - name: kubectl get nodes is not covered\n    covers: kubectl-drain\n    facts: { action: shell_exec, program: kubectl, subcommand: get nodes, risk: low }\n    expect: { verdict: allow }\n"
+    }
+  ]
+}

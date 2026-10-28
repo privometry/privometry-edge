@@ -1,0 +1,10 @@
+{
+  "type": "jira",
+  "name": "Security board",
+  "secret": "t",
+  "config": {
+    "base_url": "http://jira.internal",
+    "email": "a@b.co",
+    "project_key": "SEC"
+  }
+}

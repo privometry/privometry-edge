@@ -1,0 +1,10 @@
+Privometry
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It includes fonts licensed under the SIL Open Font License, Version 1.1,
+embedded in the web timeline (ui/timeline-web/fonts; see OFL.txt there):
+
+- Inter, Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+- Manrope, Copyright 2018 The Manrope Project Authors (https://github.com/sharanda/manrope)
+- IBM Plex Mono, Copyright © 2017 IBM Corp. with Reserved Font Name "Plex"

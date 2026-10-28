@@ -1,0 +1,11 @@
+schema: privometry.detectorpack/v1
+id: privometry/hidden-content
+version: 1.0.0
+title: Hidden content
+description: Finds text a person reading the file would not see, such as invisible Unicode, instructions inside HTML comments, encoded instructions and text pushed off-screen by long runs of spaces.
+maintainers:
+  - { name: Privometry maintainers, url: https://github.com/privometry }
+license: Apache-2.0
+min_sensor_version: 0.6.0
+categories: [hidden_content]
+keywords: [unicode, steganography, prompt-injection]

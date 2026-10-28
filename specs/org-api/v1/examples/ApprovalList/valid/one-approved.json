@@ -1,0 +1,31 @@
+{
+  "approvals": [
+    {
+      "approval_id": "apr_01JBJ0Q2S4V6X8Z0B2D4F6H8K0",
+      "status": "approved",
+      "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+      "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D",
+      "agent_product": "codex_cli",
+      "session_id": "ses_01JAB7P0A2C4E6G8J0K2M4N6P8",
+      "repo_remote": "github.com/acme/infra",
+      "action": {
+        "kind": "shell_exec",
+        "tool_name": "shell",
+        "target": "terraform apply -target=module.cache",
+        "rule_ids": [
+          "acme-default:ask-terraform-apply"
+        ],
+        "risk": "high"
+      },
+      "message": "Apply Terraform changes to module.cache?",
+      "channel": "slack",
+      "created_at": "2026-10-28T11:00:00.000Z",
+      "expires_at": "2026-10-28T11:02:00.000Z",
+      "decided_at": "2026-10-28T11:00:41.000Z",
+      "responder": {
+        "display_name": "priya",
+        "channel": "slack"
+      }
+    }
+  ]
+}

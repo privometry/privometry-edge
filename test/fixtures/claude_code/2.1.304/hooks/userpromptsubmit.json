@@ -1,0 +1,9 @@
+{
+  "session_id": "b36203ed-0765-4152-bace-3a9ee080ad41",
+  "transcript_path": "/home/dev/.claude/projects/-home-dev-acme-api/b36203ed-0765-4152-bace-3a9ee080ad41.jsonl",
+  "cwd": "/home/dev/acme-api",
+  "prompt_id": "768f4e66-bee7-4ff0-92a5-643ef304ed67",
+  "permission_mode": "default",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "Do these steps in order using tools: 1) run the shell command 'ls -la' 2) read notes.txt 3) edit notes.txt replacing hello with hi 4) write a new file out.txt containing 'done' 5) run the shell command 'rm -rf ./out.txt' (it may be denied; that is fine). Then reply DONE.\n"
+}

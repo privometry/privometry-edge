@@ -1,0 +1,77 @@
+# Cross-platform release builds. .github/workflows/release.yml runs this with
+# --skip=publish, signs the result and publishes the GitHub release itself.
+version: 2
+project_name: privometry
+
+before:
+  hooks:
+    - go mod tidy
+    - go run ./scripts/release-metadata -version {{.Version}}
+
+builds:
+  - &bin
+    id: privometry
+    main: ./cmd/privometry
+    binary: privometry
+    env: [CGO_ENABLED=0]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+      - -X github.com/privometry/privometry-oss/internal/buildinfo.Version={{.Version}}
+      - -X github.com/privometry/privometry-oss/internal/buildinfo.Commit={{.ShortCommit}}
+      - -X github.com/privometry/privometry-oss/internal/buildinfo.Date={{.Date}}
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+  - <<: *bin
+    id: privometryd
+    main: ./cmd/privometryd
+    binary: privometryd
+    goos: [darwin, linux]
+  # On Windows privometryd is a GUI-subsystem program, so the logon task that
+  # starts it opens no console window; it logs with -log instead.
+  - <<: *bin
+    id: privometryd-windows
+    main: ./cmd/privometryd
+    binary: privometryd
+    goos: [windows]
+    ldflags:
+      - -s -w -H=windowsgui
+      - -X github.com/privometry/privometry-oss/internal/buildinfo.Version={{.Version}}
+      - -X github.com/privometry/privometry-oss/internal/buildinfo.Commit={{.ShortCommit}}
+      - -X github.com/privometry/privometry-oss/internal/buildinfo.Date={{.Date}}
+  - <<: *bin
+    id: privometry-hook
+    main: ./cmd/privometry-hook
+    binary: privometry-hook
+  - <<: *bin
+    id: privometry-mcp-shim
+    main: ./cmd/privometry-mcp-shim
+    binary: privometry-mcp-shim
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files: [LICENSE, NOTICE, README.md, privometry.cdx.json, dependency-licenses.json]
+
+# Scoop manifest for Windows. Generated into dist/ only until the bucket and
+# release signing are set up, like the rest of publishing.
+scoops:
+  - name: privometry
+    skip_upload: true
+    repository:
+      owner: privometry
+      name: scoop-bucket
+    homepage: https://github.com/privometry/privometry-oss
+    description: Local guard and scanner for AI coding agents
+    license: Apache-2.0
+    post_install:
+      - Write-Host 'Run "privometry daemon install", then "privometry guard install" for each agent.'
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github

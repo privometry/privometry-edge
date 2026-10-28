@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/rulepack/v1/pack.schema.json",
+  "title": "Privometry rule pack manifest v1",
+  "description": "pack.yaml at the root of a rule pack folder. The folder also holds rules/*.yaml (privometry.rules/v1), tests/*.test.yaml (privometry.ruletest/v1) and README.md. A pack without passing tests cannot be released. Strict, like policy files.",
+  "type": "object",
+  "required": ["schema", "id", "version", "title", "description", "maintainers", "license", "min_sensor_version", "categories"],
+  "properties": {
+    "schema": { "const": "privometry.rulepack/v1" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 100,
+      "description": "<publisher>/<name>, for example privometry/core-catastrophic. Rules are referenced as <id>:<rule-id>."
+    },
+    "version": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/semver",
+      "description": "A stricter verdict is a minor change; removing or loosening a rule is a major change."
+    },
+    "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 1024 },
+    "maintainers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "email": { "type": "string", "format": "email" },
+          "url": { "type": "string", "format": "uri", "pattern": "^https://" }
+        }
+      }
+    },
+    "license": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9.+-]+( (AND|OR|WITH) [A-Za-z0-9.+-]+)*$",
+      "description": "SPDX license expression; Apache-2.0 for Privometry packs."
+    },
+    "min_sensor_version": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/semver",
+      "description": "Oldest sensor that understands every fact the pack uses."
+    },
+    "categories": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "../../common/v1/common.schema.json#/$defs/rule_category" },
+      "description": "Every rule's category must be listed here; the pack test runner checks this."
+    },
+    "default_fail_modes": {
+      "type": "object",
+      "propertyNames": { "$ref": "../../common/v1/common.schema.json#/$defs/rule_category" },
+      "additionalProperties": { "$ref": "../../common/v1/common.schema.json#/$defs/fail_mode" }
+    },
+    "homepage": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "keywords": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+    }
+  },
+  "additionalProperties": false
+}

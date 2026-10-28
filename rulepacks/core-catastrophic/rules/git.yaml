@@ -1,0 +1,48 @@
+schema: privometry.rules/v1
+rules:
+  - id: git-force-push-protected
+    description: Force pushes whose refspec targets main, master or a release branch.
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: git
+      intent: force_push
+      subcommand:
+        - "push * main"
+        - "push * master"
+        - "push * +main"
+        - "push * +master"
+        - "push * release*"
+        - "push * +release*"
+        - "push * *:main"
+        - "push * *:master"
+        - "push * *:release*"
+    verdict: deny
+    message: Force-pushing to main, master or a release branch is blocked.
+  - id: git-force-push
+    description: Any other force push, including one with no explicit branch.
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: git
+      intent: force_push
+    verdict: ask
+    message: Confirm this force push; it rewrites remote history.
+  - id: git-reset-hard
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: git
+      subcommand: reset
+      flags: [--hard]
+    verdict: ask
+    message: git reset --hard discards uncommitted work; confirm it.
+  - id: git-clean-force
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: git
+      subcommand: clean
+      flags: [-f, --force]
+    verdict: ask
+    message: git clean deletes untracked files for good; confirm it.

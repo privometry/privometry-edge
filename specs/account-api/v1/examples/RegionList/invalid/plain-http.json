@@ -1,0 +1,11 @@
+{
+  "regions": [
+    {
+      "region": "in",
+      "name": "India",
+      "account_base_url": "http://in.api.privometry.dev/account/v1",
+      "edge_base_url": "https://in.api.privometry.dev/edge/v1",
+      "accepts_new_organizations": true
+    }
+  ]
+}

@@ -1,0 +1,834 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/account-api/v1/messages.schema.json",
+  "title": "Privometry account API v1 messages",
+  "description": "Request and response bodies of /account/v1, referenced from openapi.yaml: registration (an email code, then a key on the person's device that a PIN unlocks), console sign-in, credentials and invitations. No message ever carries the PIN; it only unlocks a key on the device. WebAuthn objects keep the camelCase names of the WebAuthn JSON serialization so browser APIs can pass them through unchanged.",
+  "$defs": {
+    "registration_id": { "type": "string", "pattern": "^reg_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "credential_id": { "type": "string", "pattern": "^crd_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "challenge_id": { "type": "string", "pattern": "^chl_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "invitation_id": { "type": "string", "pattern": "^ivt_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "region": { "type": "string", "pattern": "^[a-z]{2,8}$" },
+    "api_key_id": { "type": "string", "pattern": "^apk_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "enrollment_token_id": { "type": "string", "pattern": "^ent_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "enrollment_token_secret": {
+      "type": "string",
+      "pattern": "^pet_[A-Za-z0-9_-]{43}$",
+      "description": "pet_ and 32 random bytes in base64url: what POST /edge/v1/enroll takes as enrollment_token."
+    },
+    "workspace_id": { "type": "string", "pattern": "^wsp_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "api_key_role": {
+      "enum": ["admin", "analyst", "viewer"],
+      "description": "An API key is never an owner."
+    },
+    "api_key_secret": {
+      "type": "string",
+      "pattern": "^pak_[A-Za-z0-9_-]{43}$",
+      "description": "pak_ and 32 random bytes in base64url, sent as Authorization: Bearer. The prefix lets secret scanners recognize a leaked key."
+    },
+    "email": {
+      "type": "string",
+      "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+      "maxLength": 254,
+      "description": "Checked loosely by pattern, not format: email, which validators implement differently (the Java one rejects top-level domains missing from its list). The emailed code is what proves the address."
+    },
+    "display_name": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "org_slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$",
+      "description": "3 to 40 lowercase letters, digits and inner hyphens. Slugs appear in sign-in URLs and are public through GET /directory/{slug}."
+    },
+    "role": {
+      "enum": ["owner", "admin", "analyst", "viewer"],
+      "description": "PRD CP-01. People who only run the CLI are viewers unless an invitation says otherwise."
+    },
+    "invitable_role": {
+      "enum": ["admin", "analyst", "viewer"],
+      "description": "Ownership is transferred, never granted by an invitation."
+    },
+    "registration_purpose": {
+      "enum": ["create_organization", "accept_invitation", "add_device"],
+      "description": "create_organization: the first person, who becomes the owner. accept_invitation: a person invited by an admin. add_device: an existing member adding a device or passkey, or registering again after a reset."
+    },
+    "credential_type": {
+      "enum": ["cli_key", "webauthn"],
+      "description": "cli_key: the person's sign-in key, which the Privometry CLI keeps in the OS keychain and the PIN unlocks. It is not the device's own key, which enrolls the device for /edge/v1 and has no PIN. webauthn: a passkey created in the browser, unlocked by the computer's PIN or biometrics."
+    },
+    "key_algorithm": {
+      "enum": ["ES256", "Ed25519"],
+      "description": "ES256: ECDSA P-256 with SHA-256, the only curve the Secure Enclave and most TPMs hold; signatures are ASN.1 DER. Ed25519: software keys only; signatures are the raw 64 bytes."
+    },
+    "key_protection": {
+      "enum": ["secure_enclave", "tpm", "software"],
+      "description": "Where the CLI key lives, as the client reports it; v1 does not verify the claim. secure_enclave and tpm limit PIN guesses in hardware. software: the key is encrypted with a key derived from the PIN, which can be guessed offline once the file is copied, so it is the fallback only."
+    },
+    "challenge": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{43}$",
+      "description": "32 random bytes, base64url without padding. Single use; valid 5 minutes."
+    },
+    "base64url": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "invitation_token": {
+      "type": "string",
+      "pattern": "^pit_[A-Za-z0-9_-]{43}$",
+      "description": "Secret from the invitation email: pit_ and 32 random bytes in base64url. The prefix lets secret scanners recognize a leaked token."
+    },
+    "link_token": {
+      "type": "string",
+      "pattern": "^plt_[A-Za-z0-9_-]{43}$",
+      "description": "Secret in a one-time sign-in link: plt_ and 32 random bytes in base64url."
+    },
+    "client": {
+      "type": "object",
+      "required": ["kind"],
+      "description": "What is registering. A CLI registration ends with an enrollment token for this device; a browser registration ends signed in.",
+      "properties": {
+        "kind": { "enum": ["cli", "browser"] },
+        "os": { "$ref": "../../common/v1/common.schema.json#/$defs/os" },
+        "arch": { "$ref": "../../common/v1/common.schema.json#/$defs/arch" },
+        "sensor_version": { "$ref": "../../common/v1/common.schema.json#/$defs/semver" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "cli" } }, "required": ["kind"] },
+          "then": { "required": ["os", "arch", "sensor_version"] }
+        }
+      ]
+    },
+    "organization_ref": {
+      "type": "object",
+      "required": ["name", "slug"],
+      "properties": {
+        "org_id": { "$ref": "../../common/v1/common.schema.json#/$defs/org_id", "description": "Absent while an organization is being created." },
+        "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "slug": { "$ref": "#/$defs/org_slug" },
+        "region": { "$ref": "#/$defs/region" }
+      }
+    },
+    "session": {
+      "type": "object",
+      "required": ["expires_at"],
+      "description": "The response that carries this also sets the session cookie __Host-privometry_session (HttpOnly, Secure, SameSite=Strict). Sessions last at most 12 hours.",
+      "properties": {
+        "expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" }
+      }
+    },
+
+    "webauthn_creation_options": {
+      "type": "object",
+      "required": ["rp", "user", "challenge", "pubKeyCredParams", "authenticatorSelection"],
+      "description": "PublicKeyCredentialCreationOptionsJSON (WebAuthn Level 3) for navigator.credentials.create. The server always requires user verification (the PIN or biometrics) and a discoverable credential, and asks for no attestation.",
+      "properties": {
+        "rp": {
+          "type": "object",
+          "required": ["id", "name"],
+          "properties": {
+            "id": { "type": "string", "description": "The console's registrable domain, so one passkey works on every regional console host." },
+            "name": { "type": "string" }
+          }
+        },
+        "user": {
+          "type": "object",
+          "required": ["id", "name", "displayName"],
+          "properties": {
+            "id": { "$ref": "#/$defs/base64url", "description": "Opaque user handle: random bytes, never the email or user_id." },
+            "name": { "type": "string" },
+            "displayName": { "type": "string" }
+          }
+        },
+        "challenge": { "$ref": "#/$defs/challenge" },
+        "pubKeyCredParams": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["type", "alg"],
+            "properties": {
+              "type": { "const": "public-key" },
+              "alg": { "type": "integer", "description": "COSE algorithm: -7 ES256, -8 EdDSA, -257 RS256." }
+            }
+          }
+        },
+        "timeout": { "type": "integer", "minimum": 1 },
+        "excludeCredentials": {
+          "type": "array",
+          "description": "Passkeys the person already has, so the browser does not create a second one on the same authenticator.",
+          "items": { "$ref": "#/$defs/webauthn_descriptor" }
+        },
+        "authenticatorSelection": {
+          "type": "object",
+          "required": ["residentKey", "userVerification"],
+          "properties": {
+            "residentKey": { "const": "required" },
+            "userVerification": { "const": "required" },
+            "authenticatorAttachment": { "enum": ["platform", "cross-platform"] }
+          }
+        },
+        "attestation": { "enum": ["none", "indirect", "direct", "enterprise"] }
+      }
+    },
+    "webauthn_request_options": {
+      "type": "object",
+      "required": ["challenge", "rpId", "userVerification"],
+      "description": "PublicKeyCredentialRequestOptionsJSON for navigator.credentials.get. allowCredentials is empty, so the browser offers the person's discoverable passkeys.",
+      "properties": {
+        "challenge": { "$ref": "#/$defs/challenge" },
+        "rpId": { "type": "string" },
+        "timeout": { "type": "integer", "minimum": 1 },
+        "userVerification": { "const": "required" },
+        "allowCredentials": { "type": "array", "items": { "$ref": "#/$defs/webauthn_descriptor" } }
+      }
+    },
+    "webauthn_descriptor": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "const": "public-key" },
+        "id": { "$ref": "#/$defs/base64url" },
+        "transports": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "webauthn_registration": {
+      "type": "object",
+      "required": ["id", "rawId", "type", "response", "clientExtensionResults"],
+      "description": "RegistrationResponseJSON: what PublicKeyCredential.toJSON() returns after navigator.credentials.create. The server checks the challenge, the console origin, the RP ID hash and that the user-verified flag is set.",
+      "properties": {
+        "id": { "$ref": "#/$defs/base64url" },
+        "rawId": { "$ref": "#/$defs/base64url" },
+        "type": { "const": "public-key" },
+        "response": {
+          "type": "object",
+          "required": ["clientDataJSON", "attestationObject"],
+          "properties": {
+            "clientDataJSON": { "$ref": "#/$defs/base64url" },
+            "attestationObject": { "$ref": "#/$defs/base64url" },
+            "transports": { "type": "array", "items": { "type": "string" } },
+            "publicKeyAlgorithm": { "type": "integer" },
+            "publicKey": { "$ref": "#/$defs/base64url" },
+            "authenticatorData": { "$ref": "#/$defs/base64url" }
+          }
+        },
+        "authenticatorAttachment": { "enum": ["platform", "cross-platform"] },
+        "clientExtensionResults": { "type": "object" }
+      }
+    },
+    "webauthn_assertion": {
+      "type": "object",
+      "required": ["id", "rawId", "type", "response", "clientExtensionResults"],
+      "description": "AuthenticationResponseJSON: what PublicKeyCredential.toJSON() returns after navigator.credentials.get. The server checks the signature, challenge, origin, RP ID hash, the user-verified flag and the signature counter.",
+      "properties": {
+        "id": { "$ref": "#/$defs/base64url" },
+        "rawId": { "$ref": "#/$defs/base64url" },
+        "type": { "const": "public-key" },
+        "response": {
+          "type": "object",
+          "required": ["clientDataJSON", "authenticatorData", "signature"],
+          "properties": {
+            "clientDataJSON": { "$ref": "#/$defs/base64url" },
+            "authenticatorData": { "$ref": "#/$defs/base64url" },
+            "signature": { "$ref": "#/$defs/base64url" },
+            "userHandle": { "$ref": "#/$defs/base64url" }
+          }
+        },
+        "authenticatorAttachment": { "enum": ["platform", "cross-platform"] },
+        "clientExtensionResults": { "type": "object" }
+      }
+    },
+
+    "AccountProof": {
+      "type": "object",
+      "required": ["purpose", "audience", "challenge", "issued_at"],
+      "description": "What a CLI key signs, as the payload of a Proof. The server accepts a proof once, only for its own audience, only for the challenge it issued, and only within 5 minutes of issued_at.",
+      "properties": {
+        "purpose": { "enum": ["register", "sign_in"] },
+        "audience": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/https_url",
+          "description": "The account API base URL the challenge came from, exactly as the challenge response gave it, so a proof made for one region or host is useless at another."
+        },
+        "challenge": { "$ref": "#/$defs/challenge" },
+        "registration_id": { "$ref": "#/$defs/registration_id" },
+        "public_key_sha256": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/sha256",
+          "description": "SHA-256 of the DER SubjectPublicKeyInfo being registered."
+        },
+        "challenge_id": { "$ref": "#/$defs/challenge_id" },
+        "credential_id": { "$ref": "#/$defs/credential_id" },
+        "issued_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "purpose": { "const": "register" } }, "required": ["purpose"] },
+          "then": { "required": ["registration_id", "public_key_sha256"] }
+        },
+        {
+          "if": { "properties": { "purpose": { "const": "sign_in" } }, "required": ["purpose"] },
+          "then": { "required": ["challenge_id", "credential_id"] }
+        }
+      ]
+    },
+    "Proof": {
+      "type": "object",
+      "required": ["payloadType", "payload", "signatures"],
+      "description": "A DSSE envelope signed by a CLI key: the signature covers PAE(payloadType, payload bytes), exactly as for Privometry's signed artifacts, so both repos reuse their DSSE code. The payload is an AccountProof as JSON. Field names follow the DSSE standard.",
+      "properties": {
+        "payloadType": { "const": "application/vnd.privometry.account-proof+json" },
+        "payload": {
+          "type": "string",
+          "contentEncoding": "base64",
+          "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+          "maxLength": 4096,
+          "description": "Standard base64 of the exact AccountProof bytes that were signed."
+        },
+        "signatures": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["keyid", "sig"],
+            "properties": {
+              "keyid": {
+                "type": "string",
+                "pattern": "^(sha256:[0-9a-f]{64}|crd_[0-9A-HJKMNP-TV-Z]{26})$",
+                "description": "When registering, the SHA-256 of the key's DER SubjectPublicKeyInfo (the key has no ID yet); when signing in, the credential_id."
+              },
+              "sig": {
+                "type": "string",
+                "contentEncoding": "base64",
+                "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+                "minLength": 88,
+                "maxLength": 96,
+                "description": "Standard base64: ASN.1 DER for ES256 (70 to 72 bytes), the raw 64 bytes for Ed25519."
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "RegionList": {
+      "type": "object",
+      "required": ["regions"],
+      "description": "Served by the global tier. Where new organizations can be created and which hosts serve each region.",
+      "properties": {
+        "regions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["region", "name", "account_base_url", "edge_base_url", "accepts_new_organizations"],
+            "properties": {
+              "region": { "$ref": "#/$defs/region" },
+              "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+              "account_base_url": { "$ref": "../../common/v1/common.schema.json#/$defs/https_url" },
+              "edge_base_url": { "$ref": "../../common/v1/common.schema.json#/$defs/https_url" },
+              "accepts_new_organizations": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "OrgLocation": {
+      "type": "object",
+      "required": ["org_id", "slug", "region", "account_base_url", "edge_base_url"],
+      "description": "Served by the global tier from its organization directory: which region an organization lives in, so a returning member's CLI or browser talks to that region. Carries no names or people.",
+      "properties": {
+        "org_id": { "$ref": "../../common/v1/common.schema.json#/$defs/org_id" },
+        "slug": { "$ref": "#/$defs/org_slug" },
+        "region": { "$ref": "#/$defs/region" },
+        "account_base_url": { "$ref": "../../common/v1/common.schema.json#/$defs/https_url" },
+        "edge_base_url": { "$ref": "../../common/v1/common.schema.json#/$defs/https_url" }
+      }
+    },
+
+    "RegistrationStart": {
+      "type": "object",
+      "required": ["email", "purpose", "client"],
+      "description": "Starts a registration and emails a six-digit code.",
+      "properties": {
+        "email": { "$ref": "#/$defs/email" },
+        "purpose": { "$ref": "#/$defs/registration_purpose" },
+        "organization": {
+          "type": "object",
+          "required": ["name", "slug"],
+          "description": "For create_organization: the new organization, created in the region this request is sent to.",
+          "properties": {
+            "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+            "slug": { "$ref": "#/$defs/org_slug" }
+          }
+        },
+        "invitation_token": { "$ref": "#/$defs/invitation_token" },
+        "org_slug": { "$ref": "#/$defs/org_slug", "description": "For add_device: the organization the person already belongs to." },
+        "client": { "$ref": "#/$defs/client" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "purpose": { "const": "create_organization" } }, "required": ["purpose"] },
+          "then": { "required": ["organization"] }
+        },
+        {
+          "if": { "properties": { "purpose": { "const": "accept_invitation" } }, "required": ["purpose"] },
+          "then": { "required": ["invitation_token"] }
+        },
+        {
+          "if": { "properties": { "purpose": { "const": "add_device" } }, "required": ["purpose"] },
+          "then": { "required": ["org_slug"] }
+        }
+      ]
+    },
+    "Registration": {
+      "type": "object",
+      "required": ["registration_id", "purpose", "status", "expires_at"],
+      "description": "Returned for every well-formed RegistrationStart, whether or not the email, invitation or organization matches, so the response never reveals who has an account. A mismatch only shows as a code that never arrives or never verifies.",
+      "properties": {
+        "registration_id": { "$ref": "#/$defs/registration_id" },
+        "purpose": { "$ref": "#/$defs/registration_purpose" },
+        "status": { "enum": ["awaiting_code", "awaiting_credential", "completed", "expired"] },
+        "expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "resend_after": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp",
+          "description": "Earliest time for POST /registrations/{registration_id}:resend; at most 3 resends."
+        },
+        "code_attempts_left": { "type": "integer", "minimum": 0, "maximum": 5 }
+      }
+    },
+    "RegistrationVerify": {
+      "type": "object",
+      "required": ["code"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[0-9]{6}$",
+          "description": "Six digits from the email. Valid 10 minutes; 5 wrong attempts end the registration."
+        }
+      }
+    },
+    "RegistrationChallenge": {
+      "type": "object",
+      "required": ["registration_id", "challenge", "audience", "expires_at", "organization", "role"],
+      "description": "The email is verified. The client now makes its key: the CLI generates the person's sign-in key, has them set a PIN that unlocks it, and signs a Proof over this challenge; a browser creates a passkey from the webauthn options.",
+      "properties": {
+        "registration_id": { "$ref": "#/$defs/registration_id" },
+        "challenge": { "$ref": "#/$defs/challenge" },
+        "audience": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/https_url",
+          "description": "Goes into the AccountProof unchanged."
+        },
+        "expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "organization": { "$ref": "#/$defs/organization_ref" },
+        "role": { "$ref": "#/$defs/role" },
+        "user_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id",
+          "description": "Set for add_device: the person already has an account."
+        },
+        "webauthn": { "$ref": "#/$defs/webauthn_creation_options", "description": "Set when the client is a browser." }
+      }
+    },
+    "RegistrationComplete": {
+      "type": "object",
+      "required": ["credential"],
+      "description": "Registers the person's first or next credential. display_name is required when the registration creates the person (create_organization, accept_invitation) and ignored for add_device.",
+      "properties": {
+        "display_name": { "$ref": "#/$defs/display_name" },
+        "credential": {
+          "type": "object",
+          "required": ["type", "label"],
+          "properties": {
+            "type": { "$ref": "#/$defs/credential_type" },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "description": "Shown in the credential list, for example the computer's name."
+            },
+            "algorithm": { "$ref": "#/$defs/key_algorithm" },
+            "public_key": {
+              "type": "string",
+              "contentEncoding": "base64",
+              "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+              "minLength": 60,
+              "maxLength": 200,
+              "description": "The CLI key's DER SubjectPublicKeyInfo, standard base64."
+            },
+            "protection": { "$ref": "#/$defs/key_protection" },
+            "proof": {
+              "$ref": "#/$defs/Proof",
+              "description": "AccountProof with purpose register, this registration's challenge and the key's SHA-256, signed by the key."
+            },
+            "webauthn": { "$ref": "#/$defs/webauthn_registration" }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "type": { "const": "cli_key" } }, "required": ["type"] },
+              "then": { "required": ["algorithm", "public_key", "protection", "proof"], "not": { "required": ["webauthn"] } }
+            },
+            {
+              "if": { "properties": { "type": { "const": "webauthn" } }, "required": ["type"] },
+              "then": {
+                "required": ["webauthn"],
+                "not": { "anyOf": [{ "required": ["public_key"] }, { "required": ["proof"] }] }
+              }
+            },
+            {
+              "if": { "properties": { "protection": { "enum": ["secure_enclave", "tpm"] } }, "required": ["protection"] },
+              "then": { "properties": { "algorithm": { "const": "ES256" } } }
+            }
+          ]
+        }
+      }
+    },
+    "RegistrationResult": {
+      "type": "object",
+      "required": ["user_id", "org_id", "role", "credential_id", "region"],
+      "description": "The person, their membership and the new credential. A CLI registration gets a one-time enrollment token for POST /edge/v1/enroll; a browser registration is signed in.",
+      "properties": {
+        "user_id": { "$ref": "../../common/v1/common.schema.json#/$defs/user_id" },
+        "org_id": { "$ref": "../../common/v1/common.schema.json#/$defs/org_id" },
+        "role": { "$ref": "#/$defs/role" },
+        "credential_id": { "$ref": "#/$defs/credential_id" },
+        "region": { "$ref": "#/$defs/region" },
+        "enrollment": {
+          "type": "object",
+          "required": ["enrollment_token", "edge_base_url", "expires_at"],
+          "description": "For cli_key credentials. The token is bound to this person, valid 10 minutes and used once, so the device enrolls under the person who registered it.",
+          "properties": {
+            "enrollment_token": { "type": "string", "minLength": 20, "maxLength": 512 },
+            "edge_base_url": { "$ref": "../../common/v1/common.schema.json#/$defs/https_url" },
+            "expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" }
+          }
+        },
+        "session": { "$ref": "#/$defs/session", "description": "For webauthn credentials." }
+      }
+    },
+
+    "SignInChallengeRequest": {
+      "type": "object",
+      "required": ["method"],
+      "properties": {
+        "method": { "$ref": "#/$defs/credential_type" },
+        "credential_id": { "$ref": "#/$defs/credential_id", "description": "For cli_key: the CLI's own credential." }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "method": { "const": "cli_key" } }, "required": ["method"] },
+          "then": { "required": ["credential_id"] }
+        }
+      ]
+    },
+    "SignInChallenge": {
+      "type": "object",
+      "required": ["challenge_id", "challenge", "audience", "expires_at"],
+      "properties": {
+        "challenge_id": { "$ref": "#/$defs/challenge_id" },
+        "challenge": { "$ref": "#/$defs/challenge" },
+        "audience": { "$ref": "../../common/v1/common.schema.json#/$defs/https_url" },
+        "expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "webauthn": { "$ref": "#/$defs/webauthn_request_options", "description": "Set for the webauthn method." }
+      }
+    },
+    "SignInRequest": {
+      "type": "object",
+      "required": ["challenge_id", "method"],
+      "properties": {
+        "challenge_id": { "$ref": "#/$defs/challenge_id" },
+        "method": { "$ref": "#/$defs/credential_type" },
+        "credential_id": { "$ref": "#/$defs/credential_id" },
+        "proof": {
+          "$ref": "#/$defs/Proof",
+          "description": "AccountProof with purpose sign_in, signed after the person entered their PIN."
+        },
+        "webauthn": { "$ref": "#/$defs/webauthn_assertion" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "method": { "const": "cli_key" } }, "required": ["method"] },
+          "then": { "required": ["credential_id", "proof"], "not": { "required": ["webauthn"] } }
+        },
+        {
+          "if": { "properties": { "method": { "const": "webauthn" } }, "required": ["method"] },
+          "then": { "required": ["webauthn"], "not": { "required": ["proof"] } }
+        }
+      ]
+    },
+    "SignInResult": {
+      "type": "object",
+      "required": ["user_id", "org_id", "role"],
+      "description": "A passkey sign-in sets the session cookie. A CLI-key sign-in returns a one-time link instead, which the CLI opens in the browser.",
+      "properties": {
+        "user_id": { "$ref": "../../common/v1/common.schema.json#/$defs/user_id" },
+        "org_id": { "$ref": "../../common/v1/common.schema.json#/$defs/org_id" },
+        "role": { "$ref": "#/$defs/role" },
+        "session": { "$ref": "#/$defs/session" },
+        "sign_in_link": {
+          "type": "object",
+          "required": ["url", "expires_at"],
+          "properties": {
+            "url": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/https_url",
+              "description": "Console URL with the link token in the fragment (#t=plt_...), so the token never reaches server or proxy logs. The console page redeems it with POST /sign-in/links:redeem."
+            },
+            "expires_at": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/timestamp",
+              "description": "60 seconds after issue; the link works once."
+            }
+          }
+        }
+      },
+      "allOf": [
+        { "oneOf": [{ "required": ["session"] }, { "required": ["sign_in_link"] }] }
+      ]
+    },
+    "SignInLinkRedeem": {
+      "type": "object",
+      "required": ["token"],
+      "properties": {
+        "token": { "$ref": "#/$defs/link_token" }
+      }
+    },
+
+    "Me": {
+      "type": "object",
+      "required": ["user_id", "email", "display_name", "role", "organization", "credential_id", "session_expires_at"],
+      "description": "The signed-in person, their organization and the credential this session was opened with.",
+      "properties": {
+        "user_id": { "$ref": "../../common/v1/common.schema.json#/$defs/user_id" },
+        "email": { "$ref": "#/$defs/email" },
+        "display_name": { "$ref": "#/$defs/display_name" },
+        "role": { "$ref": "#/$defs/role" },
+        "organization": { "$ref": "#/$defs/organization_ref" },
+        "credential_id": { "$ref": "#/$defs/credential_id" },
+        "session_expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" }
+      }
+    },
+    "CredentialList": {
+      "type": "object",
+      "required": ["credentials"],
+      "properties": {
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["credential_id", "type", "label", "created_at", "current"],
+            "properties": {
+              "credential_id": { "$ref": "#/$defs/credential_id" },
+              "type": { "$ref": "#/$defs/credential_type" },
+              "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+              "algorithm": { "$ref": "#/$defs/key_algorithm" },
+              "protection": { "$ref": "#/$defs/key_protection" },
+              "device_id": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/device_id",
+                "description": "For CLI keys: the device that enrolled with this registration."
+              },
+              "created_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+              "last_used_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+              "current": { "type": "boolean", "description": "This session was opened with it." }
+            }
+          }
+        }
+      }
+    },
+
+    "InvitationCreate": {
+      "type": "object",
+      "required": ["email", "role"],
+      "properties": {
+        "email": { "$ref": "#/$defs/email" },
+        "role": { "$ref": "#/$defs/invitable_role" },
+        "expires_in_hours": { "type": "integer", "minimum": 1, "maximum": 720, "default": 168 }
+      }
+    },
+    "Invitation": {
+      "type": "object",
+      "required": ["invitation_id", "org_id", "email", "role", "status", "invited_by", "created_at", "expires_at"],
+      "properties": {
+        "invitation_id": { "$ref": "#/$defs/invitation_id" },
+        "org_id": { "$ref": "../../common/v1/common.schema.json#/$defs/org_id" },
+        "email": { "$ref": "#/$defs/email" },
+        "role": {
+          "$ref": "#/$defs/role",
+          "description": "The role the person gets. An invitation from a reset carries the person's existing role, which may be owner."
+        },
+        "status": { "enum": ["pending", "accepted", "revoked", "expired"] },
+        "invited_by": { "$ref": "../../common/v1/common.schema.json#/$defs/user_id" },
+        "created_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "invitation_url": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/https_url",
+          "description": "Only in the response that creates the invitation, for admins whose email filters hold the message; it contains the invitation token."
+        }
+      }
+    },
+    "MemberResetRequest": {
+      "type": "object",
+      "description": "Recovery for a lost device or a forgotten PIN.",
+      "properties": {
+        "reason": { "type": "string", "maxLength": 500, "description": "Kept in the audit log." },
+        "revoke_devices": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also revoke the certificates of the devices the person enrolled, for a lost or stolen computer."
+        }
+      }
+    },
+    "MemberResetResult": {
+      "type": "object",
+      "required": ["user_id", "revoked_credentials", "revoked_devices", "invitation"],
+      "description": "Every credential of the person is revoked and their sessions end. The new invitation lets them register again with accept_invitation, keeping their user_id and role.",
+      "properties": {
+        "user_id": { "$ref": "../../common/v1/common.schema.json#/$defs/user_id" },
+        "revoked_credentials": { "type": "integer", "minimum": 0 },
+        "revoked_devices": { "type": "integer", "minimum": 0 },
+        "invitation": { "$ref": "#/$defs/Invitation" }
+      }
+    },
+
+    "Member": {
+      "type": "object",
+      "required": ["user_id", "email", "display_name", "role", "status", "workspaces"],
+      "properties": {
+        "user_id": { "$ref": "../../common/v1/common.schema.json#/$defs/user_id" },
+        "email": { "$ref": "#/$defs/email" },
+        "display_name": { "$ref": "#/$defs/display_name" },
+        "role": { "$ref": "#/$defs/role", "description": "Their role in the whole organization." },
+        "status": { "enum": ["active", "suspended", "deprovisioned"] },
+        "workspaces": {
+          "type": "array",
+          "description": "Workspaces they have a role in, besides the organization-wide one.",
+          "items": {
+            "type": "object",
+            "required": ["workspace_id", "role"],
+            "properties": {
+              "workspace_id": { "$ref": "#/$defs/workspace_id" },
+              "role": { "$ref": "#/$defs/role" }
+            }
+          }
+        }
+      }
+    },
+    "MemberList": {
+      "type": "object",
+      "required": ["members"],
+      "description": "The organization's people. An API key scoped to a workspace sees only that workspace's members.",
+      "properties": {
+        "members": { "type": "array", "items": { "$ref": "#/$defs/Member" } }
+      }
+    },
+
+    "ApiKeyCreate": {
+      "type": "object",
+      "required": ["name", "role"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 80, "description": "What the key is for, for example the CI system that holds it." },
+        "role": { "$ref": "#/$defs/api_key_role" },
+        "workspace_id": { "$ref": "#/$defs/workspace_id", "description": "Limits the key to one workspace; without it the key acts on the whole organization." },
+        "expires_in_days": { "type": "integer", "minimum": 1, "maximum": 365, "default": 90 }
+      }
+    },
+    "ApiKey": {
+      "type": "object",
+      "required": ["api_key_id", "org_id", "name", "role", "status", "created_by", "created_at", "expires_at"],
+      "description": "An organization API key, without its secret.",
+      "properties": {
+        "api_key_id": { "$ref": "#/$defs/api_key_id" },
+        "org_id": { "$ref": "../../common/v1/common.schema.json#/$defs/org_id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "role": { "$ref": "#/$defs/api_key_role" },
+        "workspace_id": { "$ref": "#/$defs/workspace_id" },
+        "status": { "enum": ["active", "expired", "revoked"] },
+        "created_by": { "$ref": "../../common/v1/common.schema.json#/$defs/user_id" },
+        "created_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "last_used_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" }
+      }
+    },
+    "ApiKeyCreated": {
+      "type": "object",
+      "required": ["api_key", "secret"],
+      "description": "The only response that carries the secret: only its SHA-256 is stored, so it cannot be shown again.",
+      "properties": {
+        "api_key": { "$ref": "#/$defs/ApiKey" },
+        "secret": { "$ref": "#/$defs/api_key_secret" }
+      }
+    },
+    "ApiKeyList": {
+      "type": "object",
+      "required": ["api_keys"],
+      "properties": {
+        "api_keys": { "type": "array", "items": { "$ref": "#/$defs/ApiKey" } }
+      }
+    },
+
+    "EnrollmentTokenCreate": {
+      "type": "object",
+      "required": ["name"],
+      "description": "A token for enrolling devices that no person registers, such as an MDM rollout. Devices enrolled with it belong to no person until one signs in on them.",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "uses": { "type": "integer", "minimum": 1, "maximum": 10000, "default": 1 },
+        "expires_in_hours": { "type": "integer", "minimum": 1, "maximum": 720, "default": 24 },
+        "workspace_id": { "$ref": "#/$defs/workspace_id", "description": "Devices enrolled with the token belong to this workspace." }
+      }
+    },
+    "EnrollmentToken": {
+      "type": "object",
+      "required": ["enrollment_token_id", "org_id", "name", "uses_remaining", "status", "created_by", "created_at", "expires_at"],
+      "description": "An enrollment token, without its secret. Tokens a CLI registration made are bound to a person (user_id).",
+      "properties": {
+        "enrollment_token_id": { "$ref": "#/$defs/enrollment_token_id" },
+        "org_id": { "$ref": "../../common/v1/common.schema.json#/$defs/org_id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "uses_remaining": { "type": "integer", "minimum": 0 },
+        "workspace_id": { "$ref": "#/$defs/workspace_id" },
+        "user_id": { "$ref": "../../common/v1/common.schema.json#/$defs/user_id" },
+        "status": { "enum": ["active", "used_up", "expired", "revoked"] },
+        "created_by": { "$ref": "../../common/v1/common.schema.json#/$defs/user_id" },
+        "created_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" }
+      }
+    },
+    "EnrollmentTokenCreated": {
+      "type": "object",
+      "required": ["enrollment_token", "token"],
+      "description": "The only response with the token's secret: only its SHA-256 is stored.",
+      "properties": {
+        "enrollment_token": { "$ref": "#/$defs/EnrollmentToken" },
+        "token": { "$ref": "#/$defs/enrollment_token_secret" }
+      }
+    },
+    "EnrollmentTokenList": {
+      "type": "object",
+      "required": ["enrollment_tokens"],
+      "properties": {
+        "enrollment_tokens": { "type": "array", "items": { "$ref": "#/$defs/EnrollmentToken" } }
+      }
+    },
+    "Device": {
+      "type": "object",
+      "required": ["device_id", "os", "os_version", "arch", "sensor_version", "status", "enrolled_at", "certificate_expires_at"],
+      "properties": {
+        "device_id": { "$ref": "../../common/v1/common.schema.json#/$defs/device_id" },
+        "user_id": { "$ref": "../../common/v1/common.schema.json#/$defs/user_id", "description": "The person it belongs to, when known." },
+        "workspace_id": { "$ref": "#/$defs/workspace_id" },
+        "os": { "$ref": "../../common/v1/common.schema.json#/$defs/os" },
+        "os_version": { "type": "string", "maxLength": 64 },
+        "arch": { "$ref": "../../common/v1/common.schema.json#/$defs/arch" },
+        "sensor_version": { "$ref": "../../common/v1/common.schema.json#/$defs/semver" },
+        "status": {
+          "enum": ["active", "stale", "revoked"],
+          "description": "stale: no heartbeat for a day. revoked: its certificates no longer work."
+        },
+        "enrolled_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "last_heartbeat_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "certificate_expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" }
+      }
+    },
+    "DeviceList": {
+      "type": "object",
+      "required": ["devices"],
+      "description": "The organization's devices. An API key limited to a workspace sees only that workspace's devices.",
+      "properties": {
+        "devices": { "type": "array", "items": { "$ref": "#/$defs/Device" } }
+      }
+    }
+  }
+}

@@ -1,0 +1,769 @@
+openapi: 3.1.0
+info:
+  title: Privometry account API
+  version: 1.0.0-draft.4
+  summary: Registration with a key and a PIN, console sign-in, credentials and invitations.
+  description: |
+    Used by the Privometry CLI (`privometry login`, `privometry console`) and
+    by the console in the browser. People authenticate here; devices
+    authenticate to /edge/v1 with the certificate they get by enrolling.
+
+    Hosts:
+    - The global tier serves GET /regions and GET /directory/{slug}. It holds
+      no people: only where each organization lives.
+    - Everything else is served by the organization's home region, where its
+      people, credentials and devices are stored.
+
+    Registration (D1 in privometry-platform/docs/implementation-plan.md):
+    1. POST /registrations with an email and a purpose emails a six-digit code.
+    2. POST /registrations/{id}:verify with the code returns a challenge.
+    3. The CLI generates the person's sign-in key (a cli_key credential) in
+       the OS keychain (Secure Enclave or TPM when the machine has one), has
+       the person set a PIN that unlocks it, and signs a Proof over the
+       challenge. A browser creates a passkey with WebAuthn, unlocked by the
+       computer's PIN or biometrics.
+    4. POST /registrations/{id}:complete registers the public key. The CLI
+       gets a one-time enrollment token bound to the person and enrolls the
+       device with POST /edge/v1/enroll, using a second key: the device's
+       own, which the daemon uses unattended and which has no PIN. The
+       browser is signed in.
+
+    Sign-in answers a challenge: a passkey in the browser sets the session
+    cookie; the CLI signs with the person's CLI key after they enter the
+    PIN and gets a one-time link that opens the console signed in.
+
+    Rules for every endpoint:
+    - No message carries the PIN. It only unlocks a key on the device, and the
+      server stores public keys only.
+    - POST /registrations answers 202 for every well-formed request, whether or
+      not the email, invitation or organization matches, so responses never
+      reveal who has an account.
+    - Limits: the email code is valid 10 minutes with 5 attempts and 3
+      resends; a registration expires after 30 minutes; challenges are single
+      use and valid 5 minutes; sign-in links are single use and valid 60
+      seconds; sessions last at most 12 hours. Requests are rate limited per
+      address and per email, and 429 responses carry Retry-After.
+    - CLI-key proofs are DSSE envelopes over PAE(payloadType, payload), like
+      Privometry's signed artifacts. The server accepts one only when its
+      audience is the server's own base URL, its challenge is the one issued
+      and unused, its purpose matches the endpoint, issued_at is within 5
+      minutes, and (when registering) the keyid and public_key_sha256 are the
+      SHA-256 of the submitted key.
+    - WebAuthn: the RP ID is the console's registrable domain, the origin must
+      be the console's, user verification and discoverable credentials are
+      required, and no attestation is requested.
+    - Sessions: the cookie __Host-privometry_session is HttpOnly, Secure and
+      SameSite=Strict. CORS allows only the console origin, and every request
+      that changes state with a session must send an Origin header matching it.
+    - Every new credential is emailed to the person and listed for admins. An
+      organization can turn off add_device, leaving admin resets as the only
+      recovery.
+    - API keys belong to the organization, not to a person. Each has a role
+      (admin, analyst or viewer, never owner), may be limited to one
+      workspace, expires within 1 to 365 days, and is sent as
+      Authorization: Bearer pak_.... Only its SHA-256 is stored, so the
+      secret is shown once. Keys work only on operations whose security lists
+      apiKey; they never manage keys, sessions or credentials. A key limited
+      to a workspace sees only that workspace and cannot act on the whole
+      organization. Only signed-in owners and admins create, list and revoke
+      keys.
+    - Errors are RFC 9457 problem details with a stable type URI under
+      https://privometry.dev/problems/: invalid-request, invalid-code,
+      registration-expired, registration-complete, slug-taken,
+      already-member, key-registered, add-device-disabled, proof-rejected,
+      passkey-rejected, link-invalid, not-signed-in, api-key-invalid,
+      not-found, last-credential, not-allowed, rate-limited, server-error. A
+      wrong code's problem also carries code_attempts_left.
+    - Sign-in and registration POSTs do not take Idempotency-Key: each
+      challenge, code and link works once. POSTs made with a session do.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://{region}.api.privometry.dev/account/v1
+    description: Regional endpoint of the organization's home region. The host name is a placeholder until it is registered.
+    variables:
+      region:
+        default: in
+        enum: [in]
+        description: India at launch; more regions on demand.
+
+security:
+  - consoleSession: []
+
+tags:
+  - name: directory
+  - name: registration
+  - name: sign-in
+  - name: credentials
+  - name: members
+  - name: api-keys
+  - name: devices
+
+paths:
+  /regions:
+    servers:
+      - url: https://api.privometry.dev/account/v1
+        description: Global tier.
+    get:
+      operationId: listRegions
+      tags: [directory]
+      summary: Regions and their hosts, for creating an organization.
+      security:
+        - {}
+      responses:
+        '200':
+          description: Regions, including whether each accepts new organizations.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/RegionList'
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /directory/{slug}:
+    servers:
+      - url: https://api.privometry.dev/account/v1
+        description: Global tier.
+    get:
+      operationId: locateOrganization
+      tags: [directory]
+      summary: The home region of an organization, for a returning member.
+      security:
+        - {}
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            $ref: 'messages.schema.json#/$defs/org_slug'
+      responses:
+        '200':
+          description: Where the organization lives.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/OrgLocation'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /registrations:
+    post:
+      operationId: startRegistration
+      tags: [registration]
+      summary: Start registering and email a six-digit code.
+      security:
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/RegistrationStart'
+      responses:
+        '202':
+          description: Registration started. Returned whether or not the email, invitation or organization matches.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/Registration'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /registrations/{registration_id}:resend:
+    post:
+      operationId: resendRegistrationCode
+      tags: [registration]
+      summary: Email a new code, which replaces the previous one.
+      security:
+        - {}
+      parameters:
+        - $ref: '#/components/parameters/RegistrationID'
+      responses:
+        '202':
+          description: A new code is on its way.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/Registration'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /registrations/{registration_id}:verify:
+    post:
+      operationId: verifyRegistrationCode
+      tags: [registration]
+      summary: Check the emailed code and get the challenge the new credential answers.
+      security:
+        - {}
+      parameters:
+        - $ref: '#/components/parameters/RegistrationID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/RegistrationVerify'
+      responses:
+        '200':
+          description: The email is verified; register a credential next.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/RegistrationChallenge'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /registrations/{registration_id}:complete:
+    post:
+      operationId: completeRegistration
+      tags: [registration]
+      summary: Register the CLI key or passkey.
+      security:
+        - {}
+      parameters:
+        - $ref: '#/components/parameters/RegistrationID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/RegistrationComplete'
+      responses:
+        '201':
+          description: Registered. A CLI key gets an enrollment token; a passkey gets a session.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetSession'
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/RegistrationResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /sign-in/challenges:
+    post:
+      operationId: createSignInChallenge
+      tags: [sign-in]
+      summary: Get a challenge to sign in with a passkey or a CLI key.
+      security:
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/SignInChallengeRequest'
+      responses:
+        '201':
+          description: A single-use challenge, valid 5 minutes.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/SignInChallenge'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /sign-in:
+    post:
+      operationId: signIn
+      tags: [sign-in]
+      summary: Answer the challenge.
+      security:
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/SignInRequest'
+      responses:
+        '200':
+          description: Signed in. A passkey gets the session cookie; a CLI key gets a one-time console link.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetSession'
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/SignInResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /sign-in/links:redeem:
+    post:
+      operationId: redeemSignInLink
+      tags: [sign-in]
+      summary: Turn the token from a CLI sign-in link into a browser session.
+      security:
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/SignInLinkRedeem'
+      responses:
+        '200':
+          description: Signed in; the session cookie is set.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetSession'
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/SignInResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /sign-out:
+    post:
+      operationId: signOut
+      tags: [sign-in]
+      summary: End this session.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '204':
+          description: Signed out; the cookie is cleared.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /me:
+    get:
+      operationId: getMe
+      tags: [credentials]
+      summary: The signed-in person and their organization.
+      responses:
+        '200':
+          description: The person behind this session.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/Me'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /me/credentials:
+    get:
+      operationId: listCredentials
+      tags: [credentials]
+      summary: The person's CLI keys and passkeys.
+      responses:
+        '200':
+          description: Every active credential.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/CredentialList'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /me/credentials/{credential_id}:
+    delete:
+      operationId: revokeCredential
+      tags: [credentials]
+      summary: Revoke one of the person's credentials and end the sessions opened with it.
+      parameters:
+        - name: credential_id
+          in: path
+          required: true
+          schema:
+            $ref: 'messages.schema.json#/$defs/credential_id'
+      responses:
+        '204':
+          description: Revoked.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /orgs/{org_id}/invitations:
+    post:
+      operationId: createInvitation
+      tags: [members]
+      summary: Invite a person by email (owners and admins, or an organization-wide admin API key).
+      security:
+        - consoleSession: []
+        - apiKey: []
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/InvitationCreate'
+      responses:
+        '201':
+          description: Invitation emailed.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/Invitation'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /orgs/{org_id}/members/{user_id}:reset:
+    post:
+      operationId: resetMember
+      tags: [members]
+      summary: Revoke a person's credentials and invite them to register again (owners, admins and organization-wide admin API keys; only an owner resets an owner).
+      security:
+        - consoleSession: []
+        - apiKey: []
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            $ref: '../../common/v1/common.schema.json#/$defs/user_id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/MemberResetRequest'
+      responses:
+        '200':
+          description: Credentials revoked, sessions ended, invitation emailed.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/MemberResetResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /orgs/{org_id}/members:
+    get:
+      operationId: listMembers
+      tags: [members]
+      summary: The organization's people, or a workspace's when the API key is limited to one.
+      security:
+        - consoleSession: []
+        - apiKey: []
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+      responses:
+        '200':
+          description: Members with their roles.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/MemberList'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /orgs/{org_id}/api-keys:
+    post:
+      operationId: createApiKey
+      tags: [api-keys]
+      summary: Create an API key (owners and admins, signed in). The response is the only one with the secret.
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/ApiKeyCreate'
+      responses:
+        '201':
+          description: The key and its secret.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/ApiKeyCreated'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+    get:
+      operationId: listApiKeys
+      tags: [api-keys]
+      summary: The organization's API keys, without secrets (owners and admins, signed in).
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+      responses:
+        '200':
+          description: Every key, with its status.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/ApiKeyList'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /orgs/{org_id}/api-keys/{api_key_id}:
+    delete:
+      operationId: revokeApiKey
+      tags: [api-keys]
+      summary: Revoke an API key at once (owners and admins, signed in).
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+        - name: api_key_id
+          in: path
+          required: true
+          schema:
+            $ref: 'messages.schema.json#/$defs/api_key_id'
+      responses:
+        '204':
+          description: Revoked; revoking again changes nothing.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /orgs/{org_id}/enrollment-tokens:
+    post:
+      operationId: createEnrollmentToken
+      tags: [devices]
+      summary: Create an enrollment token for devices no person registers (owners, admins, organization-wide admin API keys).
+      security:
+        - consoleSession: []
+        - apiKey: []
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/EnrollmentTokenCreate'
+      responses:
+        '201':
+          description: The token and its secret.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/EnrollmentTokenCreated'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+    get:
+      operationId: listEnrollmentTokens
+      tags: [devices]
+      summary: The organization's enrollment tokens, without secrets (owners, admins, organization-wide admin API keys).
+      security:
+        - consoleSession: []
+        - apiKey: []
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+      responses:
+        '200':
+          description: Every token, with its status.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/EnrollmentTokenList'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /orgs/{org_id}/enrollment-tokens/{enrollment_token_id}:
+    delete:
+      operationId: revokeEnrollmentToken
+      tags: [devices]
+      summary: Revoke an enrollment token (owners, admins, organization-wide admin API keys).
+      security:
+        - consoleSession: []
+        - apiKey: []
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+        - name: enrollment_token_id
+          in: path
+          required: true
+          schema:
+            $ref: 'messages.schema.json#/$defs/enrollment_token_id'
+      responses:
+        '204':
+          description: Revoked; devices it enrolled are not affected.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /orgs/{org_id}/devices:
+    get:
+      operationId: listDevices
+      tags: [devices]
+      summary: The organization's devices, or a workspace's when the API key is limited to one.
+      security:
+        - consoleSession: []
+        - apiKey: []
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+      responses:
+        '200':
+          description: Devices with their status.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/DeviceList'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /orgs/{org_id}/devices/{device_id}:
+    delete:
+      operationId: revokeDevice
+      tags: [devices]
+      summary: Revoke a device, so its certificates stop working at once (owners, admins, organization-wide admin API keys).
+      security:
+        - consoleSession: []
+        - apiKey: []
+      parameters:
+        - $ref: '#/components/parameters/OrgID'
+        - name: device_id
+          in: path
+          required: true
+          schema:
+            $ref: '../../common/v1/common.schema.json#/$defs/device_id'
+      responses:
+        '204':
+          description: Revoked; revoking again changes nothing. Local protection on the device keeps working.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+components:
+  securitySchemes:
+    consoleSession:
+      type: apiKey
+      in: cookie
+      name: __Host-privometry_session
+      description: Set by a passkey sign-in, a redeemed sign-in link or a browser registration.
+    apiKey:
+      type: http
+      scheme: bearer
+      description: An organization API key (pak_...), for operations that list it.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: Unique per logical request; the server returns the first result for retries by the same session within 24 hours.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+    RegistrationID:
+      name: registration_id
+      in: path
+      required: true
+      schema:
+        $ref: 'messages.schema.json#/$defs/registration_id'
+    OrgID:
+      name: org_id
+      in: path
+      required: true
+      schema:
+        $ref: '../../common/v1/common.schema.json#/$defs/org_id'
+
+  headers:
+    RetryAfter:
+      description: Seconds to wait before retrying.
+      schema:
+        type: integer
+        minimum: 1
+    SetSession:
+      description: The session cookie, when the response opens a browser session.
+      schema:
+        type: string
+        pattern: '^__Host-privometry_session='
+
+  responses:
+    BadRequest:
+      description: The request does not match the contract.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../../edge-api/v1/messages.schema.json#/$defs/Problem'
+    Unauthorized:
+      description: No valid session or API key, or a proof, passkey or link that did not verify.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../../edge-api/v1/messages.schema.json#/$defs/Problem'
+    Forbidden:
+      description: A wrong code, a rejected credential, a disabled add_device, or a role that may not do this.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../../edge-api/v1/messages.schema.json#/$defs/Problem'
+    NotFound:
+      description: No such registration, organization, credential or member, or one that expired.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../../edge-api/v1/messages.schema.json#/$defs/Problem'
+    Conflict:
+      description: The slug is taken, the person is already a member, the registration is already complete, the key is already registered in the organization, or the credential is the person's last one.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../../edge-api/v1/messages.schema.json#/$defs/Problem'
+    TooManyRequests:
+      description: Rate limited; retry after the given delay.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../../edge-api/v1/messages.schema.json#/$defs/Problem'
+    ServerError:
+      description: Retry with backoff.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '../../edge-api/v1/messages.schema.json#/$defs/Problem'

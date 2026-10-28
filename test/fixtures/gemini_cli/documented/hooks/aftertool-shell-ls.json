@@ -1,0 +1,17 @@
+{
+  "session_id": "0b8f9a12-3c4d-4e5f-8a6b-7c8d9e0f1a2b",
+  "transcript_path": "/home/dev/.gemini/tmp/acme-api/chats/session-2026-10-28T10-00-0b8f9a12.json",
+  "cwd": "/home/dev/acme-api",
+  "timestamp": "2026-10-28T10:00:00.000Z",
+  "hook_event_name": "AfterTool",
+  "tool_name": "run_shell_command",
+  "tool_input": {
+    "command": "ls -la",
+    "description": "List files in the project root",
+    "dir_path": "."
+  },
+  "tool_response": {
+    "llmContent": "Command: ls -la\nDirectory: .\nOutput: README.md\nsrc\n",
+    "returnDisplay": "README.md\nsrc\n"
+  }
+}

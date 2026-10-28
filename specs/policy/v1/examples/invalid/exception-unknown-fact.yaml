@@ -1,0 +1,14 @@
+schema: privometry.policy/v1
+name: bad
+rules:
+  - id: r1
+    when:
+      action: shell_exec
+      program: terraform
+    verdict: deny
+    message: No.
+exceptions:
+  - rule: r1
+    reason: test
+    expires_at: 2026-12-31T00:00:00Z
+    path: /tmp

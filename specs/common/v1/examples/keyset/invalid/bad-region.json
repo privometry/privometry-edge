@@ -1,0 +1,59 @@
+{
+  "issued_at": "2026-10-01T00:00:00.000Z",
+  "keys": [
+    {
+      "keyid": "root:test-a:d1d472f0c9e12f2f",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "YoX9/mFUP2WtApMFNmdvky2HPdHmRprBn0qASY6Fpu4=",
+      "role": "root"
+    },
+    {
+      "keyid": "root:test-b:258bf301b82f1554",
+      "not_before": "2026-06-01T00:00:00.000Z",
+      "public_key": "JStbEKbz+P+96V4SGdRBXomAIxNmaSmy6cxObRGMmQI=",
+      "role": "root"
+    },
+    {
+      "keyid": "release:test:fa11963da0f70949",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "h2Y4QbQHgqepFG5GAXv9y2moO/6LWXCcnT5pWs6F1O0=",
+      "role": "release"
+    },
+    {
+      "keyid": "policy:test-in:181c04c2328832a9",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "zw3PCKcYRqTUqck1hEeKPyxiop2XbhvzFy/AqC++dek=",
+      "region": "India",
+      "role": "policy"
+    },
+    {
+      "keyid": "policy:test-in-old:64d92a8dc2b27d71",
+      "not_after": "2026-06-30T00:00:00.000Z",
+      "not_before": "2025-01-01T00:00:00.000Z",
+      "public_key": "IGJV0+K/laY1Nbnhi63nU+Ui+YJx5/bqA6JemmvBcAs=",
+      "region": "India",
+      "role": "policy"
+    },
+    {
+      "keyid": "policy:test-in-next:709c177d36c8857b",
+      "not_before": "2027-01-01T00:00:00.000Z",
+      "public_key": "PVYXNMqRCB50Abnph2WEqx+C7nLZLySc1BeEbeLrn4A=",
+      "region": "India",
+      "role": "policy"
+    },
+    {
+      "keyid": "feed:test:2cc5b9f75dd159e9",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "2CbojoaeG/EmD4R5b9uIN4fGASbZhQ3oRXJK04rJVXc=",
+      "role": "feed"
+    },
+    {
+      "keyid": "license:test:847e4b770fed8628",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "ccuPWkL+5HAlAVwRtlqPR5FjdJ66GfcDNaq5xq8DBzE=",
+      "role": "license"
+    }
+  ],
+  "schema": "privometry.keyset/v1",
+  "version": 2
+}

@@ -1,0 +1,15 @@
+{
+  "session_id": "01a16d8f-6680-7f01-8c3d-a6d7d56cc796",
+  "turn_id": "01a16d8f-6b14-7dd2-84dd-6de1eaaa87f0",
+  "transcript_path": null,
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-6-sol",
+  "permission_mode": "bypassPermissions",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "ls -la"
+  },
+  "tool_response": "total 16\ndrwxr-xr-x@  5 dev  wheel  160 Oct 24 16:21 .\ndrwxr-xr-x@  8 dev  wheel  256 Oct 24 16:19 ..\ndrwxr-xr-x@ 12 dev  wheel  384 Oct 24 16:21 .git\n-rw-r--r--@  1 dev  wheel   50 Oct 24 16:18 README.md\n-rw-r--r--@  1 dev  wheel   32 Oct 24 16:21 calc.py\n",
+  "tool_use_id": "exec-66f102c0-5de9-4543-9a5b-0bc1355019f6"
+}

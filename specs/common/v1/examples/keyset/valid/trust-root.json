@@ -1,0 +1,13 @@
+{
+  "issued_at": "2026-01-01T00:00:00.000Z",
+  "keys": [
+    {
+      "keyid": "root:test-a:189610611f0e3652",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "Gz2sSA+zD9M7zDFVKf4F5GBzNZhnRIkExz3wCwIZrfY=",
+      "role": "root"
+    }
+  ],
+  "schema": "privometry.keyset/v1",
+  "version": 1
+}

@@ -1,0 +1,21 @@
+name: Dependency license scan
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go run ./scripts/release-metadata
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-licenses
+          path: dependency-licenses.json

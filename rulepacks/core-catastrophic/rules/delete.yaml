@@ -1,0 +1,29 @@
+schema: privometry.rules/v1
+rules:
+  - id: home-recursive-delete
+    description: Recursive deletes in the home directory, outside any repo.
+    category: catastrophic
+    when:
+      action: [shell_exec, file_delete]
+      intent: recursive_delete
+      path_class: home
+    verdict: deny
+    message: Recursive delete outside the repo, in your home directory, is blocked.
+  - id: system-recursive-delete
+    description: Recursive deletes of system paths such as / or /usr.
+    category: catastrophic
+    when:
+      action: [shell_exec, file_delete]
+      intent: recursive_delete
+      path_class: system
+    verdict: deny
+    message: Recursive delete of a system path is blocked.
+  - id: secret-store-recursive-delete
+    description: Recursive deletes of credential stores such as ~/.ssh or ~/.aws.
+    category: catastrophic
+    when:
+      action: [shell_exec, file_delete]
+      intent: recursive_delete
+      path_class: secret_store
+    verdict: deny
+    message: Recursive delete of a credential store is blocked.

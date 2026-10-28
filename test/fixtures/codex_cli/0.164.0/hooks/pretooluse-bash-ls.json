@@ -1,0 +1,14 @@
+{
+  "session_id": "01a16d8f-6680-7f01-8c3d-a6d7d56cc796",
+  "turn_id": "01a16d8f-6b14-7dd2-84dd-6de1eaaa87f0",
+  "transcript_path": null,
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PreToolUse",
+  "model": "gpt-6-sol",
+  "permission_mode": "bypassPermissions",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "ls -la"
+  },
+  "tool_use_id": "exec-66f102c0-5de9-4543-9a5b-0bc1355019f6"
+}

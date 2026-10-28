@@ -1,0 +1,44 @@
+# The organization policy from Contracts v1, unchanged in substance.
+schema: privometry.policy/v1
+name: acme-default
+extends:
+  - privometry/core-catastrophic@^1
+  - privometry/secrets@^1
+defaults:
+  mode: enforce
+  unmatched: auto
+  fail_modes:
+    catastrophic: closed
+    secrets: ask
+rules:
+  - id: no-terraform-destroy
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: terraform
+      subcommand: destroy
+    verdict: deny
+    message: Run terraform destroy from CI, not from an agent.
+    locked: true
+  - id: allow-tests
+    when:
+      action: shell_exec
+      program: [npm, pnpm, go, mvn, gradle]
+      subcommand: [test, "run test"]
+    verdict: allow
+  - id: ask-untrusted-network
+    when:
+      action: network_fetch
+      untrusted_input_seen: true
+    unless:
+      host: ["*.github.com", "registry.npmjs.org"]
+    verdict: ask
+    message: The agent read untrusted content; confirm this download.
+overrides:
+  privometry/core-catastrophic:git-force-push: deny
+exceptions:
+  - rule: privometry/secrets:read-env-file
+    target_path: "*/.env.example"
+    reason: Example file with no real secrets
+    expires_at: 2026-12-31T00:00:00Z
+    approved_by: appsec@acme.com

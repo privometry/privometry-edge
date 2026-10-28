@@ -1,0 +1,15 @@
+{
+  "session_id": "01a16d8f-6680-7f01-8c3d-a6d7d56cc796",
+  "turn_id": "01a16d8f-6b14-7dd2-84dd-6de1eaaa87f0",
+  "transcript_path": null,
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-6-sol",
+  "permission_mode": "bypassPermissions",
+  "tool_name": "apply_patch",
+  "tool_input": {
+    "command": "*** Begin Patch\n*** Update File: calc.py\n@@\n def add(a, b):\n     return a + b\n+\n+\n+def sub(a, b):\n+    return a - b\n*** End Patch"
+  },
+  "tool_response": "Exit code: 0\nWall time: 0 seconds\nOutput:\nSuccess. Updated the following files:\nM calc.py\n",
+  "tool_use_id": "exec-b9ac9476-b643-4bde-b149-03f8350d7991"
+}

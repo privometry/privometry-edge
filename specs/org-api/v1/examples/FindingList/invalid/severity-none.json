@@ -1,0 +1,29 @@
+{
+  "findings": [
+    {
+      "finding_id": "fnd_01JBH0Q2S4V6X8Z0B2D4F6H8K0",
+      "type": "posture",
+      "rule_key": "auto_approve_mode",
+      "severity": "none",
+      "status": "open",
+      "entity": {
+        "type": "device",
+        "id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+        "label": "cursor, user settings"
+      },
+      "title": "Cursor runs terminal commands without asking",
+      "details": {
+        "agent_product": "cursor",
+        "tier": "user"
+      },
+      "ticket": {
+        "integration_id": "int_01JBH2S4V6X8Z0B2D4F6H8K0N2",
+        "provider": "jira",
+        "key": "SEC-142",
+        "url": "https://acme.atlassian.net/browse/SEC-142"
+      },
+      "first_seen_at": "2026-10-27T09:00:00.000Z",
+      "last_seen_at": "2026-10-28T09:14:02.481Z"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "kind": "mcp_server",
+  "name": "shell-runner",
+  "match": {
+    "command": "*mcp-shell-runner*"
+  },
+  "status": "blocked",
+  "reason": "Runs arbitrary shell"
+}

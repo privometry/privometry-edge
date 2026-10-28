@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/common/v1/keyset.schema.json",
+  "title": "Privometry key set v1",
+  "description": "The public keys each signing role may use, with validity windows. The sensor ships a pinned root key set; rotations arrive as a new key set (DSSE payloadType application/vnd.privometry.keyset+json) signed by a current root key. Devices reject a key set whose version is not higher than the one they hold.",
+  "type": "object",
+  "required": [
+    "schema",
+    "version",
+    "issued_at",
+    "keys"
+  ],
+  "properties": {
+    "schema": {
+      "const": "privometry.keyset/v1"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "issued_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "keys": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "keyid",
+          "role",
+          "public_key",
+          "not_before"
+        ],
+        "properties": {
+          "keyid": {
+            "$ref": "common.schema.json#/$defs/keyid"
+          },
+          "role": {
+            "enum": [
+              "root",
+              "release",
+              "policy",
+              "feed",
+              "license",
+              "publisher"
+            ],
+            "description": "publisher keys sign community rule and detector packs; their name is the publisher, the first part of the pack IDs they may sign. A publisher distributes its keys as a key set of publisher keys, which people trust with privometry trust add; publisher keys never appear in a region's key set."
+          },
+          "public_key": {
+            "$ref": "#/$defs/public_key"
+          },
+          "not_before": {
+            "$ref": "common.schema.json#/$defs/timestamp"
+          },
+          "not_after": {
+            "$ref": "common.schema.json#/$defs/timestamp",
+            "description": "Signatures are rejected after this time; absent means no end."
+          },
+          "region": {
+            "type": "string",
+            "pattern": "^[a-z]{2,8}$",
+            "description": "For policy keys: the region whose policy service holds the key, for example in."
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "public_key": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]{43}=$",
+      "description": "Raw 32-byte Ed25519 public key, standard base64."
+    }
+  }
+}

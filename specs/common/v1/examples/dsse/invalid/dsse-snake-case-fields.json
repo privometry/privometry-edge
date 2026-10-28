@@ -1,0 +1,10 @@
+{
+  "payload_type": "application/vnd.privometry.bundle+json",
+  "payload": "eyJzY2hlbWEiOiJwcml2by5idW5kbGUvdjEiLCJidW5kbGVfaWQiOiJibmRfMDFKQUIxUVowMDAwMDAwMDAwMDAwMDAwQUIiLCJ2ZXJzaW9uIjo0Mn0=",
+  "signatures": [
+    {
+      "key_id": "policy:test:65b60673d6ed884b",
+      "sig": "nz7nI5cN9L+K0DP+BNPS0PgULnR3b8prTg02paTfGIHdpccfgztGHSXc9Q7DDkd7pyLPR+uWpwhlYggVHlgsCA=="
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: blocks DROP DATABASE through psql
+    covers: db-drop
+    facts: { action: shell_exec, program: psql, intent: [db_drop], risk: critical }
+    expect: { verdict: deny, rule: db-drop }
+  - name: blocks a drop through a database MCP tool
+    covers: db-drop
+    facts: { action: mcp_call, mcp_server: postgres, mcp_tool: execute_sql, catalog_status: approved, intent: [db_drop], risk: critical }
+    expect: { verdict: deny, rule: db-drop }
+  - name: a SELECT is not a drop
+    covers: db-drop
+    facts: { action: mcp_call, mcp_server: postgres, mcp_tool: execute_sql, catalog_status: approved, risk: low }
+    expect: { verdict: allow }

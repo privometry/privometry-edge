@@ -1,0 +1,12 @@
+{
+  "registration_id": "reg_01JBA7Q3X5Z8C1E4G6J9M2P5R8",
+  "challenge": "nj8-SSL2QlG-lz0zhGvqSxXTID3Ul86wV-ngxXfNKgo",
+  "audience": "https://in.api.privometry.dev/account/v1",
+  "expires_at": "2026-10-27T10:21:02.660Z",
+  "organization": {
+    "name": "Acme Payments",
+    "slug": "acme",
+    "region": "in"
+  },
+  "role": "owner"
+}

@@ -1,0 +1,66 @@
+{
+  "schema": "privometry.release/v1",
+  "version": "0.5.0",
+  "channel": "stable",
+  "released_at": "2026-11-02T10:00:00.000Z",
+  "expires_at": "2026-12-02T10:00:00.000Z",
+  "notes_url": "https://github.com/privometry/privometry-oss/releases/tag/v0.5.0",
+  "artifacts": [
+    {
+      "os": "macos",
+      "arch": "arm64",
+      "url": "https://github.com/privometry/privometry-oss/releases/download/v0.5.0/privometry_0.5.0_darwin_arm64.tar.gz",
+      "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "size": 9871234,
+      "format": "tar.gz",
+      "binaries": [
+        "privometry",
+        "privometryd",
+        "privometry-hook",
+        "privometry-mcp-shim"
+      ]
+    },
+    {
+      "os": "macos",
+      "arch": "amd64",
+      "url": "https://github.com/privometry/privometry-oss/releases/download/v0.5.0/privometry_0.5.0_darwin_amd64.tar.gz",
+      "sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "size": 9871235,
+      "format": "tar.gz",
+      "binaries": [
+        "privometry",
+        "privometryd",
+        "privometry-hook",
+        "privometry-mcp-shim"
+      ]
+    },
+    {
+      "os": "linux",
+      "arch": "arm64",
+      "url": "https://github.com/privometry/privometry-oss/releases/download/v0.5.0/privometry_0.5.0_linux_arm64.tar.gz",
+      "sha256": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "size": 9871236,
+      "format": "tar.gz",
+      "binaries": [
+        "privometry",
+        "privometryd",
+        "privometry-hook",
+        "privometry-mcp-shim"
+      ]
+    },
+    {
+      "os": "linux",
+      "arch": "amd64",
+      "url": "https://github.com/privometry/privometry-oss/releases/download/v0.5.0/privometry_0.5.0_linux_amd64.tar.gz",
+      "sha256": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "size": 9871237,
+      "format": "tar.gz",
+      "binaries": [
+        "privometry",
+        "privometryd",
+        "privometry-hook",
+        "privometry-mcp-shim"
+      ]
+    }
+  ]
+}

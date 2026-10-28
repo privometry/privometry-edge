@@ -1,0 +1,2954 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/org-api/v1/messages.schema.json",
+  "title": "Privometry organization API v1 messages",
+  "description": "Request and response bodies of /api/v1, referenced from openapi.yaml: what an organization manages from the console or with an API key. Policies are kept as the YAML people write; each version is immutable.",
+  "$defs": {
+    "workspace_id": {
+      "type": "string",
+      "pattern": "^wsp_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "policy_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "A policy's version number: 1 for the first, one more for each change."
+    },
+    "policy_yaml": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 262144,
+      "description": "A privometry.policy/v1 file as YAML (policy/v1/policy.schema.json). Its name qualifies its rule IDs and cannot change between versions."
+    },
+    "change_note": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "qualified_rule_id": {
+      "$ref": "../../policy/v1/policy.schema.json#/$defs/qualified_rule_ref"
+    },
+    "PolicyScope": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "description": "Where a policy applies (PRD CP-11). Organization policies reach every device; workspace policies reach the devices enrolled into that workspace. Narrow a rule to repos with its when.repo condition.",
+      "properties": {
+        "type": {
+          "enum": [
+            "org",
+            "workspace"
+          ]
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/workspace_id"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "workspace"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "workspace_id"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "workspace_id"
+              ]
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "PolicyCreate": {
+      "type": "object",
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/policy_yaml"
+        },
+        "scope": {
+          "$ref": "#/$defs/PolicyScope"
+        },
+        "change_note": {
+          "$ref": "#/$defs/change_note"
+        }
+      },
+      "additionalProperties": false,
+      "description": "A new policy. Its scope defaults to the organization."
+    },
+    "PolicyVersionCreate": {
+      "type": "object",
+      "required": [
+        "content",
+        "base_version"
+      ],
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/policy_yaml"
+        },
+        "base_version": {
+          "$ref": "#/$defs/policy_version"
+        },
+        "change_note": {
+          "$ref": "#/$defs/change_note"
+        }
+      },
+      "additionalProperties": false,
+      "description": "A change to a policy. base_version is the version the change was made from; if the policy has moved on since, the change is refused with version-conflict and nothing is lost."
+    },
+    "PolicyRollback": {
+      "type": "object",
+      "required": [
+        "version",
+        "base_version"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/policy_version"
+        },
+        "base_version": {
+          "$ref": "#/$defs/policy_version"
+        },
+        "change_note": {
+          "$ref": "#/$defs/change_note"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Makes a new version with the content of an earlier one. History is never rewritten."
+    },
+    "PolicyCheck": {
+      "type": "object",
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/policy_yaml"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RuleSummary": {
+      "type": "object",
+      "required": [
+        "id",
+        "verdict",
+        "category",
+        "mode"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/qualified_rule_id"
+        },
+        "verdict": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/verdict"
+        },
+        "category": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/rule_category"
+        },
+        "mode": {
+          "enum": [
+            "enforce",
+            "monitor"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "overridable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "PolicyCheckResult": {
+      "type": "object",
+      "required": [
+        "valid",
+        "errors"
+      ],
+      "description": "What saving the content would give, without saving it. errors lists schema and compile problems by JSON pointer into the YAML.",
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "detail"
+            ],
+            "properties": {
+              "pointer": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RuleSummary"
+          }
+        },
+        "cedar_policies": {
+          "type": "string"
+        },
+        "cedar_monitor_policies": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "valid": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "name",
+              "rules",
+              "cedar_policies",
+              "cedar_monitor_policies"
+            ],
+            "properties": {
+              "errors": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "errors": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Policy": {
+      "type": "object",
+      "required": [
+        "policy_id",
+        "org_id",
+        "name",
+        "scope",
+        "status",
+        "current_version",
+        "rule_count",
+        "monitor_rule_count",
+        "created_by",
+        "created_at",
+        "updated_at"
+      ],
+      "description": "A policy at its current version. content is included when one policy is fetched, not in lists.",
+      "properties": {
+        "policy_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/policy_id"
+        },
+        "org_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/org_id"
+        },
+        "name": {
+          "$ref": "../../policy/v1/policy.schema.json#/$defs/kebab_id"
+        },
+        "description": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/PolicyScope"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "archived"
+          ]
+        },
+        "current_version": {
+          "$ref": "#/$defs/policy_version"
+        },
+        "rule_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "monitor_rule_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Rules in monitor mode, which record would_verdict and never block (CP-12)."
+        },
+        "content": {
+          "$ref": "#/$defs/policy_yaml"
+        },
+        "created_by": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "created_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "updated_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "bundle_version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The latest bundle that carries this policy's current version."
+        }
+      }
+    },
+    "PolicyList": {
+      "type": "object",
+      "required": [
+        "policies"
+      ],
+      "description": "Active policies, organization-wide first. An API key limited to a workspace sees organization policies and its workspace's.",
+      "properties": {
+        "policies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Policy"
+          }
+        }
+      }
+    },
+    "PolicyVersion": {
+      "type": "object",
+      "required": [
+        "policy_id",
+        "version",
+        "name",
+        "content",
+        "rules",
+        "cedar_policies",
+        "cedar_monitor_policies",
+        "created_by",
+        "created_at"
+      ],
+      "description": "One immutable version: the YAML as written, the rules it defines and its compiled Cedar (the organization layer's own rules; packs, overrides and exceptions are merged on each device).",
+      "properties": {
+        "policy_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/policy_id"
+        },
+        "version": {
+          "$ref": "#/$defs/policy_version"
+        },
+        "name": {
+          "$ref": "../../policy/v1/policy.schema.json#/$defs/kebab_id"
+        },
+        "content": {
+          "$ref": "#/$defs/policy_yaml"
+        },
+        "change_note": {
+          "$ref": "#/$defs/change_note"
+        },
+        "rolled_back_from": {
+          "$ref": "#/$defs/policy_version"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RuleSummary"
+          }
+        },
+        "cedar_policies": {
+          "type": "string"
+        },
+        "cedar_monitor_policies": {
+          "type": "string"
+        },
+        "created_by": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "created_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        }
+      }
+    },
+    "PolicyVersionSummary": {
+      "type": "object",
+      "required": [
+        "version",
+        "rule_count",
+        "created_by",
+        "created_at"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/policy_version"
+        },
+        "change_note": {
+          "$ref": "#/$defs/change_note"
+        },
+        "rolled_back_from": {
+          "$ref": "#/$defs/policy_version"
+        },
+        "rule_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "created_by": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "created_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        }
+      }
+    },
+    "PolicyVersionList": {
+      "type": "object",
+      "required": [
+        "policy_id",
+        "versions"
+      ],
+      "description": "Newest first.",
+      "properties": {
+        "policy_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/policy_id"
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PolicyVersionSummary"
+          }
+        }
+      }
+    },
+    "PolicyDiff": {
+      "type": "object",
+      "required": [
+        "policy_id",
+        "from",
+        "to",
+        "diff",
+        "rules"
+      ],
+      "properties": {
+        "policy_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/policy_id"
+        },
+        "from": {
+          "$ref": "#/$defs/policy_version"
+        },
+        "to": {
+          "$ref": "#/$defs/policy_version"
+        },
+        "diff": {
+          "type": "string",
+          "description": "Unified diff of the YAML, three lines of context, empty when the versions are the same."
+        },
+        "rules": {
+          "type": "object",
+          "required": [
+            "added",
+            "removed",
+            "changed"
+          ],
+          "description": "Rule IDs by what happened to them; a rule is changed when anything in it differs, its mode included.",
+          "properties": {
+            "added": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/qualified_rule_id"
+              }
+            },
+            "removed": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/qualified_rule_id"
+              }
+            },
+            "changed": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/qualified_rule_id"
+              }
+            }
+          }
+        }
+      }
+    },
+    "BundlePublish": {
+      "type": "object",
+      "properties": {
+        "note": {
+          "$ref": "#/$defs/change_note"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Signs a new bundle with the current policies, entitlements and catalog. Policy changes publish on their own; this is for the rest."
+    },
+    "BundleInfo": {
+      "type": "object",
+      "required": [
+        "bundle_id",
+        "version",
+        "org_id",
+        "reason",
+        "created_at",
+        "expires_at",
+        "sha256",
+        "key_id",
+        "policies"
+      ],
+      "description": "A signed bundle (policy/v1 bundle.schema.json), without its content. One publish signs one bundle for the organization and one for each workspace with policies of its own, all with the same version.",
+      "properties": {
+        "bundle_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/bundle_id"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "org_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/org_id"
+        },
+        "workspace_id": {
+          "$ref": "#/$defs/workspace_id"
+        },
+        "reason": {
+          "enum": [
+            "policy_change",
+            "manual",
+            "refresh",
+            "entitlements_change"
+          ],
+          "description": "policy_change: a policy was created, changed, rolled back or archived. manual: POST /orgs/{org_id}/bundles. refresh: signed when a device asked and the organization had no bundle yet, or the newest was within 7 days of expiring. entitlements_change: the edition, period or seats changed (a subscription, renewal, seat change or downgrade)."
+        },
+        "note": {
+          "$ref": "#/$defs/change_note"
+        },
+        "created_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "expires_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "sha256": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/sha256"
+        },
+        "key_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/keyid"
+        },
+        "policies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "policy_id",
+              "name",
+              "version"
+            ],
+            "properties": {
+              "policy_id": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/policy_id"
+              },
+              "name": {
+                "type": "string"
+              },
+              "version": {
+                "$ref": "#/$defs/policy_version"
+              }
+            }
+          }
+        },
+        "created_by": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        }
+      }
+    },
+    "BundleList": {
+      "type": "object",
+      "required": [
+        "bundles"
+      ],
+      "description": "Newest first, at most 100.",
+      "properties": {
+        "bundles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BundleInfo"
+          }
+        }
+      }
+    },
+    "EventPage": {
+      "type": "object",
+      "required": [
+        "events"
+      ],
+      "description": "Events as stored in the cloud (event-schema/v1, with hashed and redacted fields), newest first. next_cursor fetches the next older page; absent on the last page.",
+      "properties": {
+        "events": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "$ref": "../../event-schema/v1/event.schema.json"
+          }
+        },
+        "next_cursor": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,512}$"
+        }
+      }
+    },
+    "component_id": {
+      "type": "string",
+      "pattern": "^cmp_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "agent_instance_id": {
+      "type": "string",
+      "pattern": "^agi_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "catalog_entry_id": {
+      "type": "string",
+      "pattern": "^cat_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "catalog_kind": {
+      "enum": [
+        "agent",
+        "mcp_server",
+        "skill",
+        "plugin",
+        "ide_extension"
+      ]
+    },
+    "catalog_status": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/catalog_status"
+    },
+    "CatalogMatch": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "description": "How a catalog entry recognizes an item besides its name. package and url are matched by the platform and devices; command only on devices, which never upload command lines.",
+      "properties": {
+        "transport": {
+          "enum": [
+            "stdio",
+            "http"
+          ]
+        },
+        "command": {
+          "$ref": "../../policy/v1/policy.schema.json#/$defs/glob"
+        },
+        "url": {
+          "$ref": "../../policy/v1/policy.schema.json#/$defs/glob"
+        },
+        "package": {
+          "$ref": "../../policy/v1/policy.schema.json#/$defs/glob"
+        }
+      }
+    },
+    "CatalogEntryCreate": {
+      "type": "object",
+      "required": [
+        "kind",
+        "name",
+        "status"
+      ],
+      "additionalProperties": false,
+      "description": "An approved or blocked agent, MCP server, skill, plugin or IDE extension (PRD CP-09; the request-and-approve flow is CP-17, P3). Takes effect on devices with the next bundle.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/catalog_kind"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "match": {
+          "$ref": "#/$defs/CatalogMatch"
+        },
+        "status": {
+          "enum": [
+            "approved",
+            "blocked"
+          ]
+        },
+        "versions": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "description": "Approved versions; absent means any."
+        },
+        "risk_tier": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "expires_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    },
+    "CatalogEntry": {
+      "type": "object",
+      "required": [
+        "catalog_entry_id",
+        "kind",
+        "name",
+        "status",
+        "created_by",
+        "created_at"
+      ],
+      "properties": {
+        "catalog_entry_id": {
+          "$ref": "#/$defs/catalog_entry_id"
+        },
+        "kind": {
+          "$ref": "#/$defs/catalog_kind"
+        },
+        "name": {
+          "type": "string"
+        },
+        "match": {
+          "$ref": "#/$defs/CatalogMatch"
+        },
+        "status": {
+          "enum": [
+            "approved",
+            "blocked"
+          ]
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "risk_tier": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "expires_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "created_by": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "created_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        }
+      }
+    },
+    "CatalogEntryList": {
+      "type": "object",
+      "required": [
+        "entries"
+      ],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CatalogEntry"
+          }
+        }
+      }
+    },
+    "Component": {
+      "type": "object",
+      "required": [
+        "component_id",
+        "kind",
+        "name",
+        "catalog_status",
+        "devices",
+        "installations",
+        "agents",
+        "first_seen_at",
+        "last_seen_at"
+      ],
+      "description": "An agent, MCP server, skill, plugin, hook or IDE extension seen on the organization's devices, with how the catalog classifies it, as devices do (privometry/mcp-allowlist): blocked or approved when an entry matches (approved only for its listed versions), unapproved when it is in the catalog but not approved for this version, unknown when it is not in the catalog (shadow AI, also when the catalog lists nothing of its kind).",
+      "properties": {
+        "component_id": {
+          "$ref": "#/$defs/component_id"
+        },
+        "kind": {
+          "enum": [
+            "agent",
+            "mcp_server",
+            "skill",
+            "plugin",
+            "hook",
+            "ide_extension"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "mcp_transport": {
+          "enum": [
+            "stdio",
+            "http"
+          ]
+        },
+        "package": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "host": {
+          "type": "string",
+          "maxLength": 253
+        },
+        "catalog_status": {
+          "$ref": "#/$defs/catalog_status"
+        },
+        "catalog_entry_id": {
+          "$ref": "#/$defs/catalog_entry_id"
+        },
+        "devices": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "installations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+          }
+        },
+        "first_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "last_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "risk_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "The risk feed score (riskfeed/v1) of the published entry for this package, when there is one; higher is riskier."
+        },
+        "risk_level": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "description": "The level that goes with risk_score: low below 25, medium below 50, high below 75, critical from 75."
+        }
+      }
+    },
+    "ComponentList": {
+      "type": "object",
+      "required": [
+        "components"
+      ],
+      "description": "Components currently installed somewhere, most devices first.",
+      "properties": {
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Component"
+          }
+        }
+      }
+    },
+    "AgentInstance": {
+      "type": "object",
+      "required": [
+        "agent_instance_id",
+        "device_id",
+        "product",
+        "catalog_status",
+        "mcp_servers",
+        "skills",
+        "plugins",
+        "first_seen_at",
+        "last_seen_at"
+      ],
+      "description": "One agent on one device, with what it can reach.",
+      "properties": {
+        "agent_instance_id": {
+          "$ref": "#/$defs/agent_instance_id"
+        },
+        "device_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/device_id"
+        },
+        "user_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "product": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "catalog_status": {
+          "$ref": "#/$defs/catalog_status"
+        },
+        "mcp_servers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skills": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "plugins": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "first_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "last_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        }
+      }
+    },
+    "AgentInstanceList": {
+      "type": "object",
+      "required": [
+        "agents"
+      ],
+      "properties": {
+        "agents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AgentInstance"
+          }
+        }
+      }
+    },
+    "finding_id": {
+      "type": "string",
+      "pattern": "^fnd_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "integration_id": {
+      "type": "string",
+      "pattern": "^int_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "finding_status": {
+      "enum": [
+        "open",
+        "in_progress",
+        "resolved",
+        "accepted"
+      ]
+    },
+    "Ticket": {
+      "type": "object",
+      "required": [
+        "integration_id",
+        "provider",
+        "key",
+        "url"
+      ],
+      "properties": {
+        "integration_id": {
+          "$ref": "#/$defs/integration_id"
+        },
+        "provider": {
+          "enum": [
+            "jira",
+            "linear"
+          ]
+        },
+        "key": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "url": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/https_url"
+        }
+      }
+    },
+    "Finding": {
+      "type": "object",
+      "required": [
+        "finding_id",
+        "type",
+        "rule_key",
+        "severity",
+        "status",
+        "entity",
+        "title",
+        "first_seen_at",
+        "last_seen_at"
+      ],
+      "description": "A posture, drift, tamper or health problem (PRD CP-15 basic). A repeat of an open finding updates it instead of opening another; when the condition clears the finding resolves itself (resolution auto).",
+      "properties": {
+        "finding_id": {
+          "$ref": "#/$defs/finding_id"
+        },
+        "type": {
+          "enum": [
+            "posture",
+            "drift",
+            "tamper",
+            "health"
+          ]
+        },
+        "rule_key": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/snake_case"
+        },
+        "severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/finding_status"
+        },
+        "entity": {
+          "type": "object",
+          "required": [
+            "type",
+            "id"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "device",
+                "agent_instance",
+                "repo",
+                "org"
+              ]
+            },
+            "id": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "label": {
+              "type": "string",
+              "maxLength": 256,
+              "description": "For display, such as the agent and tier."
+            }
+          }
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "details": {
+          "type": "object",
+          "description": "What the source reported, such as a posture check's message. Never secrets or paths."
+        },
+        "owner_user_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "ticket": {
+          "$ref": "#/$defs/Ticket"
+        },
+        "first_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "last_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "resolved_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "resolution": {
+          "enum": [
+            "auto",
+            "manual",
+            "ticket",
+            "accepted"
+          ]
+        },
+        "comment": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      }
+    },
+    "FindingList": {
+      "type": "object",
+      "required": [
+        "findings"
+      ],
+      "description": "Newest first.",
+      "properties": {
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Finding"
+          }
+        }
+      }
+    },
+    "FindingTriage": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "description": "Change a finding's status or owner. accepted keeps it closed even when the condition repeats; resolved reopens on a repeat.",
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/finding_status"
+        },
+        "owner_user_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "comment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "clear_owner": {
+          "const": true,
+          "description": "Remove the owner."
+        }
+      },
+      "not": {
+        "required": [
+          "owner_user_id",
+          "clear_owner"
+        ]
+      }
+    },
+    "IntegrationCreate": {
+      "type": "object",
+      "required": [
+        "type",
+        "name",
+        "config"
+      ],
+      "additionalProperties": false,
+      "description": "Connects a tool. jira, linear and slack take an API token or bot token in secret (slack also its signing_secret); teams takes a Workflows webhook URL in secret. A Jira base_url and a Teams URL must be https on public addresses, as webhook URLs must, and are checked again before each call. Secrets are kept encrypted and never returned. github takes the installation of the Privometry GitHub App.",
+      "properties": {
+        "type": {
+          "enum": [
+            "jira",
+            "linear",
+            "github",
+            "slack",
+            "teams"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "secret": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "config": {
+          "type": "object"
+        },
+        "signing_secret": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Slack only: the Slack app's signing secret, which signs its interactivity requests. Kept encrypted, never returned."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "secret"
+            ],
+            "properties": {
+              "config": {
+                "$ref": "#/$defs/JiraConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "linear"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "secret"
+            ],
+            "properties": {
+              "config": {
+                "$ref": "#/$defs/LinearConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "github"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "secret"
+              ]
+            },
+            "properties": {
+              "config": {
+                "$ref": "#/$defs/GitHubConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "slack"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "secret",
+              "signing_secret"
+            ],
+            "properties": {
+              "config": {
+                "$ref": "#/$defs/SlackConfig"
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "signing_secret"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "teams"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "secret"
+            ],
+            "properties": {
+              "config": {
+                "$ref": "#/$defs/TeamsConfig"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "JiraConfig": {
+      "type": "object",
+      "required": [
+        "base_url",
+        "email",
+        "project_key"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "base_url": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/https_url"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 254,
+          "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+        },
+        "project_key": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{1,9}$"
+        },
+        "issue_type": {
+          "type": "string",
+          "maxLength": 64,
+          "default": "Task"
+        },
+        "min_severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "default": "high"
+        }
+      }
+    },
+    "LinearConfig": {
+      "type": "object",
+      "required": [
+        "team_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "team_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "min_severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "default": "high"
+        }
+      }
+    },
+    "GitHubConfig": {
+      "type": "object",
+      "required": [
+        "installation_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "installation_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "check_pull_requests": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "Integration": {
+      "type": "object",
+      "required": [
+        "integration_id",
+        "type",
+        "name",
+        "config",
+        "status",
+        "created_by",
+        "created_at"
+      ],
+      "properties": {
+        "integration_id": {
+          "$ref": "#/$defs/integration_id"
+        },
+        "type": {
+          "enum": [
+            "jira",
+            "linear",
+            "github",
+            "slack",
+            "teams"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "config": {
+          "type": "object"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "error"
+          ]
+        },
+        "last_error": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "webhook_url": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/https_url"
+        },
+        "created_by": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "created_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        }
+      }
+    },
+    "IntegrationCreated": {
+      "type": "object",
+      "required": [
+        "integration"
+      ],
+      "properties": {
+        "integration": {
+          "$ref": "#/$defs/Integration"
+        },
+        "webhook_secret": {
+          "type": "string",
+          "pattern": "^whs_[A-Za-z0-9_-]{43}$",
+          "description": "For jira and linear: shown once. Configure the tool's webhook to call webhook_url with it (Jira: as the secret; Linear: as the signing secret), so ticket changes reach Privometry."
+        }
+      }
+    },
+    "IntegrationList": {
+      "type": "object",
+      "required": [
+        "integrations"
+      ],
+      "properties": {
+        "integrations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Integration"
+          }
+        }
+      }
+    },
+    "ApprovalSettings": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "route",
+        "timeout_seconds"
+      ],
+      "additionalProperties": false,
+      "description": "How asks reach a person (PRD CP-21). Changes sign a new bundle, which carries enabled, route and timeout_seconds to devices.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "route": {
+          "enum": [
+            "unattended",
+            "all"
+          ]
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 300
+        },
+        "integration_id": {
+          "$ref": "#/$defs/integration_id"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "integration_id"
+            ]
+          }
+        }
+      ]
+    },
+    "ApprovalRequest": {
+      "type": "object",
+      "required": [
+        "approval_id",
+        "status",
+        "device_id",
+        "agent_product",
+        "session_id",
+        "action",
+        "message",
+        "created_at",
+        "expires_at"
+      ],
+      "description": "An ask a device sent for approval. The target is always redacted.",
+      "properties": {
+        "approval_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/approval_id"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "approved",
+            "denied",
+            "timeout"
+          ]
+        },
+        "device_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/device_id"
+        },
+        "user_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "agent_product": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+        },
+        "session_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/session_id"
+        },
+        "repo_remote": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "action": {
+          "type": "object",
+          "required": [
+            "kind",
+            "target",
+            "rule_ids"
+          ],
+          "properties": {
+            "kind": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/action_kind"
+            },
+            "tool_name": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "target": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "rule_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "risk": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/risk"
+            }
+          }
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 280
+        },
+        "channel": {
+          "enum": [
+            "slack",
+            "teams"
+          ]
+        },
+        "created_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "expires_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "decided_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "responder": {
+          "type": "object",
+          "required": [
+            "channel"
+          ],
+          "properties": {
+            "user_id": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+            },
+            "display_name": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "channel": {
+              "enum": [
+                "slack",
+                "teams",
+                "console"
+              ]
+            }
+          }
+        },
+        "comment": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      }
+    },
+    "ApprovalList": {
+      "type": "object",
+      "required": [
+        "approvals"
+      ],
+      "description": "Newest first, at most 200.",
+      "properties": {
+        "approvals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ApprovalRequest"
+          }
+        }
+      }
+    },
+    "ApprovalDecision": {
+      "type": "object",
+      "required": [
+        "decision"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "enum": [
+            "approve",
+            "deny"
+          ]
+        },
+        "comment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "SlackConfig": {
+      "type": "object",
+      "required": [
+        "channel_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "channel_id": {
+          "type": "string",
+          "pattern": "^[CG][A-Z0-9]{6,20}$"
+        }
+      }
+    },
+    "TeamsConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "webhook_id": {
+      "type": "string",
+      "pattern": "^whk_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "webhook_delivery_id": {
+      "type": "string",
+      "pattern": "^whd_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "webhook_event_id": {
+      "type": "string",
+      "pattern": "^whe_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "webhook_topic": {
+      "enum": [
+        "finding.opened",
+        "finding.updated",
+        "finding.resolved",
+        "policy.published",
+        "policy.archived",
+        "inventory.component_discovered",
+        "event.asked",
+        "event.denied",
+        "approval.requested",
+        "approval.decided"
+      ],
+      "description": "What a webhook can subscribe to. finding.opened: a new finding; finding.updated: its status, owner or comment changed (not resolved); finding.resolved: it was resolved, by its condition clearing, its ticket closing or a person. policy.published: a policy was created, changed or rolled back, and its version signed into bundles; policy.archived. inventory.component_discovered: a component the organization had not seen before appeared on a device. event.asked, event.denied: an uploaded action event with that verdict. approval.requested; approval.decided: approved, denied, or timed out."
+    },
+    "webhook_event_type": {
+      "enum": [
+        "finding.opened",
+        "finding.updated",
+        "finding.resolved",
+        "policy.published",
+        "policy.archived",
+        "inventory.component_discovered",
+        "event.asked",
+        "event.denied",
+        "approval.requested",
+        "approval.decided",
+        "webhook.test"
+      ],
+      "description": "Every event type: the topics a webhook can subscribe to, and webhook.test, which only the test endpoint sends."
+    },
+    "WebhookCreate": {
+      "type": "object",
+      "required": [
+        "url",
+        "event_types"
+      ],
+      "additionalProperties": false,
+      "description": "Subscribes a URL to events (PRD CP-29).",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://",
+          "maxLength": 2048,
+          "description": "Where deliveries are POSTed. https only (plain http only in development); the host must resolve to public addresses, and redirects are not followed."
+        },
+        "event_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/webhook_topic"
+          }
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        }
+      }
+    },
+    "WebhookUpdate": {
+      "type": "object",
+      "required": [
+        "url",
+        "event_types",
+        "enabled"
+      ],
+      "additionalProperties": false,
+      "description": "Replaces a webhook's URL, events and description. enabled false stops new deliveries; true turns a disabled webhook back on. The secret stays.",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://",
+          "maxLength": 2048,
+          "description": "Where deliveries are POSTed. https only (plain http only in development); the host must resolve to public addresses, and redirects are not followed."
+        },
+        "event_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/webhook_topic"
+          }
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "WebhookSecretRotate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "previous_secret_hours": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 168,
+          "default": 24,
+          "description": "How long the previous secret keeps signing deliveries alongside the new one; 0 stops it at once. Rotating again during that time drops the older secret."
+        }
+      }
+    },
+    "Webhook": {
+      "type": "object",
+      "required": [
+        "webhook_id",
+        "url",
+        "event_types",
+        "status",
+        "created_by",
+        "created_at"
+      ],
+      "description": "A subscription. status: active; failing when the last delivery attempt failed (deliveries keep retrying); disabled when turned off, or after a delivery failed every retry with nothing delivered since it was queued.",
+      "properties": {
+        "webhook_id": {
+          "$ref": "#/$defs/webhook_id"
+        },
+        "url": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "event_types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/webhook_topic"
+          }
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
+        "status": {
+          "enum": [
+            "active",
+            "failing",
+            "disabled"
+          ]
+        },
+        "last_error": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "last_delivered_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "previous_secret_expires_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp",
+          "description": "Set after a secret rotation, while the previous secret still signs deliveries alongside the new one."
+        },
+        "created_by": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id",
+          "description": "The person who created it, or who created the API key that did."
+        },
+        "created_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        }
+      }
+    },
+    "WebhookCreated": {
+      "type": "object",
+      "required": [
+        "webhook",
+        "secret"
+      ],
+      "properties": {
+        "webhook": {
+          "$ref": "#/$defs/Webhook"
+        },
+        "secret": {
+          "type": "string",
+          "pattern": "^whsec_[A-Za-z0-9+/]{32}$",
+          "description": "Shown once. Deliveries are signed as Standard Webhooks (standardwebhooks.com) specify: webhook-signature is v1, then the base64 HMAC-SHA256, keyed with the base64-decoded part after whsec_, of webhook-id, webhook-timestamp and the body joined with dots."
+        }
+      }
+    },
+    "WebhookList": {
+      "type": "object",
+      "required": [
+        "webhooks"
+      ],
+      "properties": {
+        "webhooks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Webhook"
+          }
+        }
+      }
+    },
+    "WebhookDelivery": {
+      "type": "object",
+      "required": [
+        "delivery_id",
+        "event_id",
+        "event_type",
+        "status",
+        "attempts",
+        "created_at"
+      ],
+      "description": "One event sent to one webhook. Attempts follow the schedule now, 30 seconds, 5 minutes, 30 minutes, 2 hours, 5 hours, 10 hours and 10 hours; a 2xx answer delivers it, anything else is retried until the last attempt fails.",
+      "properties": {
+        "delivery_id": {
+          "$ref": "#/$defs/webhook_delivery_id"
+        },
+        "event_id": {
+          "$ref": "#/$defs/webhook_event_id"
+        },
+        "event_type": {
+          "$ref": "#/$defs/webhook_event_type"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "delivered",
+            "failed"
+          ]
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "created_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "last_attempt_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "next_attempt_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "delivered_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "response_status": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 599
+        },
+        "error": {
+          "type": "string",
+          "maxLength": 1024
+        }
+      }
+    },
+    "WebhookDeliveryList": {
+      "type": "object",
+      "required": [
+        "deliveries"
+      ],
+      "description": "The webhook's latest deliveries, newest first.",
+      "properties": {
+        "deliveries": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/WebhookDelivery"
+          }
+        }
+      }
+    },
+    "WebhookEvent": {
+      "type": "object",
+      "required": [
+        "event_id",
+        "type",
+        "created_at",
+        "org_id",
+        "data"
+      ],
+      "additionalProperties": false,
+      "description": "The body of a delivery, POSTed as JSON with the Standard Webhooks headers webhook-id (the event_id, the same on every retry, for de-duplication), webhook-timestamp (Unix seconds) and webhook-signature. Receivers should check the signature, reject timestamps more than 5 minutes off, and answer 2xx quickly. data is the resource as this API returns it.",
+      "properties": {
+        "event_id": {
+          "$ref": "#/$defs/webhook_event_id"
+        },
+        "type": {
+          "$ref": "#/$defs/webhook_event_type"
+        },
+        "created_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "org_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/org_id"
+        },
+        "data": {
+          "type": "object"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "finding.opened",
+                  "finding.updated",
+                  "finding.resolved"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/Finding"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "policy.published",
+                  "policy.archived"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/Policy"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "inventory.component_discovered"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/Component"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "event.asked",
+                  "event.denied"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "../../event-schema/v1/event.schema.json"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "approval.requested",
+                  "approval.decided"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/ApprovalRequest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "webhook.test"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "webhook_id"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "webhook_id": {
+                    "$ref": "#/$defs/webhook_id"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "OrgOverview": {
+      "type": "object",
+      "required": [
+        "generated_at",
+        "devices",
+        "activity",
+        "findings",
+        "inventory",
+        "approvals"
+      ],
+      "description": "Counts for the console's overview (PRD CP-28). A workspace API key counts its workspace's devices only.",
+      "properties": {
+        "generated_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "devices": {
+          "type": "object",
+          "required": [
+            "enrolled",
+            "reporting"
+          ],
+          "properties": {
+            "enrolled": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Enrolled and not revoked."
+            },
+            "reporting": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Sent a heartbeat in the last hour."
+            }
+          }
+        },
+        "activity": {
+          "type": "object",
+          "required": [
+            "from",
+            "to",
+            "actions",
+            "allowed",
+            "asked",
+            "denied",
+            "per_minute"
+          ],
+          "description": "Action events in the 24 hours before to, by verdict; per_minute covers the last hour, oldest first, one entry per minute that had actions.",
+          "properties": {
+            "from": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+            },
+            "to": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+            },
+            "actions": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "allowed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "asked": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "denied": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "per_minute": {
+              "type": "array",
+              "maxItems": 60,
+              "items": {
+                "type": "object",
+                "required": [
+                  "at",
+                  "actions",
+                  "asked",
+                  "denied"
+                ],
+                "properties": {
+                  "at": {
+                    "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+                  },
+                  "actions": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "asked": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "denied": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "findings": {
+          "type": "object",
+          "required": [
+            "open",
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "Findings open or in progress, by severity.",
+          "properties": {
+            "open": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "critical": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "high": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "medium": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "low": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "inventory": {
+          "type": "object",
+          "required": [
+            "components",
+            "unknown",
+            "blocked"
+          ],
+          "description": "Components installed on current devices; unknown is shadow AI (not in the catalog), blocked is in use although the catalog blocks it.",
+          "properties": {
+            "components": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unknown": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "blocked": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "approvals": {
+          "type": "object",
+          "required": [
+            "pending"
+          ],
+          "properties": {
+            "pending": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "license_event_id": {
+      "type": "string",
+      "pattern": "^lev_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "invoice_id": {
+      "type": "string",
+      "pattern": "^ivc_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "billing_plan": {
+      "enum": [
+        "team_monthly",
+        "team_annual"
+      ],
+      "description": "Team, paid each month or each year."
+    },
+    "billing_provider": {
+      "enum": [
+        "razorpay",
+        "paddle"
+      ],
+      "description": "razorpay for INR (Indian customers: GST invoices, UPI AutoPay and cards); paddle, as merchant of record, for USD."
+    },
+    "currency": {
+      "enum": [
+        "INR",
+        "USD"
+      ]
+    },
+    "License": {
+      "type": "object",
+      "required": [
+        "edition",
+        "state",
+        "features",
+        "limits",
+        "valid_from",
+        "grace_days",
+        "seats",
+        "offers"
+      ],
+      "description": "What the organization may use now (PRD LIC-01 to LIC-05): its edition and state, features and limits as devices receive them signed in bundles, seats counted as active developers (people whose devices sent events in the last 30 days), its subscription, and what it can buy. Features are checked by key, never by edition.",
+      "properties": {
+        "edition": {
+          "enum": [
+            "free",
+            "trial",
+            "team",
+            "enterprise"
+          ]
+        },
+        "state": {
+          "enum": [
+            "active",
+            "trial",
+            "grace",
+            "expired"
+          ],
+          "description": "grace: past valid_until, everything still works until grace_ends_at, then the organization is downgraded to free."
+        },
+        "features": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "limits": {
+          "$ref": "../../entitlements/v1/entitlements.schema.json#/properties/limits"
+        },
+        "valid_from": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "valid_until": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp",
+          "description": "Absent for the free edition."
+        },
+        "grace_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "grace_ends_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "seats": {
+          "type": "object",
+          "required": [
+            "active",
+            "enrollment_blocked"
+          ],
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Absent when unlimited."
+            },
+            "active": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "counted_at": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+            },
+            "overage_since": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/timestamp",
+              "description": "When active developers first exceeded the limit, while they still do."
+            },
+            "overage_grace_ends_at": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+            },
+            "enrollment_blocked": {
+              "type": "boolean",
+              "description": "New devices are refused (seat-limit-reached) because the overage outlasted its grace period, or (not-entitled) because the edition has no cloud_sync. Enrolled devices keep working."
+            }
+          }
+        },
+        "subscription": {
+          "type": "object",
+          "required": [
+            "provider",
+            "status",
+            "plan",
+            "seats",
+            "currency"
+          ],
+          "properties": {
+            "provider": {
+              "$ref": "#/$defs/billing_provider"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "past_due",
+                "canceled",
+                "halted"
+              ],
+              "description": "past_due: a renewal payment failed and the provider is retrying; halted: it gave up; canceled: it ends at current_period_end."
+            },
+            "plan": {
+              "$ref": "#/$defs/billing_plan"
+            },
+            "seats": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "currency": {
+              "$ref": "#/$defs/currency"
+            },
+            "current_period_end": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+            },
+            "cancel_at_period_end": {
+              "type": "boolean"
+            }
+          }
+        },
+        "offers": {
+          "type": "array",
+          "description": "What the organization can buy now, from the providers this region has set up; empty when self-serve billing is off.",
+          "items": {
+            "type": "object",
+            "required": [
+              "plan",
+              "interval",
+              "currency",
+              "unit_amount_minor",
+              "min_seats",
+              "provider"
+            ],
+            "properties": {
+              "plan": {
+                "$ref": "#/$defs/billing_plan"
+              },
+              "interval": {
+                "enum": [
+                  "month",
+                  "year"
+                ]
+              },
+              "currency": {
+                "$ref": "#/$defs/currency"
+              },
+              "unit_amount_minor": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Price per seat per interval, in the currency's minor unit (paise, cents), before tax."
+              },
+              "min_seats": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "provider": {
+                "$ref": "#/$defs/billing_provider"
+              }
+            }
+          }
+        }
+      }
+    },
+    "LicenseEvent": {
+      "type": "object",
+      "required": [
+        "event_id",
+        "at",
+        "action",
+        "actor"
+      ],
+      "description": "One license change or enforcement action (PRD LIC-10). The log is append-only.",
+      "properties": {
+        "event_id": {
+          "$ref": "#/$defs/license_event_id"
+        },
+        "at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "action": {
+          "enum": [
+            "trial_started",
+            "checkout_started",
+            "subscription_activated",
+            "renewed",
+            "seats_changed",
+            "payment_failed",
+            "cancel_requested",
+            "canceled",
+            "expired",
+            "downgraded",
+            "seat_overage_started",
+            "seat_overage_resolved",
+            "enrollment_refused",
+            "data_deleted"
+          ]
+        },
+        "actor": {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "user",
+                "system",
+                "provider"
+              ]
+            },
+            "id": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "The user ID, or the provider's name."
+            }
+          }
+        },
+        "detail": {
+          "type": "object"
+        }
+      }
+    },
+    "LicenseEventList": {
+      "type": "object",
+      "required": [
+        "events"
+      ],
+      "description": "Newest first, at most 200.",
+      "properties": {
+        "events": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/LicenseEvent"
+          }
+        }
+      }
+    },
+    "BillingCheckout": {
+      "type": "object",
+      "required": [
+        "plan",
+        "seats",
+        "currency"
+      ],
+      "additionalProperties": false,
+      "description": "Starts a self-serve Team subscription (PRD CP-30). The provider follows from the currency.",
+      "properties": {
+        "plan": {
+          "$ref": "#/$defs/billing_plan"
+        },
+        "seats": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "currency": {
+          "$ref": "#/$defs/currency"
+        }
+      }
+    },
+    "BillingCheckoutStarted": {
+      "type": "object",
+      "required": [
+        "provider",
+        "checkout_url",
+        "reference"
+      ],
+      "description": "Open checkout_url in the browser to pay. The subscription starts when the provider confirms it.",
+      "properties": {
+        "provider": {
+          "$ref": "#/$defs/billing_provider"
+        },
+        "checkout_url": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/https_url"
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "The provider's transaction or subscription ID."
+        }
+      }
+    },
+    "BillingSeats": {
+      "type": "object",
+      "required": [
+        "seats"
+      ],
+      "additionalProperties": false,
+      "description": "Changes the subscription's seats; the provider prorates.",
+      "properties": {
+        "seats": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        }
+      }
+    },
+    "Invoice": {
+      "type": "object",
+      "required": [
+        "invoice_id",
+        "provider",
+        "status",
+        "amount_minor",
+        "currency",
+        "issued_at"
+      ],
+      "properties": {
+        "invoice_id": {
+          "$ref": "#/$defs/invoice_id"
+        },
+        "provider": {
+          "$ref": "#/$defs/billing_provider"
+        },
+        "number": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "status": {
+          "enum": [
+            "paid",
+            "open",
+            "void"
+          ]
+        },
+        "amount_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "currency": {
+          "$ref": "#/$defs/currency"
+        },
+        "issued_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "url": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/https_url",
+          "description": "When the provider gives a lasting link; otherwise use :download."
+        }
+      }
+    },
+    "InvoiceList": {
+      "type": "object",
+      "required": [
+        "invoices"
+      ],
+      "description": "Newest first.",
+      "properties": {
+        "invoices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Invoice"
+          }
+        }
+      }
+    },
+    "InvoiceDownload": {
+      "type": "object",
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "url": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/https_url"
+        },
+        "expires_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        }
+      }
+    },
+    "credential_id": {
+      "type": "string",
+      "pattern": "^crd_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "description": "Derived from the fingerprint: crd_ and the first 128 bits of its HMAC in Crockford base32, so the same secret always has the same ID."
+    },
+    "credential_status": {
+      "enum": [
+        "exposed",
+        "rotated",
+        "still_present",
+        "ignored"
+      ],
+      "description": "exposed: seen and not marked. rotated: marked rotated and not seen since. still_present: marked rotated, but a device found the old value after that (copies remain). ignored: marked as not a live secret, such as a test value."
+    },
+    "credential_source": {
+      "enum": [
+        "action_argument",
+        "file_write",
+        "tool_output",
+        "memory_file",
+        "agent_config",
+        "mcp_config",
+        "skill",
+        "repo"
+      ],
+      "description": "Where devices found the secret, as content_finding.source."
+    },
+    "Credential": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "credential_id",
+        "fingerprint",
+        "secret_type",
+        "status",
+        "devices",
+        "people",
+        "findings",
+        "first_seen_at",
+        "last_seen_at",
+        "sources",
+        "detectors"
+      ],
+      "description": "One leaked secret, tracked across devices by its organization-keyed fingerprint (PRD SCAN-15). Never the secret or where it sits on disk.",
+      "properties": {
+        "credential_id": {
+          "$ref": "#/$defs/credential_id"
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^hmac-sha256:[0-9a-f]{64}$"
+        },
+        "secret_type": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]{1,64}$"
+        },
+        "status": {
+          "$ref": "#/$defs/credential_status"
+        },
+        "devices": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Devices that found it."
+        },
+        "people": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "People those devices are enrolled for."
+        },
+        "findings": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "first_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "last_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "sources": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/credential_source"
+          }
+        },
+        "detectors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+/[a-z0-9-]+:[a-z0-9-]+$"
+          }
+        },
+        "marked_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "marked_by": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    "CredentialDevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_id",
+        "findings",
+        "last_seen_at",
+        "sources"
+      ],
+      "properties": {
+        "device_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/device_id"
+        },
+        "user_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "findings": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "last_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "sources": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/credential_source"
+          }
+        }
+      }
+    },
+    "CredentialDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "credential_id",
+        "fingerprint",
+        "secret_type",
+        "status",
+        "devices",
+        "people",
+        "findings",
+        "first_seen_at",
+        "last_seen_at",
+        "sources",
+        "detectors",
+        "devices_seen"
+      ],
+      "description": "A credential and the devices that found it, so each copy can be removed after rotating.",
+      "properties": {
+        "credential_id": {
+          "$ref": "#/$defs/credential_id"
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^hmac-sha256:[0-9a-f]{64}$"
+        },
+        "secret_type": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]{1,64}$"
+        },
+        "status": {
+          "$ref": "#/$defs/credential_status"
+        },
+        "devices": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Devices that found it."
+        },
+        "people": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "People those devices are enrolled for."
+        },
+        "findings": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "first_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "last_seen_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "sources": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/credential_source"
+          }
+        },
+        "detectors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+/[a-z0-9-]+:[a-z0-9-]+$"
+          }
+        },
+        "marked_at": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+        },
+        "marked_by": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "devices_seen": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CredentialDevice"
+          },
+          "description": "Each device that found it, most recent first."
+        }
+      }
+    },
+    "CredentialList": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "credentials"
+      ],
+      "properties": {
+        "credentials": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "$ref": "#/$defs/Credential"
+          }
+        }
+      }
+    },
+    "CredentialMark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "description": "Mark a credential rotated (it was revoked and replaced), ignored (not a live secret) or exposed again (undo).",
+      "properties": {
+        "status": {
+          "enum": [
+            "rotated",
+            "ignored",
+            "exposed"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    }
+  }
+}

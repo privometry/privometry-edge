@@ -1,0 +1,9 @@
+{
+  "type": "jira",
+  "name": "Security board",
+  "config": {
+    "base_url": "https://acme.atlassian.net",
+    "email": "secbot@acme.example",
+    "project_key": "SEC"
+  }
+}

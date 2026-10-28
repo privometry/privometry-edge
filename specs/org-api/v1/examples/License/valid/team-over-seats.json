@@ -1,0 +1,74 @@
+{
+  "edition": "team",
+  "state": "active",
+  "features": {
+    "local_guard": true,
+    "scanner": true,
+    "local_timeline": true,
+    "community_feed": true,
+    "cloud_sync": true,
+    "shared_policies": true,
+    "inventory": true,
+    "findings_basic": true,
+    "approvals": true,
+    "curated_feed": true,
+    "ticketing_sync": true,
+    "sso_scim": false,
+    "mdm_rollout": false,
+    "managed_hooks": false,
+    "tamper_detection": false,
+    "governance": false,
+    "policy_simulation": false,
+    "kill_switch": false,
+    "audit_replay": false,
+    "compliance_reports": false,
+    "siem_export": false,
+    "mcp_gateway": false,
+    "self_hosted": false
+  },
+  "limits": {
+    "seats": 12,
+    "retention_days": 90,
+    "events_per_day": null,
+    "devices_per_user": 3
+  },
+  "valid_from": "2026-10-01T00:00:00.000Z",
+  "valid_until": "2026-11-01T00:00:00.000Z",
+  "grace_days": 15,
+  "grace_ends_at": "2026-11-16T00:00:00.000Z",
+  "seats": {
+    "limit": 12,
+    "active": 14,
+    "counted_at": "2026-10-28T00:10:00.000Z",
+    "overage_since": "2026-10-20T00:10:00.000Z",
+    "overage_grace_ends_at": "2026-11-04T00:10:00.000Z",
+    "enrollment_blocked": false
+  },
+  "subscription": {
+    "provider": "razorpay",
+    "status": "active",
+    "plan": "team_monthly",
+    "seats": 12,
+    "currency": "INR",
+    "current_period_end": "2026-11-01T00:00:00.000Z",
+    "cancel_at_period_end": false
+  },
+  "offers": [
+    {
+      "plan": "team_monthly",
+      "interval": "month",
+      "currency": "INR",
+      "unit_amount_minor": 99900,
+      "min_seats": 5,
+      "provider": "razorpay"
+    },
+    {
+      "plan": "team_annual",
+      "interval": "year",
+      "currency": "USD",
+      "unit_amount_minor": 24000,
+      "min_seats": 5,
+      "provider": "paddle"
+    }
+  ]
+}

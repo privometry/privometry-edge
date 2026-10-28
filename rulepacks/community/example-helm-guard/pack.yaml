@@ -1,0 +1,12 @@
+schema: privometry.rulepack/v1
+id: example/helm-guard
+version: 1.0.0
+title: Helm and node guard (example)
+description: An example community pack. Asks before an agent uninstalls a Helm release or drains a Kubernetes node. Publishers copy this folder, change the publisher and name, and sign it with privometry packs sign.
+maintainers:
+  - { name: Example publisher, url: https://example.com }
+license: Apache-2.0
+min_sensor_version: 0.6.0
+categories: [catastrophic]
+default_fail_modes: { catastrophic: ask }
+keywords: [kubernetes, helm, example]

@@ -1,0 +1,465 @@
+openapi: 3.1.0
+info:
+  title: Privometry edge API
+  version: 1.0.0-draft.9
+  summary: Everything an enrolled Privometry sensor needs from the cloud.
+  description: |
+    Regional API used by the edge daemon. Every endpoint except enrollment,
+    the community risk feed and adapter definitions requires mutual TLS with
+    the device certificate issued at enrollment.
+
+    Rules for every endpoint:
+    - Changes within /edge/v1 are additive only.
+    - Errors are RFC 9457 problem details (application/problem+json) with a
+      stable type URI per error.
+    - 429 responses carry Retry-After; the edge backs off and keeps buffering.
+    - Every POST accepts an Idempotency-Key header.
+    - Signed documents (bundle, risk feed, adapter set) are DSSE envelopes the
+      edge verifies with its key set before use; TLS alone is never trusted.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://{region}.api.privometry.dev/edge/v1
+    description: Regional SaaS endpoint. The host name is a placeholder until it is registered.
+    variables:
+      region:
+        default: in
+        enum: [in]
+        description: India at launch; more regions on demand.
+
+security:
+  - deviceCertificate: []
+
+tags:
+  - name: enrollment
+  - name: policy
+  - name: telemetry
+  - name: approvals
+  - name: feeds
+
+paths:
+  /enroll:
+    post:
+      operationId: enroll
+      tags: [enrollment]
+      summary: Exchange a one-time enrollment token and a CSR for a device certificate.
+      description: |
+        The certificate is for the CSR's key (Ed25519 or P-256), valid 30 days,
+        for client authentication only. Its subject common name is the
+        device_id, and it carries the URI SANs urn:privometry:device:<device_id>
+        and urn:privometry:org:<org_id>. certificate holds the leaf, then the
+        device CA. A retry with the same token and the same CSR key returns the
+        same device even after the token's last use, so a lost response does not
+        strand the device.
+
+        Enrollment is refused (403) with not-entitled when the organization's
+        edition has no cloud_sync, and with seat-limit-reached when more of its
+        developers were active than it has seats for longer than the seat grace
+        period (entitlements/v1 feature-registry editions). Devices already
+        enrolled keep working.
+      security:
+        - enrollmentToken: []
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/EnrollRequest'
+      responses:
+        '201':
+          description: Enrolled. The sensor keeps key_set (the region's policy and license keys), fetches its first bundle next and uploads events buffered since install.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/EnrollResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /certs:renew:
+    post:
+      operationId: renewCertificate
+      tags: [enrollment]
+      summary: Renew the device certificate before it expires (30-day lifetime).
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/RenewRequest'
+      responses:
+        '200':
+          description: New certificate.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/RenewResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /bundle:
+    get:
+      operationId: getBundle
+      tags: [policy]
+      summary: Latest signed policy bundle, with entitlements and catalog.
+      description: |
+        The bundle for the device's workspace when that workspace has policies
+        of its own, else the organization's; both carry the organization's
+        policies and share version numbers, so a device that moves between
+        workspaces never sees a version go back. A bundle within 7 days of
+        expiring is re-signed as a new version on request. The device verifies
+        the envelope with the policy key from the key set it got at enrollment,
+        checks org_id is its own, refuses a version lower than the one it
+        holds and a bundle that has already expired, and keeps enforcing the
+        bundle it holds when a new one is refused.
+      parameters:
+        - name: current
+          in: query
+          description: The bundle_id the device holds.
+          schema:
+            $ref: '../../common/v1/common.schema.json#/$defs/bundle_id'
+      responses:
+        '200':
+          description: DSSE envelope with payloadType application/vnd.privometry.bundle+json, signed with the regional policy key.
+          content:
+            application/json:
+              schema:
+                $ref: '../../common/v1/dsse.schema.json'
+        '304':
+          description: The device already holds the latest bundle.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /events:batch:
+    post:
+      operationId: uploadEvents
+      tags: [telemetry]
+      summary: Upload up to 500 redacted events or 1 MB gzip.
+      description: |
+        Events go up in device_seq order and are stored as sent. Before upload
+        the sensor sets org_id and device.device_id to its enrollment's,
+        user.user_id to the person it is enrolled for (if any), and replaces
+        user.local_user with hmac-sha256:<hex>, keyed by the organization's
+        hash key, marking it hashed in redaction.
+
+        The server accepts, counts as a duplicate (an event_id it already has),
+        or rejects each event. Rejected events are dropped by the sensor and
+        never retried; their problem types are:
+        - event-invalid: not a valid privometry.event/v1 document.
+        - event-not-from-device: org_id or device.device_id is not the
+          certificate's.
+        - secret-detected: a field holds what looks like an unredacted secret
+          (the server applies the same recognizers as the sensor's redaction).
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: Content-Encoding
+          in: header
+          required: true
+          schema:
+            const: gzip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/EventsBatch'
+      responses:
+        '200':
+          description: Per-event outcome. Duplicates count as delivered; rejected events are dropped, not retried.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/EventsBatchResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /inventory:
+    post:
+      operationId: uploadInventory
+      tags: [telemetry]
+      summary: Full scan snapshot; replaces the device's previous inventory.
+      description: |
+        The sensor sends one after enrolling, once a day, and when a rescan
+        command asks. Items carry names, versions, tiers and, for MCP servers,
+        the package or host; never command lines, paths or values.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/InventorySnapshot'
+      responses:
+        '202':
+          description: Accepted for processing.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/InventoryReceipt'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /heartbeat:
+    post:
+      operationId: heartbeat
+      tags: [telemetry]
+      summary: Sensor health every 60 seconds; the response carries commands such as the kill switch.
+      description: |
+        The server records the device's last contact, sensor version, bundle
+        and hook state; a device without a heartbeat for a day is stale. When
+        the device does not report the newest bundle for it, the response
+        carries refresh_bundle until the device acknowledges it, so a policy
+        change reaches devices within one heartbeat.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/Heartbeat'
+      responses:
+        '200':
+          description: Commands to apply and when to send the next heartbeat.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/HeartbeatResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /approvals:
+    post:
+      operationId: createApproval
+      tags: [approvals]
+      summary: Route an ask decision to Slack or Teams.
+      description: |
+        Sent in the background after the sensor has already answered the
+        hook with deny and a message (privometry-oss
+        docs/spikes/remote-approvals.md): a hook cannot wait for a person. The
+        sensor long-polls the approval; if it is approved, the next attempt of
+        the same action in the same session is allowed once. No answer by
+        expires_at is timeout, which denies.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/ApprovalCreate'
+      responses:
+        '201':
+          description: Approval created; poll it until it is decided or times out.
+          headers:
+            Location:
+              description: URL of the new approval.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/Approval'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /approvals/{approval_id}:
+    get:
+      operationId: getApproval
+      tags: [approvals]
+      summary: Long-poll an approval for up to 30 seconds.
+      parameters:
+        - name: approval_id
+          in: path
+          required: true
+          schema:
+            $ref: '../../common/v1/common.schema.json#/$defs/approval_id'
+        - name: wait
+          in: query
+          description: Seconds to hold the request open while the approval is pending.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 30
+            default: 0
+      responses:
+        '200':
+          description: Current state. A pending approval returned after wait means poll again.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/Approval'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /riskfeed:
+    get:
+      operationId: getRiskFeed
+      tags: [feeds]
+      summary: Signed risk feed snapshot or delta since a sequence.
+      description: The community feed needs no authentication; the curated feed needs an enrolled device with the curated_feed entitlement.
+      security:
+        - {}
+        - deviceCertificate: []
+      parameters:
+        - name: feed
+          in: query
+          required: true
+          schema:
+            enum: [community, curated]
+        - name: since
+          in: query
+          description: The sequence the device holds; omit for a full snapshot.
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: DSSE envelope with payloadType application/vnd.privometry.riskfeed+json, signed with the feed key. A delta when since is recent enough, otherwise a snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '../../common/v1/dsse.schema.json'
+        '304':
+          description: Nothing newer than since.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /adapters:
+    get:
+      operationId: getAdapters
+      tags: [feeds]
+      summary: Signed adapter definition set newer than set_version.
+      security:
+        - {}
+      parameters:
+        - name: since
+          in: query
+          description: The set_version the device holds.
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: DSSE envelope with payloadType application/vnd.privometry.adapters+json, signed with the release key.
+          content:
+            application/json:
+              schema:
+                $ref: '../../common/v1/dsse.schema.json'
+        '304':
+          description: The device already holds the latest set.
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+components:
+  securitySchemes:
+    deviceCertificate:
+      type: mutualTLS
+      description: Client certificate issued by POST /enroll and renewed by POST /certs:renew.
+    enrollmentToken:
+      type: http
+      scheme: bearer
+      description: One-time enrollment token. The request body carries it too, so MDM tools that cannot set headers still work.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: Unique per logical request; the server returns the first result for retries within 24 hours.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+
+  headers:
+    RetryAfter:
+      description: Seconds to wait before retrying.
+      schema:
+        type: integer
+        minimum: 1
+
+  responses:
+    BadRequest:
+      description: The request does not match the contract.
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'messages.schema.json#/$defs/Problem'
+    Unauthorized:
+      description: Missing, expired or revoked credentials.
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'messages.schema.json#/$defs/Problem'
+    Forbidden:
+      description: Authenticated but not allowed, for example a missing entitlement or a paused license.
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'messages.schema.json#/$defs/Problem'
+    NotFound:
+      description: No such resource for this device.
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'messages.schema.json#/$defs/Problem'
+    Conflict:
+      description: The enrollment token was already used.
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'messages.schema.json#/$defs/Problem'
+    PayloadTooLarge:
+      description: Over 500 events or 1 MB compressed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'messages.schema.json#/$defs/Problem'
+    TooManyRequests:
+      description: Rate limited; keep buffering and retry after the given delay.
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'messages.schema.json#/$defs/Problem'
+    ServerError:
+      description: Retry with backoff.
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'messages.schema.json#/$defs/Problem'

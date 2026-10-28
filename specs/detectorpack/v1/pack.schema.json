@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/detectorpack/v1/pack.schema.json",
+  "title": "Privometry detector pack manifest v1",
+  "description": "pack.yaml at the root of a detector pack folder. The folder also holds detectors/*.yaml (privometry.detectors/v1) and README.md. Detector packs use the same layout, signing and trust model as rule packs, but hold detectors instead of rules: detectors run in the Go extractors and produce policy facts and content findings; Cedar only sees the facts. A pack whose samples do not all pass cannot be released. Strict.",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "title",
+    "description",
+    "maintainers",
+    "license",
+    "min_sensor_version",
+    "categories"
+  ],
+  "properties": {
+    "schema": {
+      "const": "privometry.detectorpack/v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 100,
+      "description": "<publisher>/<name>, for example privometry/credentials. Detectors are referenced as <id>:<detector-id> in content_finding.detector_id."
+    },
+    "version": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/semver",
+      "description": "A new detector or a wider pattern is a minor change; removing a detector or narrowing what it finds is a major change."
+    },
+    "title": {
+      "$ref": "../../rulepack/v1/pack.schema.json#/properties/title"
+    },
+    "description": {
+      "$ref": "../../rulepack/v1/pack.schema.json#/properties/description"
+    },
+    "maintainers": {
+      "$ref": "../../rulepack/v1/pack.schema.json#/properties/maintainers"
+    },
+    "license": {
+      "$ref": "../../rulepack/v1/pack.schema.json#/properties/license"
+    },
+    "min_sensor_version": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/semver",
+      "description": "Oldest sensor that supports every detector kind and option the pack uses."
+    },
+    "categories": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "detectors.schema.json#/$defs/category"
+      },
+      "description": "Every detector's category must be listed here; the pack test runner checks this."
+    },
+    "homepage": {
+      "$ref": "../../rulepack/v1/pack.schema.json#/properties/homepage"
+    },
+    "keywords": {
+      "$ref": "../../rulepack/v1/pack.schema.json#/properties/keywords"
+    }
+  },
+  "additionalProperties": false
+}

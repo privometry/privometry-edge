@@ -1,0 +1,22 @@
+# New rules start in monitor mode: they record would_verdict and never block.
+schema: privometry.policy/v1
+name: q4-rollout
+defaults:
+  mode: monitor
+rules:
+  - id: ask-package-installs
+    when:
+      action: shell_exec
+      intent: package_install
+    verdict: ask
+    message: Confirm this package install.
+  - id: deny-uploads-to-unknown-hosts
+    category: exfiltration
+    when:
+      action: [shell_exec, network_fetch]
+      intent: network_upload
+    unless:
+      host: ["*.acme.com", "*.amazonaws.com"]
+    verdict: deny
+    message: Uploads go to Acme or AWS hosts only.
+    mode: enforce

@@ -1,0 +1,43 @@
+{
+  "schema": "privometry.detectorpack_set/v1",
+  "set_version": 4,
+  "published_at": "2026-10-24T06:00:00.000Z",
+  "packs": [
+    {
+      "manifest": {
+        "schema": "privometry.detectorpack/v1",
+        "id": "acme/internal-tokens",
+        "version": "0.2.0",
+        "title": "Acme internal tokens",
+        "description": "Acme's own service token format.",
+        "maintainers": [{ "name": "Acme AppSec" }],
+        "license": "Apache-2.0",
+        "min_sensor_version": "0.6.0",
+        "categories": ["credential"]
+      },
+      "detectors": [
+        {
+          "schema": "privometry.detectors/v1",
+          "detectors": [
+            {
+              "id": "service-token",
+              "title": "Acme service token",
+              "category": "credential",
+              "kind": "pattern",
+              "severity": "high",
+              "confidence": "high",
+              "secret_type": "acme_service_token",
+              "applies_to": ["action_argument", "file_write", "memory_file", "agent_config", "repo"],
+              "keywords": ["acme_st_"],
+              "pattern": "\\b(?P<secret>acme_st_[a-f0-9]{32})\\b",
+              "samples": {
+                "match": ["ACME_TOKEN=acme_{{}}st_0123456789abcdef0123456789abcdef"],
+                "no_match": ["acme_st_short"]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

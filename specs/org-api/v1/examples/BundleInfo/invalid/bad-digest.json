@@ -1,0 +1,18 @@
+{
+  "bundle_id": "bnd_01JBF2S4V6X8Z0B2D4F6H8K0N2",
+  "version": 5,
+  "org_id": "org_01JA0000000000000000000001",
+  "reason": "policy_change",
+  "created_at": "2026-10-28T11:30:00.412Z",
+  "expires_at": "2026-11-27T11:30:00.412Z",
+  "sha256": "9c1d",
+  "key_id": "policy:in-1:3b7c1e0a9d2f4e65",
+  "policies": [
+    {
+      "policy_id": "pol_01JBF0Q2S4V6X8Z0B2D4F6H8K0",
+      "name": "q4-rollout",
+      "version": 2
+    }
+  ],
+  "created_by": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+}

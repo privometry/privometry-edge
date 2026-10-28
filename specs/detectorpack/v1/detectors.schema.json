@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/detectorpack/v1/detectors.schema.json",
+  "title": "Privometry detector pack detectors file v1",
+  "description": "A file in a detector pack's detectors/ folder. Detector IDs must be unique across the pack. Patterns use RE2 syntax (no backreferences or lookaround), so the Go edge and Java services (re2j) match the same text. Samples may contain {{}}, which runners remove before matching, so sample credentials are never contiguous in the repository.",
+  "type": "object",
+  "required": [
+    "schema",
+    "detectors"
+  ],
+  "properties": {
+    "schema": {
+      "const": "privometry.detectors/v1"
+    },
+    "detectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/detector"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "category": {
+      "enum": [
+        "injected_instructions",
+        "safety_weakening",
+        "hidden_content",
+        "exfiltration",
+        "credential",
+        "suspicious_tool"
+      ]
+    },
+    "source": {
+      "enum": [
+        "memory_file",
+        "agent_config",
+        "skill",
+        "tool_description",
+        "tool_output",
+        "action_argument",
+        "file_write",
+        "repo"
+      ]
+    },
+    "detector": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "category",
+        "kind",
+        "severity",
+        "confidence",
+        "applies_to",
+        "samples"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "What the finding says, for example GitHub token."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "category": {
+          "$ref": "#/$defs/category"
+        },
+        "kind": {
+          "enum": [
+            "pattern",
+            "entropy",
+            "unicode",
+            "structure"
+          ],
+          "description": "pattern: a regular expression. entropy: values picked by pattern, kept when random enough. unicode: invisible or direction-changing characters. structure: a shape such as an HTML comment or an encoded blob, optionally with a pattern applied inside it."
+        },
+        "severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "confidence": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "secret_type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "maxLength": 64,
+          "description": "Credentials only: the kind reported in secret_detected and action.secret_types, for example github_token."
+        },
+        "injection_level": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "description": "Injected and safety-weakening instructions only: the level this detector contributes to injection_detected. Defaults to the confidence."
+        },
+        "applies_to": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "keywords": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "description": "Cheap substrings checked first, case-insensitively; the pattern runs only on text containing at least one."
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "description": "RE2 regular expression. A named group secret marks the value to fingerprint, mask and test for entropy; otherwise the whole match is used. Use (?i) for case-insensitive matching."
+        },
+        "min_entropy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 8,
+          "description": "entropy detectors: minimum Shannon entropy of the value, in bits per character."
+        },
+        "min_length": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536,
+          "description": "entropy and structure detectors: shortest value or span that counts."
+        },
+        "unicode": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "zero_width",
+              "bidi_control",
+              "tag",
+              "variation_selector",
+              "private_use"
+            ]
+          },
+          "description": "unicode detectors: the character classes to look for."
+        },
+        "structure": {
+          "enum": [
+            "html_comment",
+            "base64_blob",
+            "hex_blob",
+            "whitespace_run",
+            "markdown_image_url"
+          ],
+          "description": "structure detectors: the shape to find. With a pattern, only spans whose content matches the pattern count."
+        },
+        "allow": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "description": "Known example and test values to ignore, compared with the secret value or the whole match."
+        },
+        "samples": {
+          "type": "object",
+          "required": [
+            "match",
+            "no_match"
+          ],
+          "properties": {
+            "match": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              }
+            },
+            "no_match": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Text the detector must and must not fire on. Credential samples are fake but correctly formed."
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "category": {
+                "const": "credential"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "secret_type"
+            ]
+          },
+          "else": {
+            "properties": {
+              "secret_type": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "category": {
+                "enum": [
+                  "injected_instructions",
+                  "safety_weakening"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "injection_level": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "pattern"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "pattern"
+            ],
+            "properties": {
+              "min_entropy": false,
+              "unicode": false,
+              "structure": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "entropy"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "pattern",
+              "min_entropy"
+            ],
+            "properties": {
+              "unicode": false,
+              "structure": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "unicode"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "unicode"
+            ],
+            "properties": {
+              "pattern": false,
+              "min_entropy": false,
+              "structure": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "structure"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "structure"
+            ],
+            "properties": {
+              "min_entropy": false,
+              "unicode": false
+            }
+          }
+        }
+      ]
+    }
+  }
+}

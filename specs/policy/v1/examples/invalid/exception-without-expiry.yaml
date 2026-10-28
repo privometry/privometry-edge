@@ -1,0 +1,12 @@
+schema: privometry.policy/v1
+name: bad
+rules:
+  - id: r1
+    when:
+      action: shell_exec
+      program: terraform
+    verdict: deny
+    message: No.
+exceptions:
+  - rule: privometry/secrets:read-env-file
+    reason: test

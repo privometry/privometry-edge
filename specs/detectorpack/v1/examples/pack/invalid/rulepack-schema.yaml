@@ -1,0 +1,9 @@
+schema: privometry.rulepack/v1
+id: privometry/credentials
+version: 1.0.0
+title: Credentials
+description: A rule pack manifest is not a detector pack manifest.
+maintainers: [{ name: Privometry maintainers }]
+license: Apache-2.0
+min_sensor_version: 0.6.0
+categories: [credential]

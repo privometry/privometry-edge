@@ -1,0 +1,5 @@
+{
+  "name": "GitHub Actions inventory export",
+  "role": "viewer",
+  "expires_in_days": 400
+}

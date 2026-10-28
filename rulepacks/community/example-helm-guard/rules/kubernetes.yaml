@@ -1,0 +1,20 @@
+schema: privometry.rules/v1
+rules:
+  - id: helm-uninstall
+    description: Removing a Helm release deletes everything it installed.
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: helm
+      subcommand: [uninstall, delete]
+    verdict: ask
+    message: This removes a Helm release and everything it installed; confirm it.
+  - id: kubectl-drain
+    description: Draining or cordoning a node moves workloads off it.
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: kubectl
+      subcommand: [drain, cordon]
+    verdict: ask
+    message: This takes a Kubernetes node out of service; confirm it.

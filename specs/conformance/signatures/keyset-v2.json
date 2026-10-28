@@ -1,0 +1,59 @@
+{
+  "issued_at": "2026-10-01T00:00:00.000Z",
+  "keys": [
+    {
+      "keyid": "root:test-a:189610611f0e3652",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "Gz2sSA+zD9M7zDFVKf4F5GBzNZhnRIkExz3wCwIZrfY=",
+      "role": "root"
+    },
+    {
+      "keyid": "root:test-b:9d6e0ee67d68abd0",
+      "not_before": "2026-06-01T00:00:00.000Z",
+      "public_key": "IM/1TvkkuPGwW5cw2p6QCZ6FJ+zi83N4FF5piYLX288=",
+      "role": "root"
+    },
+    {
+      "keyid": "release:test:31954608e6595f7d",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "Gz7Pd2pWMMD6eesyLG4GYCb+88zOm1TlOYkloZ2CbD8=",
+      "role": "release"
+    },
+    {
+      "keyid": "policy:test-in:71b8c0f9f46116b2",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "b3HrKtvxtRssqpeJoY66eqKbx7wvXP8WgaEBgdsGE2I=",
+      "region": "in",
+      "role": "policy"
+    },
+    {
+      "keyid": "policy:test-in-old:241255ab7ef789fd",
+      "not_after": "2026-06-30T00:00:00.000Z",
+      "not_before": "2025-01-01T00:00:00.000Z",
+      "public_key": "GSNviWvxBkE9H27TiBXKn97eLGR89s+nJ/ZUKTeOrC4=",
+      "region": "in",
+      "role": "policy"
+    },
+    {
+      "keyid": "policy:test-in-next:9419733f2ad0108d",
+      "not_before": "2027-01-01T00:00:00.000Z",
+      "public_key": "ndx5UI6h5WN8TKhl5I3aaO8ezYJmzRq7eUe4eR86Pfc=",
+      "region": "in",
+      "role": "policy"
+    },
+    {
+      "keyid": "feed:test:f959987245a25fcc",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "9cGr1N5cVP7vHpvCZ7DapAhq+7fLtMsk2pOTB8JeYNY=",
+      "role": "feed"
+    },
+    {
+      "keyid": "license:test:d0c6eb55271105f3",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "A7lzf482TJWr3V/XAY4vYfrMkAyOHSF38Kq6HEiLIz4=",
+      "role": "license"
+    }
+  ],
+  "schema": "privometry.keyset/v1",
+  "version": 2
+}

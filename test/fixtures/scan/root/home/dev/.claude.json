@@ -1,0 +1,26 @@
+{
+  "numStartups": 12,
+  "claudeCodeFirstTokenDate": "2026-01-02T10:00:00.000Z",
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "fake-literal-token-value-1234"
+      }
+    },
+    "aws-docs": {
+      "command": "uvx",
+      "args": [
+        "awslabs.aws-documentation-mcp-server==1.1.2"
+      ],
+      "env": {
+        "AWS_ACCESS_KEY_ID": "AKIAIOSFODNN7EXAMPLE",
+        "AWS_REGION": "ap-south-1"
+      }
+    }
+  }
+}

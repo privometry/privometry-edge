@@ -1,0 +1,15 @@
+# ~/.privometry/policy.yaml: a developer tunes built-in rules for their own machine.
+schema: privometry.policy/v1
+name: my-laptop
+defaults:
+  unmatched: allow
+overrides:
+  privometry/exfiltration:curl-upload:
+    mode: monitor
+  privometry/secrets:read-ssh-key:
+    verdict: deny
+    message: Never let an agent read SSH keys on this laptop.
+exceptions:
+  - rule: privometry/core-catastrophic:docker-prune
+    reason: I prune local images daily
+    expires_at: "2026-11-30T23:59:59.999Z"

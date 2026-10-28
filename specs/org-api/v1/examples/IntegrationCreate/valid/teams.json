@@ -1,0 +1,6 @@
+{
+  "type": "teams",
+  "name": "Security approvals",
+  "secret": "https://prod-01.westus.logic.azure.com/workflows/abc/triggers/manual/paths/invoke",
+  "config": {}
+}

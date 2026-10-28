@@ -1,0 +1,110 @@
+# Codex CLI. Based on documentation only; replace with recorded fixtures before release.
+schema: privometry.adapter/v1
+agent: codex_cli
+display_name: Codex CLI
+versions: ">=0.14.0 <1.0.0"
+verified: []
+detect:
+  binaries: [codex]
+  processes: [codex]
+  version_cmd: [codex, --version]
+env_overrides:
+  - var: CODEX_HOME
+    replaces: "~/.codex"
+config_tiers:
+  - tier: user
+    format: toml
+    holds: [settings, permissions, mcp_servers, hooks]
+    paths: { any: ["~/.codex/config.toml"] }
+  - tier: user
+    format: json
+    holds: [hooks]
+    paths: { any: ["~/.codex/hooks.json"] }
+  - tier: project
+    format: toml
+    holds: [settings, mcp_servers, hooks]
+    paths: { any: [".codex/config.toml"] }
+    requires_trust: true
+  - tier: project
+    format: json
+    holds: [hooks]
+    paths: { any: [".codex/hooks.json"] }
+    requires_trust: true
+  - tier: managed
+    format: toml
+    holds: [settings, permissions, hooks]
+    paths:
+      macos: ["/etc/codex/requirements.toml"]
+      linux: ["/etc/codex/requirements.toml"]
+      windows: ["%ProgramData%\\OpenAI\\Codex\\requirements.toml"]
+  - tier: user
+    format: starlark
+    holds: [rules]
+    paths: { any: ["~/.codex/rules/*.rules"] }
+mcp_sources:
+  - tier: user
+    format: toml
+    paths: { any: ["~/.codex/config.toml"] }
+    pointer: /mcp_servers
+hooks:
+  registration: codex_hooks
+  install:
+    free:
+      tier: user
+      paths: { any: ["~/.codex/hooks.json"] }
+    enterprise:
+      tier: managed
+      paths:
+        macos: ["/etc/codex/requirements.toml"]
+        linux: ["/etc/codex/requirements.toml"]
+        windows: ["%ProgramData%\\OpenAI\\Codex\\requirements.toml"]
+      lock: { key: allow_managed_hooks_only, value: true }
+  timeout_seconds: 10
+  fail_closed_option: null
+  trust:
+    required: true
+    tiers: [user, project]
+    instructions: Open Codex, run /hooks and trust the Privometry hook once.
+  events:
+    - name: PreToolUse
+      role: pre_tool
+      matcher: ".*"
+      verdicts: [allow, deny]
+      fallback: { ask: deny }
+      request:
+        session_id: /session_id
+        tool_use_id: /tool_use_id
+        tool_name: /tool_name
+        tool_input: /tool_input
+        cwd: /cwd
+        permission_mode: /permission_mode
+      responses:
+        allow: { exit_code: 0, stdout: null }
+        deny:
+          exit_code: 0
+          stdout:
+            hookSpecificOutput:
+              hookEventName: PreToolUse
+              permissionDecision: deny
+              permissionDecisionReason: "{message}"
+    - name: SessionStart
+      role: session_start
+      verdicts: []
+      request: { session_id: /session_id, cwd: /cwd }
+      responses:
+        none: { exit_code: 0, stdout: null }
+tool_kinds:
+  Bash: shell_exec
+  apply_patch: file_write
+  "mcp__*": mcp_call
+  spawn_agent: subagent_spawn
+  "*": other
+tool_targets:
+  Bash: { command: /command }
+  apply_patch: { patch: /command }
+mcp_tools:
+  name_template: "mcp__{server}__{tool}"
+posture_checks: [auto_approve_mode, sandbox_disabled, unapproved_mcp_server, secret_in_config]
+notes:
+  - Codex hooks fail open on crash or timeout and cannot ask; Privometry sends deny with a message for ask verdicts.
+  - Hosted tools such as web search are not hookable.

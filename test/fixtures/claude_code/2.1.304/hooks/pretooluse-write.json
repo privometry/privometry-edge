@@ -1,0 +1,17 @@
+{
+  "session_id": "b36203ed-0765-4152-bace-3a9ee080ad41",
+  "transcript_path": "/home/dev/.claude/projects/-home-dev-acme-api/b36203ed-0765-4152-bace-3a9ee080ad41.jsonl",
+  "cwd": "/home/dev/acme-api",
+  "prompt_id": "768f4e66-bee7-4ff0-92a5-643ef304ed67",
+  "permission_mode": "default",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "/home/dev/acme-api/out.txt",
+    "content": "done"
+  },
+  "tool_use_id": "toolu_01YRitbopzkeKKjneuQUXfj2"
+}

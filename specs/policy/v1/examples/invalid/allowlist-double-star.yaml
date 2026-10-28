@@ -1,0 +1,6 @@
+schema: privometry.policy/v1
+name: web-app
+allowlist:
+  - detectors: [privometry/credentials:*]
+    paths: [test/**/fixtures]
+    reason: Fake keys in tests

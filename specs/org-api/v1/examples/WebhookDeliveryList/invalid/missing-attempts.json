@@ -1,0 +1,14 @@
+{
+  "deliveries": [
+    {
+      "delivery_id": "whd_01JBK4N6Q8S0V2W4Y6A8C0E2G4",
+      "event_id": "whe_01JBK4N6Q8S0V2W4Y6A8C0E2G5",
+      "event_type": "finding.opened",
+      "status": "delivered",
+      "created_at": "2026-10-28T09:14:02.900Z",
+      "last_attempt_at": "2026-10-28T09:14:03.100Z",
+      "delivered_at": "2026-10-28T09:14:03.120Z",
+      "response_status": 200
+    }
+  ]
+}

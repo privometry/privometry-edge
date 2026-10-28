@@ -1,0 +1,11 @@
+schema: privometry.detectorpack/v1
+id: example/service-tokens
+version: 1.0.0
+title: Example service tokens
+description: An example community detector pack that finds the token format of a fictional service. Publishers copy this folder for their own token formats.
+maintainers:
+  - { name: Example publisher, url: https://example.com }
+license: Apache-2.0
+min_sensor_version: 0.6.0
+categories: [credential]
+keywords: [tokens, example]

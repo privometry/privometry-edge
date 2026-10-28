@@ -1,0 +1,5 @@
+schema: privometry.policy/v1
+name: web-app
+allowlist:
+  - detectors: [privometry/injection:*]
+    reason: Too noisy

@@ -1,0 +1,1019 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/event-schema/v1/event.schema.json",
+  "title": "Privometry event v1",
+  "description": "One envelope for every event the edge, stdio shim and MCP gateway emit. The type field says which optional sections are present. Events are written locally first and uploaded later, so each is complete on its own. Maximum size 32 KB. Consumers ignore unknown fields.",
+  "type": "object",
+  "required": [
+    "schema",
+    "event_id",
+    "type",
+    "occurred_at",
+    "device_seq",
+    "device",
+    "user",
+    "redaction"
+  ],
+  "properties": {
+    "schema": {
+      "const": "privometry.event/v1"
+    },
+    "event_id": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/event_id"
+    },
+    "type": {
+      "enum": [
+        "action",
+        "config_change",
+        "integrity",
+        "fail_mode",
+        "inventory",
+        "prompt",
+        "content_finding"
+      ]
+    },
+    "occurred_at": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/timestamp"
+    },
+    "device_seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Per-device counter that only increases; gaps reveal lost or deleted events."
+    },
+    "org_id": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/org_id"
+    },
+    "device": {
+      "$ref": "#/$defs/device"
+    },
+    "user": {
+      "$ref": "#/$defs/user"
+    },
+    "agent": {
+      "$ref": "#/$defs/agent"
+    },
+    "repo": {
+      "$ref": "#/$defs/repo"
+    },
+    "action": {
+      "$ref": "#/$defs/action"
+    },
+    "mcp": {
+      "$ref": "#/$defs/mcp"
+    },
+    "context": {
+      "$ref": "#/$defs/context"
+    },
+    "decision": {
+      "$ref": "#/$defs/decision"
+    },
+    "config": {
+      "$ref": "#/$defs/config"
+    },
+    "integrity": {
+      "$ref": "#/$defs/integrity"
+    },
+    "fail_mode": {
+      "$ref": "#/$defs/fail_mode"
+    },
+    "inventory": {
+      "$ref": "#/$defs/inventory"
+    },
+    "prompt": {
+      "$ref": "#/$defs/prompt"
+    },
+    "content_finding": {
+      "$ref": "#/$defs/content_finding"
+    },
+    "redaction": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/redaction_map"
+    },
+    "ext": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/ext"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "prompt"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "agent",
+          "prompt"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "action"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "agent",
+          "action",
+          "context",
+          "decision"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "config_change"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "agent",
+          "config"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "integrity"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "integrity"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "fail_mode"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "agent",
+          "action",
+          "fail_mode"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "inventory"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "inventory"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "content_finding"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "content_finding"
+        ]
+      }
+    },
+    {
+      "description": "A finding in something an agent is doing carries the agent and the action.",
+      "if": {
+        "required": [
+          "content_finding"
+        ],
+        "properties": {
+          "content_finding": {
+            "required": [
+              "source"
+            ],
+            "properties": {
+              "source": {
+                "enum": [
+                  "action_argument",
+                  "file_write",
+                  "tool_output"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "agent",
+          "action"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "mcp_call"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "mcp"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "device": {
+      "type": "object",
+      "required": [
+        "device_id",
+        "os",
+        "os_version",
+        "arch",
+        "sensor_version"
+      ],
+      "properties": {
+        "device_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/device_id"
+        },
+        "os": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/os"
+        },
+        "os_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "arch": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/arch"
+        },
+        "sensor_version": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/semver"
+        }
+      }
+    },
+    "user": {
+      "type": "object",
+      "required": [
+        "local_user"
+      ],
+      "properties": {
+        "local_user": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "OS username; clear locally, hashed (sha256:<hex>) in the cloud."
+        },
+        "user_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/user_id"
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "required": [
+        "product",
+        "session_id"
+      ],
+      "properties": {
+        "product": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "session_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/session_id",
+          "description": "Privometry session ID, assigned by the daemon the first time it sees an agent session."
+        },
+        "native_session_id": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "The agent's own session identifier (for example a Claude Code UUID or a Cursor conversation_id). Used to group hook calls into one Privometry session."
+        },
+        "parent_session_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/session_id",
+          "description": "Set for subagents."
+        },
+        "pattern": {
+          "enum": [
+            "interactive",
+            "event_triggered",
+            "scheduled",
+            "autonomous",
+            "orchestrated"
+          ]
+        }
+      }
+    },
+    "repo": {
+      "type": "object",
+      "properties": {
+        "remote": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Normalized remote without scheme or credentials, for example github.com/acme/api."
+        },
+        "root_hash": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "branch": {
+          "type": "string",
+          "maxLength": 256
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/action_kind"
+        },
+        "tool_name": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "The agent's own tool name, for example Bash."
+        },
+        "tool_use_id": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "The agent's ID for this tool call. The daemon dedupes on it when two hooks report the same call."
+        },
+        "target": {
+          "type": "string",
+          "maxLength": 16384,
+          "description": "Command, path, URL or tool arguments, at the privacy level recorded in redaction."
+        },
+        "intent": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/intent"
+          },
+          "description": "Facts from the Go extractors."
+        },
+        "path_class": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/path_class"
+        },
+        "categories": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/rule_category"
+          }
+        },
+        "risk": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/risk"
+        },
+        "secret_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/secret_type"
+          },
+          "description": "Kinds of credential the detectors found in this action's arguments or written content, for example github_token. Never the values."
+        }
+      }
+    },
+    "mcp": {
+      "type": "object",
+      "required": [
+        "server_name",
+        "transport",
+        "tool"
+      ],
+      "properties": {
+        "server_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/mcp_server_id"
+        },
+        "server_name": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "transport": {
+          "enum": [
+            "stdio",
+            "http"
+          ]
+        },
+        "tool": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "catalog_status": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/catalog_status"
+        },
+        "risk_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "untrusted_input_seen"
+      ],
+      "properties": {
+        "untrusted_input_seen": {
+          "type": "boolean"
+        },
+        "untrusted_sources": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "web_fetch",
+              "repo_file",
+              "mcp_response",
+              "issue_or_pr_text",
+              "other"
+            ]
+          }
+        },
+        "cwd_scope": {
+          "enum": [
+            "repo",
+            "home",
+            "system",
+            "other"
+          ]
+        },
+        "injection_seen": {
+          "type": "boolean",
+          "description": "True once the session has read content a detector flagged as injected instructions; stays true for the rest of the session."
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": [
+        "verdict",
+        "source",
+        "mode",
+        "latency_ms"
+      ],
+      "properties": {
+        "verdict": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/verdict",
+          "description": "What was applied. In monitor mode this is allow and would_verdict records the policy result."
+        },
+        "would_verdict": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/verdict"
+        },
+        "native_verdict": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/verdict",
+          "description": "What was sent to the agent when it cannot express verdict, for example deny sent to Codex for an ask."
+        },
+        "source": {
+          "enum": [
+            "policy",
+            "auto_approve",
+            "fail_mode",
+            "kill_switch"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "enforce",
+            "monitor"
+          ]
+        },
+        "rule_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^([a-z0-9-]+/[a-z0-9-]+|[a-z0-9-]+):[a-z0-9-]+$"
+          },
+          "description": "Rules that determined the verdict, as <pack-or-policy>:<rule-id>."
+        },
+        "bundle_id": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/bundle_id"
+        },
+        "policy_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "latency_ms": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/duration_ms"
+        },
+        "user_response": {
+          "enum": [
+            "approved",
+            "denied",
+            "timeout"
+          ]
+        },
+        "responder": {
+          "enum": [
+            "developer",
+            "approver"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "monitor"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "would_verdict"
+            ],
+            "properties": {
+              "verdict": {
+                "const": "allow"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "user_response"
+            ]
+          },
+          "then": {
+            "properties": {
+              "verdict": {
+                "const": "ask"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "config": {
+      "type": "object",
+      "required": [
+        "change",
+        "tier",
+        "path"
+      ],
+      "properties": {
+        "change": {
+          "enum": [
+            "created",
+            "modified",
+            "deleted"
+          ]
+        },
+        "tier": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/config_tier"
+        },
+        "path": {
+          "type": "string",
+          "maxLength": 4096,
+          "description": "Config file path, at its privacy level."
+        },
+        "path_class": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/path_class"
+        },
+        "holds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "settings",
+              "permissions",
+              "hooks",
+              "mcp_servers",
+              "skills",
+              "plugins",
+              "instructions",
+              "rules",
+              "memory",
+              "other"
+            ]
+          },
+          "description": "What kinds of configuration changed. instructions, rules and memory are agents' memory and instruction files."
+        },
+        "sha256_before": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/sha256"
+        },
+        "sha256_after": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/sha256"
+        },
+        "detected_by": {
+          "enum": [
+            "file_watcher",
+            "agent_hook",
+            "scan"
+          ]
+        },
+        "changed_by": {
+          "enum": [
+            "person",
+            "agent",
+            "unknown"
+          ],
+          "description": "Memory and instruction files: who made the change. agent when an agent session wrote the file through a hooked tool shortly before the change was seen; person otherwise; unknown when Privometry cannot tell."
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "required": [
+        "check"
+      ],
+      "properties": {
+        "check": {
+          "enum": [
+            "hook_removed",
+            "hook_modified",
+            "config_hash_mismatch",
+            "sensor_binary_modified",
+            "sequence_gap",
+            "hooks_bypassed",
+            "hooks_disabled",
+            "hooks_silent",
+            "sensor_stopped",
+            "sensor_uninstalled",
+            "other"
+          ],
+          "description": "hooks_bypassed: a running agent was started with a flag from its adapter's detect.bypass_flags, which skips its permission prompts or its hooks; detail names the flag, never the command line. hooks_disabled: a config file turns the agent's hooks off (adapter hooks.disable_settings) or turns Privometry's own entry off. hooks_silent: an agent has run for minutes and its hooks never called Privometry; reason says why when it is known. sensor_stopped: privometryd was down for more than five minutes outside a shutdown or reboot (down_seconds, actions_while_down). sensor_uninstalled: privometry daemon uninstall removed the sensor."
+        },
+        "reason": {
+          "enum": [
+            "setting",
+            "config_dir_override",
+            "untrusted_hook",
+            "killed",
+            "stopped",
+            "unknown"
+          ],
+          "description": "Why the check fired, when it can be known. hooks_silent: setting (a setting turns hooks off), config_dir_override (the agent runs with a config folder from one of its env_overrides that has no Privometry hook), untrusted_hook (the agent has not approved the hook), or unknown. sensor_stopped: killed (no stop marker) or stopped (a graceful stop)."
+        },
+        "down_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "sensor_stopped: how long privometryd was down."
+        },
+        "actions_while_down": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "sensor_stopped: how many decisions privometry-hook made with its fail modes while privometryd was down: the evidence that agents were used while it was off."
+        },
+        "agent_product": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+        },
+        "tier": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/config_tier"
+        },
+        "path": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "expected_sha256": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/sha256"
+        },
+        "observed_sha256": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/sha256"
+        },
+        "detail": {
+          "type": "string",
+          "maxLength": 1024
+        }
+      }
+    },
+    "fail_mode": {
+      "type": "object",
+      "required": [
+        "reason",
+        "mode",
+        "evaluated_by"
+      ],
+      "properties": {
+        "reason": {
+          "enum": [
+            "daemon_unavailable",
+            "policy_load_failed",
+            "timeout",
+            "internal_error"
+          ]
+        },
+        "category": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/rule_category"
+        },
+        "mode": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/fail_mode"
+        },
+        "evaluated_by": {
+          "enum": [
+            "hook_client",
+            "daemon"
+          ],
+          "description": "hook_client means the built-in closed-category matcher answered because the daemon was unreachable."
+        },
+        "elapsed_ms": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/duration_ms"
+        }
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "required": [
+        "change",
+        "item"
+      ],
+      "properties": {
+        "change": {
+          "enum": [
+            "added",
+            "changed",
+            "removed"
+          ]
+        },
+        "item": {
+          "type": "object",
+          "required": [
+            "item_id",
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "item_id": {
+              "type": "string",
+              "maxLength": 128,
+              "description": "Stable local key for this item, for example a hash of kind, agent, tier and name."
+            },
+            "kind": {
+              "enum": [
+                "agent",
+                "mcp_server",
+                "skill",
+                "plugin",
+                "hook",
+                "ide_extension",
+                "posture_issue"
+              ]
+            },
+            "agent_product": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "version": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "tier": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/config_tier"
+            },
+            "path_class": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/path_class"
+            },
+            "mcp_transport": {
+              "enum": [
+                "stdio",
+                "http"
+              ]
+            },
+            "package": {
+              "type": "string",
+              "maxLength": 256,
+              "description": "For MCP servers: the package the server runs, such as @modelcontextprotocol/server-github, without a version. Organization catalogs match on it."
+            },
+            "host": {
+              "type": "string",
+              "maxLength": 253,
+              "description": "For HTTP MCP servers: the host of the server's URL, without credentials, path or query."
+            },
+            "posture": {
+              "type": "object",
+              "required": [
+                "check_id",
+                "severity"
+              ],
+              "properties": {
+                "check_id": {
+                  "$ref": "../../common/v1/common.schema.json#/$defs/snake_case"
+                },
+                "severity": {
+                  "$ref": "../../common/v1/common.schema.json#/$defs/risk"
+                },
+                "message": {
+                  "type": "string",
+                  "maxLength": 1024
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "posture_issue"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "posture"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "prompt": {
+      "type": "object",
+      "description": "Metadata for a user query submitted to an agent. Raw prompt text is never stored in the event.",
+      "required": [
+        "fingerprint",
+        "characters"
+      ],
+      "properties": {
+        "prompt_id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^hmac-sha256:[0-9a-f]{64}$",
+          "description": "A device-keyed fingerprint used to correlate identical prompts without retaining their text."
+        },
+        "characters": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of Unicode code points in the submitted query."
+        }
+      },
+      "additionalProperties": false
+    },
+    "secret_type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "maxLength": 64,
+      "description": "A credential kind named by a detector, for example aws_access_key, github_token or private_key. Detector packs may add kinds, so this is not an enum."
+    },
+    "content_finding": {
+      "type": "object",
+      "description": "A content detector fired. Never carries the matched value or the text around it; the local timeline keeps a masked excerpt on the device only.",
+      "required": [
+        "detector_id",
+        "category",
+        "severity",
+        "confidence",
+        "source",
+        "action_taken"
+      ],
+      "properties": {
+        "detector_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9-]*$",
+          "maxLength": 128,
+          "description": "<pack>:<name>, for example privometry/credentials:github-token."
+        },
+        "pack_version": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/semver"
+        },
+        "category": {
+          "enum": [
+            "injected_instructions",
+            "safety_weakening",
+            "hidden_content",
+            "exfiltration",
+            "credential",
+            "suspicious_tool"
+          ]
+        },
+        "severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "confidence": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "source": {
+          "enum": [
+            "memory_file",
+            "agent_config",
+            "skill",
+            "tool_description",
+            "tool_output",
+            "action_argument",
+            "file_write",
+            "repo"
+          ]
+        },
+        "secret_type": {
+          "$ref": "#/$defs/secret_type"
+        },
+        "location": {
+          "type": "object",
+          "properties": {
+            "path_class": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/path_class"
+            },
+            "path_hash": {
+              "type": "string",
+              "pattern": "^hmac-sha256:[0-9a-f]{64}$",
+              "description": "Salted hash of the file path, so findings in the same file group together without revealing it."
+            },
+            "line": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "tier": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/config_tier"
+            },
+            "agent_product": {
+              "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+            }
+          },
+          "additionalProperties": false
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^hmac-sha256:[0-9a-f]{64}$",
+          "description": "Credentials only: HMAC-SHA256 of the secret. On an enrolled device the key is the organization's hash key, so the same secret has the same fingerprint on every device of the organization and the platform can track it across devices (PRD SCAN-15); otherwise it is a key that never leaves the device, and such fingerprints are not uploaded."
+        },
+        "action_taken": {
+          "enum": [
+            "none",
+            "asked",
+            "blocked",
+            "redacted"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "category": {
+                "const": "credential"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "secret_type"
+            ]
+          },
+          "else": {
+            "properties": {
+              "secret_type": false,
+              "fingerprint": false
+            }
+          }
+        }
+      ]
+    }
+  }
+}

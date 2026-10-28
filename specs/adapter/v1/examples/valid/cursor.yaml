@@ -1,0 +1,116 @@
+# Cursor. Based on documentation only; replace with recorded fixtures before release.
+schema: privometry.adapter/v1
+agent: cursor
+display_name: Cursor
+versions: ">=1.7.0 <3.0.0"
+verified: []
+detect:
+  binaries: [cursor, cursor-agent]
+  processes: [Cursor, cursor-agent]
+  app_bundles:
+    macos: ["/Applications/Cursor.app"]
+    windows: ["%LOCALAPPDATA%\\Programs\\cursor\\Cursor.exe"]
+  version_cmd: [cursor, --version]
+config_tiers:
+  - tier: user
+    format: json
+    holds: [hooks]
+    paths: { any: ["~/.cursor/hooks.json"] }
+  - tier: project
+    format: json
+    holds: [hooks]
+    paths: { any: [".cursor/hooks.json"] }
+  - tier: project
+    format: mdc
+    holds: [rules]
+    paths: { any: [".cursor/rules/*.mdc"] }
+  - tier: managed
+    format: json
+    holds: [hooks]
+    paths:
+      macos: ["/Library/Application Support/Cursor/hooks.json"]
+      linux: ["/etc/cursor/hooks.json"]
+      windows: ["C:\\ProgramData\\Cursor\\hooks.json"]
+mcp_sources:
+  - tier: user
+    format: json
+    paths: { any: ["~/.cursor/mcp.json"] }
+    pointer: /mcpServers
+  - tier: project
+    format: json
+    paths: { any: [".cursor/mcp.json"] }
+    pointer: /mcpServers
+hooks:
+  registration: cursor_hooks
+  install:
+    free:
+      tier: user
+      paths: { any: ["~/.cursor/hooks.json"] }
+    enterprise:
+      tier: managed
+      paths:
+        macos: ["/Library/Application Support/Cursor/hooks.json"]
+        linux: ["/etc/cursor/hooks.json"]
+        windows: ["C:\\ProgramData\\Cursor\\hooks.json"]
+  timeout_seconds: 10
+  fail_closed_option: { key: failClosed, value: true }
+  trust: { required: false }
+  payload_markers: [/cursor_version]
+  events:
+    # Shell and MCP have their own events that honor ask; preToolUse covers the rest.
+    - name: beforeShellExecution
+      role: pre_shell
+      verdicts: [allow, ask, deny]
+      request: { session_id: /conversation_id, command: /command, cwd: /cwd, agent_version: /cursor_version, workspace_roots: /workspace_roots }
+      responses: &cursor_replies
+        allow: { exit_code: 0, stdout: { permission: allow } }
+        ask: { exit_code: 0, stdout: { permission: ask, user_message: "{message}", agent_message: "{message}" } }
+        deny: { exit_code: 0, stdout: { permission: deny, user_message: "{message}", agent_message: "{message}" } }
+    - name: beforeMCPExecution
+      role: pre_mcp
+      verdicts: [allow, ask, deny]
+      request: { session_id: /conversation_id, tool_name: /tool_name, tool_input: /tool_input, mcp_server: /mcp_server_name, agent_version: /cursor_version }
+      responses: *cursor_replies
+    - name: beforeReadFile
+      role: pre_file_read
+      verdicts: [allow, deny]
+      fallback: { ask: deny }
+      request: { session_id: /conversation_id, file_path: /file_path, agent_version: /cursor_version }
+      responses:
+        allow: { exit_code: 0, stdout: { permission: allow } }
+        deny: { exit_code: 0, stdout: { permission: deny, user_message: "{message}", agent_message: "{message}" } }
+    - name: preToolUse
+      role: pre_tool
+      matcher: "^(Write|Delete|Task)$"
+      verdicts: [allow, deny]
+      fallback: { ask: deny }
+      request: { session_id: /conversation_id, tool_use_id: /tool_use_id, tool_name: /tool_name, tool_input: /tool_input, cwd: /cwd, agent_version: /cursor_version }
+      responses:
+        allow: { exit_code: 0, stdout: { permission: allow } }
+        deny: { exit_code: 0, stdout: { permission: deny, user_message: "{message}", agent_message: "{message}" } }
+    - name: sessionStart
+      role: session_start
+      verdicts: []
+      request: { session_id: /conversation_id, workspace_roots: /workspace_roots }
+      responses:
+        none: { exit_code: 0, stdout: null }
+tool_kinds:
+  Shell: shell_exec
+  Read: file_read
+  Grep: file_read
+  Write: file_write
+  Delete: file_delete
+  Task: subagent_spawn
+  "MCP:*": mcp_call
+  "*": other
+tool_targets:
+  Shell: { command: /command }
+  Write: { path: /file_path }
+  Delete: { path: /file_path }
+mcp_tools:
+  name_template: "MCP:{tool}"
+  server_pointer: /mcp_server_name
+posture_checks: [auto_approve_mode, unapproved_mcp_server, secret_in_config]
+notes:
+  - beforeReadFile payloads include file content; the hook client must never log or forward it.
+  - Cursor also runs Claude Code hooks by default; the daemon dedupes using payload_markers.

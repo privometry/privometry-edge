@@ -1,0 +1,16 @@
+{
+  "devices": [
+    {
+      "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+      "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D",
+      "os": "macos",
+      "os_version": "15.4",
+      "arch": "arm64",
+      "sensor_version": "dev",
+      "status": "active",
+      "enrolled_at": "2026-10-27T10:16:30.000Z",
+      "last_heartbeat_at": "2026-10-27T11:00:00.000Z",
+      "certificate_expires_at": "2026-11-26T10:16:30.000Z"
+    }
+  ]
+}

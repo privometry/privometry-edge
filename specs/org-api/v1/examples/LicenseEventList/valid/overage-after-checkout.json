@@ -1,0 +1,45 @@
+{
+  "events": [
+    {
+      "event_id": "lev_01JBM2P4R6T8V0X2Z4B6D8F0H2",
+      "at": "2026-10-20T00:10:00.000Z",
+      "action": "seat_overage_started",
+      "actor": {
+        "type": "system"
+      },
+      "detail": {
+        "active": 14,
+        "limit": 12,
+        "grace_ends_at": "2026-11-04T00:10:00.000Z"
+      }
+    },
+    {
+      "event_id": "lev_01JBM2P4R6T8V0X2Z4B6D8F0H1",
+      "at": "2026-10-01T00:00:05.000Z",
+      "action": "subscription_activated",
+      "actor": {
+        "type": "provider",
+        "id": "razorpay"
+      },
+      "detail": {
+        "plan": "team_monthly",
+        "seats": 12,
+        "valid_until": "2026-11-01T00:00:00.000Z"
+      }
+    },
+    {
+      "event_id": "lev_01JBM2P4R6T8V0X2Z4B6D8F0H0",
+      "at": "2026-09-30T23:58:00.000Z",
+      "action": "checkout_started",
+      "actor": {
+        "type": "user",
+        "id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+      },
+      "detail": {
+        "plan": "team_monthly",
+        "seats": 12,
+        "currency": "INR"
+      }
+    }
+  ]
+}

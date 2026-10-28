@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/common/v1/dsse.schema.json",
+  "title": "DSSE envelope",
+  "description": "Dead Simple Signing Envelope (https://github.com/secure-systems-lab/dsse). Field names follow the DSSE standard rather than Privometry's snake_case convention so that standard DSSE and Sigstore tooling can verify Privometry artifacts. Each signature is Ed25519 over PAE(payloadType, payload bytes).",
+  "type": "object",
+  "required": [
+    "payloadType",
+    "payload",
+    "signatures"
+  ],
+  "properties": {
+    "payloadType": {
+      "type": "string",
+      "pattern": "^application/vnd\\.privometry\\.[a-z0-9_.-]+\\+json$",
+      "description": "Media type of the payload, for example application/vnd.privometry.bundle+json."
+    },
+    "payload": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+      "description": "Standard base64 of the exact payload bytes that were signed."
+    },
+    "signatures": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "keyid",
+          "sig"
+        ],
+        "properties": {
+          "keyid": {
+            "$ref": "common.schema.json#/$defs/keyid"
+          },
+          "sig": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "pattern": "^[A-Za-z0-9+/]{86}==$",
+            "description": "Base64 Ed25519 signature (64 bytes)."
+          }
+        }
+      }
+    }
+  }
+}

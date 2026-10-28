@@ -1,0 +1,7 @@
+{
+  "adapters": [],
+  "min_sensor_version": "0.1.0",
+  "published_at": "2026-10-23T06:00:00.000Z",
+  "schema": "privometry.adapter_set/v1",
+  "set_version": 3
+}

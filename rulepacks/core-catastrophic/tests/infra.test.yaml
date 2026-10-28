@@ -1,0 +1,59 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: asks before terraform destroy
+    covers: infra-destroy
+    facts: { action: shell_exec, program: terraform, subcommand: destroy, flags: [-auto-approve], risk: critical }
+    expect: { verdict: ask, rule: infra-destroy }
+  - name: asks before pulumi destroy on a stack
+    covers: infra-destroy
+    facts: { action: shell_exec, program: pulumi, subcommand: destroy, flags: [--stack], risk: critical }
+    expect: { verdict: ask, rule: infra-destroy }
+  - name: terraform plan is not destroy
+    covers: infra-destroy
+    facts: { action: shell_exec, program: terraform, subcommand: plan, risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before terraform apply -destroy
+    covers: infra-apply-destroy
+    facts: { action: shell_exec, program: terraform, subcommand: apply, flags: [-destroy], risk: critical }
+    expect: { verdict: ask, rule: infra-apply-destroy }
+  - name: a normal apply is not covered
+    covers: infra-apply-destroy
+    facts: { action: shell_exec, program: terraform, subcommand: apply, flags: [-auto-approve], risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before deleting a namespace
+    covers: kubectl-delete-namespace
+    facts: { action: shell_exec, program: kubectl, subcommand: delete ns payments, risk: high }
+    expect: { verdict: ask, rule: kubectl-delete-namespace }
+  - name: deleting a pod is not covered
+    covers: kubectl-delete-namespace
+    facts: { action: shell_exec, program: kubectl, subcommand: delete pod web-1, risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before removing an S3 bucket
+    covers: aws-destructive
+    facts: { action: shell_exec, program: aws, subcommand: s3 rb s3://acme-backups, flags: [--force], risk: critical }
+    expect: { verdict: ask, rule: aws-destructive }
+  - name: listing buckets is not covered
+    covers: aws-destructive
+    facts: { action: shell_exec, program: aws, subcommand: s3 ls, risk: none }
+    expect: { verdict: allow }
+
+  - name: asks before deleting a GCP project
+    covers: gcloud-destructive
+    facts: { action: shell_exec, program: gcloud, subcommand: projects delete acme-prod, risk: critical }
+    expect: { verdict: ask, rule: gcloud-destructive }
+  - name: describing a project is not covered
+    covers: gcloud-destructive
+    facts: { action: shell_exec, program: gcloud, subcommand: projects describe acme-prod, risk: none }
+    expect: { verdict: allow }
+
+  - name: asks before deleting an Azure resource group
+    covers: az-destructive
+    facts: { action: shell_exec, program: az, subcommand: group delete, flags: [--name, --yes], risk: critical }
+    expect: { verdict: ask, rule: az-destructive }
+  - name: listing resource groups is not covered
+    covers: az-destructive
+    facts: { action: shell_exec, program: az, subcommand: group list, risk: none }
+    expect: { verdict: allow }

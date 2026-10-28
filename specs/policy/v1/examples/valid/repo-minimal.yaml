@@ -1,0 +1,7 @@
+# The smallest useful repo policy: turn on the built-in packs.
+schema: privometry.policy/v1
+name: web-app
+extends:
+  - privometry/core-catastrophic@^1
+  - privometry/secrets@^1.2
+  - privometry/exfiltration@~1.0.3

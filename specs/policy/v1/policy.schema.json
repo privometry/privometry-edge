@@ -1,0 +1,634 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/policy/v1/policy.schema.json",
+  "title": "Privometry policy v1",
+  "description": "A policy file people write in YAML: .privometry/policy.yaml in a repo, ~/.privometry/policy.yaml for a developer, or an organization policy in the console. The edge and the policy service compile it to Cedar (see privometry.cedarschema). Unlike machine-written contracts, policy files are strict: an unknown key is an error, because a misspelled condition would silently widen a rule.",
+  "type": "object",
+  "required": [
+    "schema",
+    "name"
+  ],
+  "properties": {
+    "schema": {
+      "const": "privometry.policy/v1"
+    },
+    "name": {
+      "$ref": "#/$defs/kebab_id",
+      "description": "Policy name; rules from this file are referenced as <name>:<rule-id>."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1024
+    },
+    "extends": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/pack_ref"
+      }
+    },
+    "defaults": {
+      "$ref": "#/$defs/defaults"
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      },
+      "description": "Rule IDs must be unique within the file; the compiler checks this."
+    },
+    "overrides": {
+      "type": "object",
+      "description": "Changes to rules from extended packs or other layers, keyed <pack-or-policy>:<rule-id>.",
+      "propertyNames": {
+        "$ref": "#/$defs/qualified_rule_ref"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "$ref": "../../common/v1/common.schema.json#/$defs/verdict"
+          },
+          {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": false,
+            "properties": {
+              "verdict": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/verdict"
+              },
+              "mode": {
+                "$ref": "#/$defs/mode"
+              },
+              "fail_mode": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/fail_mode"
+              },
+              "message": {
+                "$ref": "#/$defs/message"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/exception"
+      }
+    },
+    "allowlist": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/allow_entry"
+      },
+      "description": "Content findings people have checked and accept, such as fake keys in test fixtures (PRD SCAN-09). Each entry covers the listed detectors only where its paths or values match."
+    },
+    "ext": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/ext"
+    }
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "kebab_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "pack_ref": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*@[\\^~]?(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*)){0,2}$",
+      "description": "<publisher>/<name>@<semver range>, for example privometry/core-catastrophic@^1."
+    },
+    "qualified_rule_ref": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)?:[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "<publisher>/<pack>:<rule-id> or <policy-name>:<rule-id>."
+    },
+    "rule_ref": {
+      "type": "string",
+      "pattern": "^([a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)?:)?[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "A rule in this file (<rule-id>) or elsewhere (<pack-or-policy>:<rule-id>)."
+    },
+    "mode": {
+      "enum": [
+        "enforce",
+        "monitor"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 280,
+      "pattern": "^[^\\n]*$",
+      "description": "One line shown to the developer."
+    },
+    "timestamp_input": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$",
+      "description": "RFC 3339 in UTC; fractional seconds optional in files people write."
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/mode"
+        },
+        "unmatched": {
+          "enum": [
+            "auto",
+            "allow",
+            "ask"
+          ],
+          "description": "When no rule matches. auto allows actions the extractors rate none or low risk and asks for anything higher."
+        },
+        "fail_modes": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/rule_category"
+          },
+          "additionalProperties": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/fail_mode"
+          }
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "required": [
+        "id",
+        "when",
+        "verdict"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/kebab_id"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "category": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/rule_category"
+        },
+        "when": {
+          "$ref": "#/$defs/conditions"
+        },
+        "unless": {
+          "$ref": "#/$defs/conditions"
+        },
+        "verdict": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/verdict"
+        },
+        "message": {
+          "$ref": "#/$defs/message"
+        },
+        "mode": {
+          "$ref": "#/$defs/mode"
+        },
+        "fail_mode": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/fail_mode"
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Organization layer only: lower layers cannot change this rule. The compiler rejects it in other layers."
+        },
+        "overridable": {
+          "type": "boolean",
+          "description": "Organization layer only: lower layers may loosen this rule. The compiler rejects it in other layers."
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "verdict": {
+                "enum": [
+                  "ask",
+                  "deny"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "message"
+            ]
+          }
+        },
+        {
+          "not": {
+            "required": [
+              "locked",
+              "overridable"
+            ],
+            "properties": {
+              "locked": {
+                "const": true
+              },
+              "overridable": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "glob": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[^\\[\\]{}()^$|?\\\\]+$",
+      "not": {
+        "pattern": "\\*\\*"
+      },
+      "description": "Literal text where * matches any sequence of characters, including /. No regex syntax ([ ] { } ( ) ^ $ | ?), no ** and no backslashes. Paths use / on every OS."
+    },
+    "word_glob": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/glob"
+        }
+      ],
+      "pattern": "^[^ ](.*[^ ])?$",
+      "description": "One or more space-separated words, for example destroy or \"run test\". Matches the leading words of the command's arguments."
+    },
+    "host_glob": {
+      "type": "string",
+      "pattern": "^[a-z0-9*]([a-z0-9*.-]*[a-z0-9*])?(:[0-9]{1,5})?$",
+      "not": {
+        "pattern": "\\*\\*"
+      },
+      "description": "Lowercase host with optional port; * matches any sequence, for example *.github.com."
+    },
+    "flag": {
+      "type": "string",
+      "pattern": "^--?[A-Za-z0-9][A-Za-z0-9_-]*$"
+    },
+    "risk_level": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "one_or_many_glob": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/glob"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/glob"
+          }
+        }
+      ]
+    },
+    "facts": {
+      "description": "Conditions on extractor facts. All listed facts must hold; a list value matches any of its items.",
+      "type": "object",
+      "properties": {
+        "action": {
+          "oneOf": [
+            {
+              "$ref": "../../common/v1/common.schema.json#/$defs/action_kind"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/action_kind"
+              }
+            }
+          ]
+        },
+        "intent": {
+          "oneOf": [
+            {
+              "$ref": "../../common/v1/common.schema.json#/$defs/intent"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/intent"
+              }
+            }
+          ]
+        },
+        "category": {
+          "oneOf": [
+            {
+              "$ref": "../../common/v1/common.schema.json#/$defs/rule_category"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/rule_category"
+              }
+            }
+          ]
+        },
+        "risk_at_least": {
+          "$ref": "#/$defs/risk_level"
+        },
+        "program": {
+          "$ref": "#/$defs/one_or_many_glob"
+        },
+        "subcommand": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/word_glob"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/word_glob"
+              }
+            }
+          ]
+        },
+        "flags": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/flag"
+          }
+        },
+        "path_class": {
+          "oneOf": [
+            {
+              "$ref": "../../common/v1/common.schema.json#/$defs/path_class"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/path_class"
+              }
+            }
+          ]
+        },
+        "target_path": {
+          "$ref": "#/$defs/one_or_many_glob"
+        },
+        "host": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/host_glob"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/host_glob"
+              }
+            }
+          ]
+        },
+        "mcp_server": {
+          "$ref": "#/$defs/one_or_many_glob"
+        },
+        "mcp_tool": {
+          "$ref": "#/$defs/one_or_many_glob"
+        },
+        "catalog_status": {
+          "oneOf": [
+            {
+              "$ref": "../../common/v1/common.schema.json#/$defs/catalog_status"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/catalog_status"
+              }
+            }
+          ]
+        },
+        "untrusted_input_seen": {
+          "type": "boolean"
+        },
+        "secret_detected": {
+          "description": "Credential kinds the detectors found in the action's arguments or written content. any matches every kind.",
+          "anyOf": [
+            {
+              "const": "any"
+            },
+            {
+              "$ref": "#/$defs/secret_type"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/secret_type"
+              }
+            }
+          ]
+        },
+        "injection_detected": {
+          "description": "The strongest injected-instruction finding in the action's content.",
+          "oneOf": [
+            {
+              "enum": [
+                "none",
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "none",
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              }
+            }
+          ]
+        },
+        "injection_seen": {
+          "type": "boolean",
+          "description": "The session has read content flagged as injected instructions."
+        },
+        "hidden_content": {
+          "type": "boolean",
+          "description": "The action's content hides text: invisible Unicode, instruction-bearing comments or encoded payloads."
+        },
+        "target_class": {
+          "description": "What kind of file the action targets: an agent's memory or instruction file, an agent config, other code in the repo, or anything else.",
+          "oneOf": [
+            {
+              "enum": [
+                "memory_file",
+                "agent_config",
+                "code",
+                "other"
+              ]
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "memory_file",
+                  "agent_config",
+                  "code",
+                  "other"
+                ]
+              }
+            }
+          ]
+        },
+        "agent": {
+          "oneOf": [
+            {
+              "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+              }
+            }
+          ]
+        },
+        "repo": {
+          "$ref": "#/$defs/one_or_many_glob"
+        }
+      }
+    },
+    "conditions": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/facts"
+        }
+      ],
+      "minProperties": 1,
+      "unevaluatedProperties": false
+    },
+    "exception": {
+      "description": "Lifts one rule where the listed facts hold, until expires_at. Facts narrow the exception; with none it covers the whole rule. Organization exceptions also need approved_by (checked by the compiler).",
+      "allOf": [
+        {
+          "$ref": "#/$defs/facts"
+        }
+      ],
+      "type": "object",
+      "required": [
+        "rule",
+        "reason",
+        "expires_at"
+      ],
+      "properties": {
+        "rule": {
+          "$ref": "#/$defs/rule_ref"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "expires_at": {
+          "$ref": "#/$defs/timestamp_input"
+        },
+        "approved_by": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "unevaluatedProperties": false
+    },
+    "allow_entry": {
+      "description": "Ignores findings of the listed detectors where the paths, the values, or both match. An entry never turns a detector off everywhere: it needs paths or values. Paths are repo-relative for files in the repo and start with ~/ for files in the home folder; they apply to files at rest and to file writes, not to commands, URLs or MCP arguments. Values are the exact matched text (for credentials, the credential itself), so list only example and test values. Expired entries are ignored.",
+      "type": "object",
+      "required": [
+        "detectors",
+        "reason"
+      ],
+      "properties": {
+        "detectors": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*/[a-z0-9]+(-[a-z0-9]+)*:([a-z0-9]+(-[a-z0-9]+)*|\\*)$"
+          },
+          "description": "Qualified detector IDs such as privometry/credentials:aws-access-key, or <pack>:* for every detector in a pack."
+        },
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/glob"
+          }
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 1024
+          }
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "expires_at": {
+          "$ref": "#/$defs/timestamp_input"
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "paths"
+          ]
+        },
+        {
+          "required": [
+            "values"
+          ]
+        }
+      ],
+      "additionalProperties": false
+    },
+    "secret_type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "maxLength": 64,
+      "description": "A credential kind, for example aws_access_key or github_token."
+    }
+  }
+}

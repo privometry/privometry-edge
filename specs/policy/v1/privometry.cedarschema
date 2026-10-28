@@ -1,0 +1,72 @@
+// Privometry Cedar schema v1.
+//
+// Cedar is internal: people write privometry.policy/v1 YAML, and the edge and the
+// policy service compile it against this schema. The Go extractors turn each
+// agent action into one or more requests. Cedar decides only on these facts and
+// never parses commands, paths or URLs itself.
+//
+// Request rules shared by every engine (Go edge, Java control plane and gateway):
+// - One request per (command, target). A shell line such as "a && b" or a
+//   command touching several paths becomes several requests, and the strongest
+//   verdict wins (deny > ask > allow).
+// - Every context attribute is always present. When a fact does not apply, the
+//   extractor sends the empty value: "" for strings, [] for sets, 0 for risk,
+//   false for booleans, and "none" for injection_detected.
+// - Strings are normalized before the request: paths use "/" and are absolute
+//   (home shown as the real home path), hosts are lowercase without a port
+//   unless one was given, program is the base name without extension.
+// - risk: none 0, low 1, medium 2, high 3, critical 4.
+// - secret_detected: any compiles to !context.secret_detected.isEmpty().
+// - subcommand: the command's positional arguments after the program, joined by
+//   single spaces, flags removed, at most 4 words. "subcommand: destroy"
+//   compiles to (subcommand == "destroy" || subcommand like "destroy *").
+// - flags: each flag as written with its value dropped (--output=x gives
+//   --output). A group of single-dash letters is kept and also split, so
+//   -fdx gives -fdx, -f, -d and -x, and single-dash long flags such as
+//   terraform's -destroy still match.
+namespace Privometry {
+  // The agent session making the request.
+  entity Agent = {
+    product: String,   // claude_code, cursor, codex_cli, gemini_cli, copilot_cli, other
+    version: String,
+    pattern: String,   // interactive, event_triggered, scheduled, autonomous, orchestrated
+  };
+
+  // The repository the session runs in.
+  entity Repo = {
+    remote: String,    // normalized, for example github.com/acme/api
+  };
+
+  // Used as the resource when the session is not inside a repository.
+  entity Machine;
+
+  type Facts = {
+    intent: Set<String>,            // recursive_delete, force_push, db_drop, secret_read, package_install, network_upload, other
+    category: Set<String>,          // catastrophic, secrets, exfiltration, unapproved_mcp, other
+    risk: Long,                     // 0 to 4
+    program: String,
+    subcommand: String,
+    flags: Set<String>,
+    path_class: String,             // repo, home, system, secret_store, temp, other
+    target_path: String,
+    host: String,
+    mcp_server: String,
+    mcp_tool: String,
+    catalog_status: String,         // approved, unapproved, blocked, unknown, or "" when not MCP
+    untrusted_input_seen: Bool,
+
+    // Content-scanning facts, set by the Go detectors before each decision.
+    secret_detected: Set<String>,   // credential kinds in the action, for example github_token; never values
+    injection_detected: String,     // none, low, medium, high
+    injection_seen: Bool,           // the session has read content flagged as injected instructions
+    hidden_content: Bool,           // invisible Unicode, instruction-bearing comments or encoded payloads
+    target_class: String,           // memory_file, agent_config, code, other, or "" when no file is targeted
+  };
+
+  action shell_exec, file_read, file_write, file_delete, network_fetch, mcp_call, web_search, subagent_spawn, other
+    appliesTo {
+      principal: [Agent],
+      resource: [Repo, Machine],
+      context: Facts,
+    };
+}

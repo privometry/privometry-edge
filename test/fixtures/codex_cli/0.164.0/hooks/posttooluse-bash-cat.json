@@ -1,0 +1,15 @@
+{
+  "session_id": "01a16d8f-6680-7f01-8c3d-a6d7d56cc796",
+  "turn_id": "01a16d8f-6b14-7dd2-84dd-6de1eaaa87f0",
+  "transcript_path": null,
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-6-sol",
+  "permission_mode": "bypassPermissions",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "cat calc.py"
+  },
+  "tool_response": "def add(a, b):\n    return a + b\n",
+  "tool_use_id": "exec-a5a3d760-666c-4a58-942d-8f626a8de902"
+}

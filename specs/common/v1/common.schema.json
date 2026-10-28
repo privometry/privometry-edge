@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/common/v1/common.schema.json",
+  "title": "Privometry common definitions v1",
+  "description": "Shared building blocks referenced by every Privometry contract: prefixed IDs, timestamps, privacy levels, extensions and hashes.",
+  "$defs": {
+    "ulid": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Crockford base32 ULID, 26 characters, time-sortable."
+    },
+    "org_id": {
+      "type": "string",
+      "pattern": "^org_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "device_id": {
+      "type": "string",
+      "pattern": "^dev_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "user_id": {
+      "type": "string",
+      "pattern": "^usr_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^ses_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "policy_id": {
+      "type": "string",
+      "pattern": "^pol_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^bnd_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "rulepack_id": {
+      "type": "string",
+      "pattern": "^rp_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "mcp_server_id": {
+      "type": "string",
+      "pattern": "^mcp_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "license_id": {
+      "type": "string",
+      "pattern": "^lic_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "approval_id": {
+      "type": "string",
+      "pattern": "^apr_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "RFC 3339 in UTC with exactly three fractional digits, for example 2026-10-23T09:14:02.481Z."
+    },
+    "duration_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Lowercase hex SHA-256 digest with an algorithm prefix."
+    },
+    "snake_case": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "privacy_level": {
+      "enum": [
+        "clear",
+        "redacted",
+        "hashed",
+        "omitted"
+      ],
+      "description": "clear: stored as captured. redacted: secrets and PII replaced with typed placeholders. hashed: salted SHA-256 of the normalized value. omitted: field removed."
+    },
+    "redaction_map": {
+      "type": "object",
+      "description": "Map from a dotted field path (for example action.target) to its privacy level.",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/privacy_level"
+      }
+    },
+    "ext": {
+      "type": "object",
+      "description": "Experimental or vendor fields, keyed x_<namespace>_<name>.",
+      "propertyNames": {
+        "pattern": "^x_[a-z0-9]+_[a-z0-9_]+$"
+      }
+    },
+    "agent_product": {
+      "enum": [
+        "claude_code",
+        "cursor",
+        "codex_cli",
+        "gemini_cli",
+        "copilot_cli",
+        "antigravity",
+        "other"
+      ]
+    },
+    "os": {
+      "enum": [
+        "macos",
+        "linux",
+        "windows",
+        "other"
+      ]
+    },
+    "arch": {
+      "enum": [
+        "amd64",
+        "arm64",
+        "other"
+      ]
+    },
+    "config_tier": {
+      "enum": [
+        "user",
+        "project",
+        "managed"
+      ]
+    },
+    "verdict": {
+      "enum": [
+        "allow",
+        "ask",
+        "deny"
+      ]
+    },
+    "rule_category": {
+      "enum": [
+        "catastrophic",
+        "secrets",
+        "exfiltration",
+        "unapproved_mcp",
+        "other"
+      ]
+    },
+    "risk": {
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "path_class": {
+      "enum": [
+        "repo",
+        "home",
+        "system",
+        "secret_store",
+        "temp",
+        "other"
+      ]
+    },
+    "fail_mode": {
+      "enum": [
+        "open",
+        "ask",
+        "closed"
+      ]
+    },
+    "action_kind": {
+      "enum": [
+        "shell_exec",
+        "file_read",
+        "file_write",
+        "file_delete",
+        "network_fetch",
+        "mcp_call",
+        "web_search",
+        "subagent_spawn",
+        "other"
+      ]
+    },
+    "intent": {
+      "enum": [
+        "recursive_delete",
+        "force_push",
+        "db_drop",
+        "secret_read",
+        "package_install",
+        "network_upload",
+        "other"
+      ],
+      "description": "Facts the Go extractors derive from an action."
+    },
+    "catalog_status": {
+      "enum": [
+        "approved",
+        "unapproved",
+        "blocked",
+        "unknown"
+      ]
+    },
+    "component_id": {
+      "type": "string",
+      "pattern": "^(mcp|skl|plg|ext)_[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Risk feed component: mcp_ for MCP servers, skl_ skills, plg_ plugins, ext_ IDE extensions."
+    },
+    "keyid": {
+      "type": "string",
+      "pattern": "^(release|policy|feed|license|root|publisher):[a-z0-9-]+:[0-9a-f]{16}$",
+      "description": "<role>:<name>:<first 16 hex of the SHA-256 of the raw Ed25519 public key>."
+    },
+    "https_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    }
+  }
+}

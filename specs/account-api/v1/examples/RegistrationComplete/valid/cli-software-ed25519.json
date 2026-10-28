@@ -1,0 +1,19 @@
+{
+  "credential": {
+    "type": "cli_key",
+    "label": "build-box-07",
+    "algorithm": "Ed25519",
+    "public_key": "MCowBQYDK2VwAyEAYrR3PE4RbvAhzafI9yK3CMuT6ILr/nmHtSi/A2NYg3M=",
+    "protection": "software",
+    "proof": {
+      "payload": "eyJwdXJwb3NlIjoicmVnaXN0ZXIiLCJhdWRpZW5jZSI6Imh0dHBzOi8vaW4uYXBpLnByaXZvbWV0cnkuZGV2L2FjY291bnQvdjEiLCJjaGFsbGVuZ2UiOiJHTlB0aXFzMzJILV9neHBYRGExaUR0aHBPZzFuNVJIU0tmbEZfN253bnZVIiwicmVnaXN0cmF0aW9uX2lkIjoicmVnXzAxSkJBOEQyRjRINks4TTBQMlI0VDZWOFgwIiwicHVibGljX2tleV9zaGEyNTYiOiJzaGEyNTY6MTUzZDAyMjkwYTRkZGZmNDZjYzY3ZGUwY2E2MTc5YjE3OTViMTc4ZDQyM2E5YzZhNTBkZWYwMzNlOWUwNWUxMiIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMjdUMTE6MDI6NDcuNTMwWiJ9",
+      "payloadType": "application/vnd.privometry.account-proof+json",
+      "signatures": [
+        {
+          "keyid": "sha256:153d02290a4ddff46cc67de0ca6179b1795b178d423a9c6a50def033e9e05e12",
+          "sig": "mFwwus3O5cUAcA41H2CK2UKkm6lyLjJx8FjFP5Wawtln68ZxqrVW7cOkGurMFUP6aec7Dg86iLS6XSyna24rDQ=="
+        }
+      ]
+    }
+  }
+}

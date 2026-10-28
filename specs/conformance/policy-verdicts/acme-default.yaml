@@ -1,0 +1,93 @@
+# Shared verdict vectors: the Go (cedar-go) and Java engines must both return
+# these verdicts for these requests. Facts not listed take their empty value.
+schema: privometry.verdicttest/v1
+policies: ../../policy/v1/examples/compiled/acme-default.cedar
+unmatched: auto
+tests:
+  - name: terraform destroy is denied
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/infra
+      action: shell_exec
+      facts: { program: terraform, subcommand: destroy, flags: [-auto-approve], risk: critical, category: [catastrophic] }
+    expect: { verdict: deny, rule_ids: [acme-default:no-terraform-destroy] }
+
+  - name: terraform destroy with a target is still denied
+    request:
+      agent: { product: cursor }
+      repo: github.com/acme/infra
+      action: shell_exec
+      facts: { program: terraform, subcommand: destroy module.db }
+    expect: { verdict: deny, rule_ids: [acme-default:no-terraform-destroy] }
+
+  - name: terraform plan is unmatched and low risk, so auto allows it
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/infra
+      action: shell_exec
+      facts: { program: terraform, subcommand: plan, risk: low }
+    expect: { verdict: allow, rule_ids: [] }
+
+  - name: a destroyer workspace is not the destroy subcommand
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/infra
+      action: shell_exec
+      facts: { program: terraform, subcommand: workspace select destroyer, risk: medium }
+    expect: { verdict: ask, rule_ids: [] }
+
+  - name: npm run test is allowed by rule
+    request:
+      agent: { product: codex_cli }
+      repo: github.com/acme/web
+      action: shell_exec
+      facts: { program: npm, subcommand: run test, risk: low }
+    expect: { verdict: allow, rule_ids: [acme-default:allow-tests] }
+
+  - name: go test with a package is allowed
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: shell_exec
+      facts: { program: go, subcommand: test ./internal/..., risk: medium }
+    expect: { verdict: allow, rule_ids: [acme-default:allow-tests] }
+
+  - name: npm testing is not npm test
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/web
+      action: shell_exec
+      facts: { program: npm, subcommand: testing, risk: medium }
+    expect: { verdict: ask, rule_ids: [] }
+
+  - name: fetch after untrusted input asks
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: network_fetch
+      facts: { host: paste.example.net, untrusted_input_seen: true, risk: medium }
+    expect: { verdict: ask, rule_ids: [acme-default:ask-untrusted-network] }
+
+  - name: fetch from github after untrusted input is unmatched
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: network_fetch
+      facts: { host: api.github.com, untrusted_input_seen: true, risk: low }
+    expect: { verdict: allow, rule_ids: [] }
+
+  - name: fetch with no untrusted input is unmatched
+    request:
+      agent: { product: claude_code }
+      machine: true
+      action: network_fetch
+      facts: { host: paste.example.net, risk: low }
+    expect: { verdict: allow, rule_ids: [] }
+
+  - name: unmatched high risk asks
+    request:
+      agent: { product: claude_code }
+      machine: true
+      action: file_write
+      facts: { target_path: /etc/hosts, path_class: system, risk: high }
+    expect: { verdict: ask, rule_ids: [] }

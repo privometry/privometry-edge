@@ -1,0 +1,56 @@
+# Uses most facts: MCP catalog, agents, repos, risk, intents and flags.
+schema: privometry.policy/v1
+name: platform-guardrails
+description: Guardrails the platform team applies to payment repos.
+defaults:
+  mode: enforce
+  unmatched: auto
+rules:
+  - id: block-blocked-mcp
+    category: unapproved_mcp
+    when:
+      action: mcp_call
+      catalog_status: blocked
+    verdict: deny
+    message: This MCP server is blocked by AppSec.
+    fail_mode: closed
+  - id: ask-unapproved-mcp
+    category: unapproved_mcp
+    when:
+      action: mcp_call
+      catalog_status: [unapproved, unknown]
+    verdict: ask
+    message: This MCP server is not in the catalog yet.
+  - id: no-db-writes-from-mcp
+    category: catastrophic
+    when:
+      action: mcp_call
+      mcp_server: ["postgres*", "*-db"]
+      mcp_tool: ["*drop*", "*truncate*", "execute_sql"]
+    verdict: deny
+    message: Database changes go through migrations.
+  - id: payments-ask-on-high-risk
+    when:
+      repo: "github.com/acme/payments-*"
+      risk_at_least: high
+      agent: [cursor, codex_cli]
+    verdict: ask
+    message: High-risk action in a payments repo.
+  - id: no-force-flags-in-git
+    category: catastrophic
+    when:
+      action: shell_exec
+      program: git
+      intent: [force_push]
+      flags: ["--force", "-f", "--force-with-lease"]
+    verdict: deny
+    message: Force pushes are blocked; open a pull request instead.
+    overridable: true
+  - id: secrets-outside-repo
+    category: secrets
+    when:
+      action: [file_read, shell_exec]
+      intent: secret_read
+      path_class: [home, secret_store]
+    verdict: deny
+    message: Reading credentials outside the repo is blocked.

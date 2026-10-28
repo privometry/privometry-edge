@@ -1,0 +1,19 @@
+{
+  "issued_at": "2026-10-01T00:00:00.000Z",
+  "keys": [
+    {
+      "keyid": "publisher:example:a4c96b4f2bd3d1c2",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "JdroKro5gaxzBXBCUD/IPMNE6IZdT8l96j7z+ec/rto=",
+      "role": "publisher"
+    },
+    {
+      "keyid": "publisher:other-labs:97b552652743905e",
+      "not_before": "2026-01-01T00:00:00.000Z",
+      "public_key": "zx+ASQdBpjbXOPnNvqMkgbfaJSXrZ6qkLKI7TWpZaR0=",
+      "role": "publisher"
+    }
+  ],
+  "schema": "privometry.keyset/v1",
+  "version": 1
+}

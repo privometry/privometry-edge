@@ -1,0 +1,9 @@
+schema: privometry.detectorpack/v1
+id: privometry/credentials
+version: 1.0.0
+title: Credentials
+description: Uses a rule category instead of a content category.
+maintainers: [{ name: Privometry maintainers }]
+license: Apache-2.0
+min_sensor_version: 0.6.0
+categories: [secrets]

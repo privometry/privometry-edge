@@ -1,0 +1,59 @@
+{
+  "schema": "privometry.riskfeed/v1",
+  "feed": "curated",
+  "kind": "delta",
+  "sequence": 4183,
+  "base_sequence": 4180,
+  "published_at": "2026-10-23T03:00:00.000Z",
+  "expires_at": "2026-10-30T03:00:00.000Z",
+  "methodology_version": "1.0.0",
+  "entries": [
+    {
+      "component_id": "skl_01J9SK000000000000000000ZZ",
+      "kind": "skill",
+      "source": {
+        "ecosystem": "github",
+        "name": "someone/helpful-skill"
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+        }
+      ],
+      "score": 90,
+      "level": "critical",
+      "signals": [
+        "known_malicious",
+        "tool_description_injection"
+      ],
+      "score_breakdown": {
+        "capability": {
+          "points": 10,
+          "signals": []
+        },
+        "provenance": {
+          "points": 12,
+          "signals": []
+        },
+        "behavior": {
+          "points": 20,
+          "signals": [
+            "tool_description_injection"
+          ]
+        },
+        "reputation": {
+          "points": 8,
+          "signals": []
+        },
+        "override": "known_malicious"
+      },
+      "default_verdict": "deny",
+      "updated_at": "2026-10-23T03:00:00.000Z",
+      "curation": "curated"
+    }
+  ],
+  "removed": [
+    "mcp_01J8MCP0D00000000000000C10"
+  ]
+}

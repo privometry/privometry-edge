@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/adapter/v1/adapter-set.schema.json",
+  "title": "Privometry adapter set v1",
+  "description": "All adapter definitions released together: DSSE payloadType application/vnd.privometry.adapters+json, signed with the release key. Devices reject a set_version not higher than the one they hold, and ignore adapters whose min_sensor_version is above their own version.",
+  "type": "object",
+  "required": ["schema", "set_version", "published_at", "adapters"],
+  "properties": {
+    "schema": { "const": "privometry.adapter_set/v1" },
+    "set_version": { "type": "integer", "minimum": 1 },
+    "published_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+    "min_sensor_version": { "$ref": "../../common/v1/common.schema.json#/$defs/semver" },
+    "adapters": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "adapter.schema.json" }
+    }
+  }
+}

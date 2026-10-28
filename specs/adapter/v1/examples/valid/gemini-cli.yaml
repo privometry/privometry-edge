@@ -1,0 +1,147 @@
+# Gemini CLI. Based on documentation only; replace with recorded fixtures before release.
+schema: privometry.adapter/v1
+agent: gemini_cli
+display_name: Gemini CLI
+versions: ">=0.26.0 <1.0.0"
+verified: []
+detect:
+  binaries: [gemini]
+  processes: [gemini]
+  version_cmd: [gemini, --version]
+  bypass_flags: [--yolo, -y, --approval-mode yolo]
+config_tiers:
+  - tier: user
+    format: json
+    holds: [settings, permissions, mcp_servers, hooks]
+    paths: { any: ["~/.gemini/settings.json"] }
+  - tier: project
+    format: json
+    holds: [settings, permissions, mcp_servers, hooks]
+    paths: { any: [".gemini/settings.json"] }
+    requires_trust: true
+  - tier: managed
+    format: json
+    holds: [settings, permissions, mcp_servers, hooks]
+    paths:
+      macos: ["/Library/Application Support/GeminiCli/settings.json"]
+      linux: ["/etc/gemini-cli/settings.json"]
+      windows: ["C:\\ProgramData\\gemini-cli\\settings.json"]
+  - tier: user
+    format: markdown
+    holds: [skills]
+    paths: { any: ["~/.gemini/skills/*/SKILL.md"] }
+  - tier: project
+    format: markdown
+    holds: [skills]
+    paths: { any: [".gemini/skills/*/SKILL.md"] }
+mcp_sources:
+  - tier: user
+    format: json
+    paths: { any: ["~/.gemini/settings.json"] }
+    pointer: /mcpServers
+  - tier: project
+    format: json
+    paths: { any: [".gemini/settings.json"] }
+    pointer: /mcpServers
+memory_files:
+  - tier: user
+    kind: memory
+    format: markdown
+    imports: true
+    written_by_agent: true
+    paths: { any: ["~/.gemini/GEMINI.md"] }
+    note: Global context; the save_memory tool appends facts under "## Gemini Added Memories".
+  - tier: project
+    kind: instructions
+    format: markdown
+    imports: true
+    nested: true
+    paths: { any: ["GEMINI.md"] }
+    note: Read from the working folder up to the project root and below it; context.fileName in settings can name other files (such as AGENTS.md).
+hooks:
+  registration: gemini_settings
+  install:
+    free:
+      tier: user
+      paths: { any: ["~/.gemini/settings.json"] }
+    enterprise:
+      tier: managed
+      paths:
+        macos: ["/Library/Application Support/GeminiCli/settings.json"]
+        linux: ["/etc/gemini-cli/settings.json"]
+        windows: ["C:\\ProgramData\\gemini-cli\\settings.json"]
+  timeout_seconds: 10
+  fail_closed_option: null
+  trust: { required: false }
+  events:
+    - name: BeforeTool
+      role: pre_tool
+      matcher: ".*"
+      verdicts: [allow, deny]
+      fallback: { ask: deny }
+      request: &tool_request
+        session_id: /session_id
+        tool_name: /tool_name
+        tool_input: /tool_input
+        cwd: /cwd
+        mcp_server: /mcp_context/server_name
+      responses:
+        allow: { exit_code: 0, stdout: { decision: allow } }
+        deny: { exit_code: 0, stdout: { decision: deny, reason: "{message}", systemMessage: "{message}" } }
+    - name: AfterTool
+      role: post_tool
+      matcher: ".*"
+      verdicts: []
+      request:
+        <<: *tool_request
+        tool_response: /tool_response/llmContent
+      responses:
+        none: { exit_code: 0, stdout: null }
+    - name: BeforeAgent
+      role: prompt_submit
+      verdicts: []
+      request: { session_id: /session_id, prompt: /prompt, cwd: /cwd }
+      responses:
+        none: { exit_code: 0, stdout: null }
+    - name: SessionStart
+      role: session_start
+      verdicts: []
+      request: { session_id: /session_id, cwd: /cwd }
+      responses:
+        none: { exit_code: 0, stdout: null }
+    - name: SessionEnd
+      role: session_end
+      verdicts: []
+      request: { session_id: /session_id, cwd: /cwd }
+      responses:
+        none: { exit_code: 0, stdout: null }
+tool_kinds:
+  run_shell_command: shell_exec
+  read_file: file_read
+  read_many_files: file_read
+  list_directory: file_read
+  glob: file_read
+  grep_search: file_read
+  search_file_content: file_read
+  write_file: file_write
+  replace: file_write
+  web_fetch: network_fetch
+  google_web_search: web_search
+  "mcp_*": mcp_call
+  "*": other
+tool_targets:
+  run_shell_command: { command: /command }
+  read_file: { path: /file_path }
+  list_directory: { path: /dir_path }
+  glob: { path: /dir_path }
+  grep_search: { path: /dir_path }
+  write_file: { path: /file_path, content: /content }
+  replace: { path: /file_path, content: /new_string }
+  google_web_search: { query: /query }
+mcp_tools:
+  name_template: "mcp_{server}_{tool}"
+posture_checks: [auto_approve_mode, project_mcp_server, unpinned_mcp_server, project_hook, secret_in_config, writable_managed_config]
+notes:
+  - Gemini CLI hooks cannot ask, and fail open when a hook crashes, times out or prints something other than JSON; Privometry sends deny with a message for ask verdicts.
+  - web_fetch takes a prompt that contains the URLs, so fetches carry no URL target.
+  - Gemini CLI was retired for consumer tiers on 2026-06-18 in favor of Antigravity CLI; it stays available with Gemini Code Assist Standard and Enterprise licenses and paid API keys.

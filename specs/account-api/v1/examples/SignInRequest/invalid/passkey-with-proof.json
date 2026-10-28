@@ -1,0 +1,27 @@
+{
+  "challenge_id": "chl_01JBA9P5R7T9W1Y3A5C7E9G1J3",
+  "method": "webauthn",
+  "webauthn": {
+    "authenticatorAttachment": "platform",
+    "clientExtensionResults": {},
+    "id": "6aVes-lL-YBFrhVmLqbFIQ",
+    "rawId": "6aVes-lL-YBFrhVmLqbFIQ",
+    "response": {
+      "authenticatorData": "p1T5afTRtBqCoiZCGD-7xvCNyCwGGlkNZmaI-SRwlGoFAAAAAA",
+      "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUElnckNfVl9XQXJPX2I3U1ZOc2thWGVSVU1uQ2NTTGZWYy1kZVZyR2kxMCIsIm9yaWdpbiI6Imh0dHBzOi8vY29uc29sZS5wcml2b21ldHJ5LmRldiIsImNyb3NzT3JpZ2luIjpmYWxzZX0",
+      "signature": "MEUCIEkWLa02gG4AzSSQJABXsjwU-gUYM_5UkYxO4CQzk-ArAiEA9u4sLnyAk-98KRBiWMYWZCHplBkj3B3GayOwUIF7I6Y",
+      "userHandle": "0mQ19SS1eGvJS7xe7a3LhQ"
+    },
+    "type": "public-key"
+  },
+  "proof": {
+    "payload": "eyJwdXJwb3NlIjoic2lnbl9pbiIsImF1ZGllbmNlIjoiaHR0cHM6Ly9pbi5hcGkucHJpdm9tZXRyeS5kZXYvYWNjb3VudC92MSIsImNoYWxsZW5nZSI6IkcxUlg4Z0w0amhSSXlHb0VITWthM0Z0d0RiYXhoMG5pWjd0a29ZYjdrajgiLCJjaGFsbGVuZ2VfaWQiOiJjaGxfMDFKQkE5RjNINUs3TjlRMVMzVjVYN1o5QjEiLCJjcmVkZW50aWFsX2lkIjoiY3JkXzAxSkJBN1IwSzJNNE42UDhRMFMyVDRWNlc4IiwiaXNzdWVkX2F0IjoiMjAyNi0xMC0yOFQwNDozMDoxMi45MDRaIn0=",
+    "payloadType": "application/vnd.privometry.account-proof+json",
+    "signatures": [
+      {
+        "keyid": "crd_01JBA7R0K2M4N6P8Q0S2T4V6W8",
+        "sig": "MEUCICr4775hd67KJg6qvo3eNM2HZcu52iuOqOisveweS4msAiEAp8qT94lWcx780bEcC5outJOjxEIPhVAT0rx7UK86NfU="
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "display_name": "Meera Nair",
+  "credential": {
+    "type": "cli_key",
+    "label": "Meera's MacBook Pro",
+    "algorithm": "ES256",
+    "public_key": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6/A6bjaCS9Vyi8HKN0pTQNHp0+DvUCRtpFOdJFAPo/011/BxIy2AVraia0/ivUSWM6Uw+sbpyxnEd6jr/GNFNg==",
+    "protection": "secure_enclave"
+  }
+}

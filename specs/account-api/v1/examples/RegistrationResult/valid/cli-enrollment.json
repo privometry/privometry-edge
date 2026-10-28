@@ -1,0 +1,12 @@
+{
+  "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D",
+  "org_id": "org_01JA0000000000000000000001",
+  "role": "owner",
+  "credential_id": "crd_01JBA7R0K2M4N6P8Q0S2T4V6W8",
+  "region": "in",
+  "enrollment": {
+    "enrollment_token": "pet_3b9e0d7c5a1f4e2d8c6b0a9f7e5d3c1b",
+    "edge_base_url": "https://in.api.privometry.dev/edge/v1",
+    "expires_at": "2026-10-27T10:26:04.903Z"
+  }
+}

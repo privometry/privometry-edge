@@ -1,0 +1,31 @@
+name: wiki
+
+# Publishes docs/wiki/ to this repository's GitHub wiki after it changes on
+# main. The wiki must be enabled and have one page created in the web UI
+# first; see docs/wiki/Publishing-the-Wiki.md.
+on:
+  push:
+    branches: [main]
+    paths: ["docs/wiki/**", "scripts/publish-wiki.sh"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish docs/wiki to the wiki
+        env:
+          WIKI_URL: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+          SOURCE_REF: ${{ github.sha }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          scripts/publish-wiki.sh "$WIKI_URL" --push

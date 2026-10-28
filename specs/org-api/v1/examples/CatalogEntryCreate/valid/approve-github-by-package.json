@@ -1,0 +1,10 @@
+{
+  "kind": "mcp_server",
+  "name": "github",
+  "match": {
+    "package": "@modelcontextprotocol/server-github"
+  },
+  "status": "approved",
+  "risk_tier": "medium",
+  "reason": "Reviewed 2026-10"
+}

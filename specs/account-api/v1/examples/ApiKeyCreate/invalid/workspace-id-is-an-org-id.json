@@ -1,0 +1,6 @@
+{
+  "name": "GitHub Actions inventory export",
+  "role": "viewer",
+  "expires_in_days": 30,
+  "workspace_id": "org_01JA0000000000000000000001"
+}

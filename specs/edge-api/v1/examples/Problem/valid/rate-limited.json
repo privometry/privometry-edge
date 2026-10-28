@@ -1,0 +1,6 @@
+{
+  "type": "https://privometry.dev/problems/rate-limited",
+  "title": "Too many requests",
+  "status": 429,
+  "detail": "Retry after 30 seconds."
+}

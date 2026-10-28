@@ -1,0 +1,14 @@
+{
+  "email": "meera@acme.example",
+  "purpose": "create_organization",
+  "organization": {
+    "name": "Acme Payments",
+    "slug": "-acme"
+  },
+  "client": {
+    "kind": "cli",
+    "os": "macos",
+    "arch": "arm64",
+    "sensor_version": "0.9.0"
+  }
+}

@@ -1,0 +1,20 @@
+name: SBOM
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+permissions:
+  contents: read
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go run ./scripts/release-metadata
+      - uses: actions/upload-artifact@v4
+        with:
+          name: privometry-sbom
+          path: privometry.cdx.json

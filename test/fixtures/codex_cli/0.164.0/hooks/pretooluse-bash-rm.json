@@ -1,0 +1,14 @@
+{
+  "session_id": "01a16d90-2be7-76e1-8c24-932485863d92",
+  "turn_id": "01a16d90-2fdb-72a2-8e0e-7fd2d6384f9d",
+  "transcript_path": null,
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PreToolUse",
+  "model": "gpt-6-sol",
+  "permission_mode": "bypassPermissions",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "rm -rf build ."
+  },
+  "tool_use_id": "exec-b917ea8a-f4af-461a-a21b-0da4b8e87da5"
+}

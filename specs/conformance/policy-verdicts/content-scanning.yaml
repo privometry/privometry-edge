@@ -1,0 +1,86 @@
+# Shared verdict vectors for the content-scanning facts. Facts not listed take
+# their empty value: secret_detected [], injection_detected "none",
+# injection_seen and hidden_content false, target_class "".
+schema: privometry.verdicttest/v1
+policies: ../../policy/v1/examples/compiled/content-scanning.cedar
+unmatched: auto
+tests:
+  - name: a token in an outbound request is denied
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: network_fetch
+      facts: { host: hooks.example.net, secret_detected: [github_token], risk: medium }
+    expect: { verdict: deny, rule_ids: [acme-content:no-secrets-to-network] }
+
+  - name: a token passed to an MCP tool is denied
+    request:
+      agent: { product: cursor }
+      machine: true
+      action: mcp_call
+      facts: { mcp_server: slack, mcp_tool: post_message, secret_detected: [slack_token], risk: medium }
+    expect: { verdict: deny, rule_ids: [acme-content:no-secrets-to-network] }
+
+  - name: the same request without a secret is unmatched
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: network_fetch
+      facts: { host: hooks.example.net, risk: low }
+    expect: { verdict: allow, rule_ids: [] }
+
+  - name: an AWS key written into code asks
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: file_write
+      facts: { target_path: /home/dev/api/src/config.ts, path_class: repo, target_class: code, secret_detected: [aws_access_key], risk: low }
+    expect: { verdict: ask, rule_ids: [acme-content:ask-cloud-keys-in-code] }
+
+  - name: a GitHub token written into code is not a cloud key
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: file_write
+      facts: { target_class: code, path_class: repo, secret_detected: [github_token], risk: low }
+    expect: { verdict: allow, rule_ids: [] }
+
+  - name: editing CLAUDE.md asks
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: file_write
+      facts: { target_path: /home/dev/api/CLAUDE.md, path_class: repo, target_class: memory_file, risk: low }
+    expect: { verdict: ask, rule_ids: [acme-content:guard-memory-files] }
+
+  - name: editing CLAUDE.md after reading injected content is denied
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: file_write
+      facts: { target_path: /home/dev/api/CLAUDE.md, path_class: repo, target_class: memory_file, injection_seen: true, risk: low }
+    expect: { verdict: deny, rule_ids: [acme-content:block-memory-writes-after-injection] }
+
+  - name: injection seen does not block ordinary code edits
+    request:
+      agent: { product: codex_cli }
+      repo: github.com/acme/api
+      action: file_write
+      facts: { target_class: code, path_class: repo, injection_seen: true, risk: low }
+    expect: { verdict: allow, rule_ids: [] }
+
+  - name: hidden injected instructions in a write ask
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: file_write
+      facts: { target_class: code, path_class: repo, hidden_content: true, injection_detected: high, risk: low }
+    expect: { verdict: ask, rule_ids: [acme-content:ask-hidden-instructions] }
+
+  - name: low-confidence injection with hidden content stays unmatched
+    request:
+      agent: { product: claude_code }
+      repo: github.com/acme/api
+      action: file_write
+      facts: { target_class: code, path_class: repo, hidden_content: true, injection_detected: low, risk: low }
+    expect: { verdict: allow, rule_ids: [] }

@@ -1,0 +1,42 @@
+# Content-scanning rules from Contracts v1, on the facts the Go detectors set
+# before each decision. Detection itself lives in detector packs; these rules
+# only decide what to do with the findings.
+schema: privometry.policy/v1
+name: acme-content
+description: Keep credentials on the machine and protect agents' own instructions.
+rules:
+  - id: no-secrets-to-network
+    category: exfiltration
+    when:
+      action: [network_fetch, mcp_call]
+      secret_detected: any
+    verdict: deny
+    message: A credential was about to leave this machine.
+  - id: ask-cloud-keys-in-code
+    category: secrets
+    when:
+      action: file_write
+      secret_detected: [aws_access_key, gcp_service_account_key]
+      target_class: code
+    verdict: ask
+    message: The agent is writing a cloud key into code.
+  - id: guard-memory-files
+    when:
+      action: file_write
+      target_class: memory_file
+    verdict: ask
+    message: The agent wants to change its own instructions.
+  - id: block-memory-writes-after-injection
+    when:
+      action: file_write
+      target_class: memory_file
+      injection_seen: true
+    verdict: deny
+    message: This session read suspicious instructions, so memory edits are blocked.
+  - id: ask-hidden-instructions
+    when:
+      action: [file_write, mcp_call]
+      hidden_content: true
+      injection_detected: [medium, high]
+    verdict: ask
+    message: The content hides instructions aimed at an agent.

@@ -1,0 +1,155 @@
+# Copilot CLI. Based on documentation only; replace with recorded fixtures before release.
+schema: privometry.adapter/v1
+agent: copilot_cli
+display_name: Copilot CLI
+versions: ">=1.0.0 <2.0.0"
+verified: []
+detect:
+  binaries: [copilot]
+  processes: [copilot]
+  version_cmd: [copilot, --version]
+  bypass_flags: [--allow-all-tools, --yolo]
+env_overrides:
+  - var: COPILOT_HOME
+    replaces: "~/.copilot"
+config_tiers:
+  - tier: user
+    format: json
+    holds: [settings, hooks]
+    paths: { any: ["~/.copilot/settings.json"] }
+  - tier: user
+    format: json
+    holds: [settings, permissions]
+    paths: { any: ["~/.copilot/config.json"] }
+  - tier: user
+    format: json
+    holds: [hooks]
+    paths: { any: ["~/.copilot/hooks/*.json"] }
+  - tier: project
+    format: json
+    holds: [hooks]
+    paths: { any: [".github/hooks/*.json"] }
+  - tier: project
+    format: json
+    holds: [settings, hooks]
+    paths: { any: [".github/copilot/settings.json", ".github/copilot/settings.local.json"] }
+  - tier: managed
+    format: json
+    holds: [settings, hooks]
+    paths:
+      macos: ["/etc/github-copilot/policy.d/*.json"]
+      linux: ["/etc/github-copilot/policy.d/*.json"]
+      windows: ["C:\\ProgramData\\GitHub\\Copilot\\policy.d\\*.json"]
+  - tier: user
+    format: markdown
+    holds: [skills]
+    paths: { any: ["~/.copilot/skills/*/SKILL.md"] }
+  - tier: project
+    format: markdown
+    holds: [skills]
+    paths: { any: [".github/skills/*/SKILL.md"] }
+mcp_sources:
+  - tier: user
+    format: json
+    paths: { any: ["~/.copilot/mcp-config.json"] }
+    pointer: /mcpServers
+memory_files:
+  - tier: user
+    kind: instructions
+    format: markdown
+    paths: { any: ["~/.copilot/copilot-instructions.md"] }
+  - tier: project
+    kind: instructions
+    format: markdown
+    paths: { any: [".github/copilot-instructions.md"] }
+  - tier: project
+    kind: rules
+    format: markdown
+    paths: { any: [".github/instructions/*.instructions.md"] }
+    note: Path-specific instructions; applyTo frontmatter says which files they cover.
+  - tier: project
+    kind: instructions
+    format: markdown
+    nested: true
+    paths: { any: ["AGENTS.md"] }
+hooks:
+  registration: copilot_hooks
+  install:
+    free:
+      tier: user
+      paths: { any: ["~/.copilot/hooks/privometry.json"] }
+    enterprise:
+      tier: managed
+      paths:
+        macos: ["/etc/github-copilot/policy.d/privometry.json"]
+        linux: ["/etc/github-copilot/policy.d/privometry.json"]
+        windows: ["C:\\ProgramData\\GitHub\\Copilot\\policy.d\\privometry.json"]
+  timeout_seconds: 10
+  fail_closed_option: null
+  trust: { required: false }
+  events:
+    # camelCase events: camelCase payloads, epoch-millisecond timestamps, and
+    # toolArgs as a JSON-encoded string (the daemon decodes it).
+    - name: preToolUse
+      role: pre_tool
+      verdicts: [allow, ask, deny]
+      request: &tool_request
+        session_id: /sessionId
+        tool_name: /toolName
+        tool_input: /toolArgs
+        cwd: /cwd
+      responses:
+        allow: { exit_code: 0, stdout: { permissionDecision: allow } }
+        ask: { exit_code: 0, stdout: { permissionDecision: ask, permissionDecisionReason: "{message}" } }
+        deny: { exit_code: 0, stdout: { permissionDecision: deny, permissionDecisionReason: "{message}" } }
+    - name: postToolUse
+      role: post_tool
+      verdicts: []
+      request:
+        <<: *tool_request
+        tool_response: /toolResult/textResultForLlm
+      responses:
+        none: { exit_code: 0, stdout: null }
+    - name: userPromptSubmitted
+      role: prompt_submit
+      verdicts: []
+      request: { session_id: /sessionId, prompt: /prompt, cwd: /cwd }
+      responses:
+        none: { exit_code: 0, stdout: null }
+    - name: sessionStart
+      role: session_start
+      verdicts: []
+      request: { session_id: /sessionId, cwd: /cwd }
+      responses:
+        none: { exit_code: 0, stdout: null }
+    - name: sessionEnd
+      role: session_end
+      verdicts: []
+      request: { session_id: /sessionId, cwd: /cwd }
+      responses:
+        none: { exit_code: 0, stdout: null }
+tool_kinds:
+  bash: shell_exec
+  powershell: shell_exec
+  view: file_read
+  glob: file_read
+  grep: file_read
+  create: file_write
+  edit: file_write
+  web_fetch: network_fetch
+  task: subagent_spawn
+  "*": other
+tool_targets:
+  bash: { command: /command }
+  powershell: { command: /command }
+  view: { path: /path }
+  glob: { path: /path }
+  grep: { path: /path }
+  create: { path: /path, content: /file_text }
+  edit: { path: /path, content: /new_str }
+  web_fetch: { url: /url }
+posture_checks: [project_mcp_server, unpinned_mcp_server, project_hook, secret_in_config, writable_managed_config]
+notes:
+  - preToolUse hooks fail closed when they crash or exit non-zero, but open when they time out. Ask is treated as deny in autopilot mode and by the cloud agent.
+  - MCP tool names are not documented, so MCP calls are classified as other until payloads are recorded.
+  - Copilot also runs the hooks in a repository's .claude/settings.json; Privometry installs Claude Code's hook at user scope, which Copilot does not read.

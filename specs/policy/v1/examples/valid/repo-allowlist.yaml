@@ -1,0 +1,13 @@
+# A repo that keeps fake credentials in its test fixtures.
+schema: privometry.policy/v1
+name: payments-api
+extends:
+  - privometry/secrets@^1
+allowlist:
+  - detectors: [privometry/credentials:*]
+    paths: [test/fixtures/*, docs/examples/*.md]
+    reason: Fake keys used by the parser tests and the docs
+  - detectors: [privometry/credentials:aws-access-key]
+    values: [AKIAIOSFODNN7EXAMPLE]
+    reason: AWS's documented example key
+    expires_at: 2027-06-30T00:00:00Z

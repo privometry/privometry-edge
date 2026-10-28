@@ -1,0 +1,8 @@
+{
+  "email": "ravi@acme.example",
+  "purpose": "accept_invitation",
+  "invitation_token": "pet_8f2a1c9d4e7b6a5f3c2d1e0f9a8b7c6d",
+  "client": {
+    "kind": "browser"
+  }
+}

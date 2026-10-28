@@ -1,0 +1,959 @@
+{
+  "adapters": [
+    {
+      "agent": "claude_code",
+      "config_tiers": [
+        {
+          "format": "json",
+          "holds": [
+            "settings",
+            "permissions",
+            "hooks",
+            "plugins"
+          ],
+          "paths": {
+            "any": [
+              "~/.claude/settings.json"
+            ]
+          },
+          "tier": "user"
+        },
+        {
+          "format": "json",
+          "holds": [
+            "settings",
+            "permissions",
+            "hooks",
+            "plugins"
+          ],
+          "paths": {
+            "any": [
+              ".claude/settings.json",
+              ".claude/settings.local.json"
+            ]
+          },
+          "tier": "project"
+        },
+        {
+          "format": "json",
+          "holds": [
+            "settings",
+            "permissions",
+            "hooks"
+          ],
+          "paths": {
+            "linux": [
+              "/etc/claude-code/managed-settings.json",
+              "/etc/claude-code/managed-settings.d/*.json"
+            ],
+            "macos": [
+              "/Library/Application Support/ClaudeCode/managed-settings.json",
+              "/Library/Application Support/ClaudeCode/managed-settings.d/*.json"
+            ],
+            "windows": [
+              "C:\\Program Files\\ClaudeCode\\managed-settings.json",
+              "C:\\Program Files\\ClaudeCode\\managed-settings.d\\*.json"
+            ]
+          },
+          "tier": "managed"
+        },
+        {
+          "format": "markdown",
+          "holds": [
+            "skills"
+          ],
+          "paths": {
+            "any": [
+              "~/.claude/skills/*/SKILL.md"
+            ]
+          },
+          "tier": "user"
+        },
+        {
+          "format": "markdown",
+          "holds": [
+            "skills"
+          ],
+          "paths": {
+            "any": [
+              ".claude/skills/*/SKILL.md"
+            ]
+          },
+          "tier": "project"
+        }
+      ],
+      "detect": {
+        "binaries": [
+          "claude"
+        ],
+        "processes": [
+          "claude"
+        ],
+        "version_cmd": [
+          "claude",
+          "--version"
+        ]
+      },
+      "display_name": "Claude Code",
+      "env_overrides": [
+        {
+          "replaces": "~/.claude",
+          "var": "CLAUDE_CONFIG_DIR"
+        }
+      ],
+      "hooks": {
+        "events": [
+          {
+            "matcher": "*",
+            "name": "PreToolUse",
+            "request": {
+              "cwd": "/cwd",
+              "mcp_server": "/mcp_server/name",
+              "permission_mode": "/permission_mode",
+              "session_id": "/session_id",
+              "tool_input": "/tool_input",
+              "tool_name": "/tool_name",
+              "tool_use_id": "/tool_use_id"
+            },
+            "responses": {
+              "allow": {
+                "exit_code": 0,
+                "stdout": {
+                  "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "allow",
+                    "permissionDecisionReason": "{message}"
+                  }
+                }
+              },
+              "ask": {
+                "exit_code": 0,
+                "stdout": {
+                  "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "ask",
+                    "permissionDecisionReason": "{message}"
+                  }
+                }
+              },
+              "deny": {
+                "exit_code": 0,
+                "stdout": {
+                  "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "deny",
+                    "permissionDecisionReason": "{message}"
+                  }
+                }
+              }
+            },
+            "role": "pre_tool",
+            "verdicts": [
+              "allow",
+              "ask",
+              "deny"
+            ]
+          },
+          {
+            "matcher": "*",
+            "name": "PostToolUse",
+            "request": {
+              "cwd": "/cwd",
+              "mcp_server": "/mcp_server/name",
+              "permission_mode": "/permission_mode",
+              "session_id": "/session_id",
+              "tool_input": "/tool_input",
+              "tool_name": "/tool_name",
+              "tool_response": "/tool_response",
+              "tool_use_id": "/tool_use_id"
+            },
+            "responses": {
+              "none": {
+                "exit_code": 0,
+                "stdout": null
+              }
+            },
+            "role": "post_tool",
+            "verdicts": []
+          },
+          {
+            "name": "SessionStart",
+            "request": {
+              "cwd": "/cwd",
+              "session_id": "/session_id"
+            },
+            "responses": {
+              "none": {
+                "exit_code": 0,
+                "stdout": null
+              }
+            },
+            "role": "session_start",
+            "verdicts": []
+          },
+          {
+            "name": "SessionEnd",
+            "request": {
+              "cwd": "/cwd",
+              "session_id": "/session_id"
+            },
+            "responses": {
+              "none": {
+                "exit_code": 0,
+                "stdout": null
+              }
+            },
+            "role": "session_end",
+            "verdicts": []
+          },
+          {
+            "name": "ConfigChange",
+            "request": {
+              "config_path": "/file_path",
+              "config_source": "/source",
+              "cwd": "/cwd",
+              "session_id": "/session_id"
+            },
+            "responses": {
+              "none": {
+                "exit_code": 0,
+                "stdout": null
+              }
+            },
+            "role": "config_change",
+            "verdicts": []
+          }
+        ],
+        "fail_closed_option": {
+          "key": "onFailure",
+          "min_version": "2.1.295",
+          "value": "block"
+        },
+        "imported_by": [
+          {
+            "agent": "cursor",
+            "default_enabled": true,
+            "setting": "Third-Party Imports"
+          }
+        ],
+        "install": {
+          "enterprise": {
+            "lock": {
+              "key": "allowManagedHooksOnly",
+              "value": true
+            },
+            "paths": {
+              "linux": [
+                "/etc/claude-code/managed-settings.d/50-privometry.json"
+              ],
+              "macos": [
+                "/Library/Application Support/ClaudeCode/managed-settings.d/50-privometry.json"
+              ],
+              "windows": [
+                "C:\\Program Files\\ClaudeCode\\managed-settings.d\\50-privometry.json"
+              ]
+            },
+            "tier": "managed"
+          },
+          "free": {
+            "paths": {
+              "any": [
+                "~/.claude/settings.json"
+              ]
+            },
+            "tier": "user"
+          }
+        },
+        "registration": "claude_settings",
+        "timeout_seconds": 10,
+        "trust": {
+          "required": false
+        }
+      },
+      "mcp_sources": [
+        {
+          "format": "json",
+          "paths": {
+            "any": [
+              "~/.claude.json"
+            ]
+          },
+          "pointer": "/mcpServers",
+          "tier": "user"
+        },
+        {
+          "format": "json",
+          "paths": {
+            "any": [
+              ".mcp.json"
+            ]
+          },
+          "pointer": "/mcpServers",
+          "tier": "project"
+        }
+      ],
+      "mcp_tools": {
+        "name_template": "mcp__{server}__{tool}"
+      },
+      "posture_checks": [
+        "auto_approve_mode",
+        "sandbox_disabled",
+        "managed_hooks_only_off",
+        "unapproved_mcp_server",
+        "secret_in_config"
+      ],
+      "schema": "privometry.adapter/v1",
+      "tool_kinds": {
+        "*": "other",
+        "Agent": "subagent_spawn",
+        "Bash": "shell_exec",
+        "Edit": "file_write",
+        "Glob": "file_read",
+        "Grep": "file_read",
+        "NotebookEdit": "file_write",
+        "PowerShell": "shell_exec",
+        "Read": "file_read",
+        "Task": "subagent_spawn",
+        "WebFetch": "network_fetch",
+        "WebSearch": "web_search",
+        "Write": "file_write",
+        "mcp__*": "mcp_call"
+      },
+      "tool_targets": {
+        "Bash": {
+          "command": "/command"
+        },
+        "Edit": {
+          "path": "/file_path"
+        },
+        "Glob": {
+          "path": "/path"
+        },
+        "Grep": {
+          "path": "/path"
+        },
+        "NotebookEdit": {
+          "path": "/notebook_path"
+        },
+        "PowerShell": {
+          "command": "/command"
+        },
+        "Read": {
+          "path": "/file_path"
+        },
+        "WebFetch": {
+          "url": "/url"
+        },
+        "WebSearch": {
+          "query": "/query"
+        },
+        "Write": {
+          "path": "/file_path"
+        }
+      },
+      "verified": [
+        {
+          "fixtures": "claude_code/2.1.304",
+          "version": "2.1.304"
+        }
+      ],
+      "versions": ">=2.1.295 <3.0.0"
+    },
+    {
+      "agent": "codex_cli",
+      "config_tiers": [
+        {
+          "format": "toml",
+          "holds": [
+            "settings",
+            "permissions",
+            "mcp_servers",
+            "hooks"
+          ],
+          "paths": {
+            "any": [
+              "~/.codex/config.toml"
+            ]
+          },
+          "tier": "user"
+        },
+        {
+          "format": "json",
+          "holds": [
+            "hooks"
+          ],
+          "paths": {
+            "any": [
+              "~/.codex/hooks.json"
+            ]
+          },
+          "tier": "user"
+        },
+        {
+          "format": "toml",
+          "holds": [
+            "settings",
+            "mcp_servers",
+            "hooks"
+          ],
+          "paths": {
+            "any": [
+              ".codex/config.toml"
+            ]
+          },
+          "requires_trust": true,
+          "tier": "project"
+        },
+        {
+          "format": "json",
+          "holds": [
+            "hooks"
+          ],
+          "paths": {
+            "any": [
+              ".codex/hooks.json"
+            ]
+          },
+          "requires_trust": true,
+          "tier": "project"
+        },
+        {
+          "format": "toml",
+          "holds": [
+            "settings",
+            "permissions",
+            "hooks"
+          ],
+          "paths": {
+            "linux": [
+              "/etc/codex/requirements.toml"
+            ],
+            "macos": [
+              "/etc/codex/requirements.toml"
+            ],
+            "windows": [
+              "%ProgramData%\\OpenAI\\Codex\\requirements.toml"
+            ]
+          },
+          "tier": "managed"
+        },
+        {
+          "format": "starlark",
+          "holds": [
+            "rules"
+          ],
+          "paths": {
+            "any": [
+              "~/.codex/rules/*.rules"
+            ]
+          },
+          "tier": "user"
+        }
+      ],
+      "detect": {
+        "binaries": [
+          "codex"
+        ],
+        "processes": [
+          "codex"
+        ],
+        "version_cmd": [
+          "codex",
+          "--version"
+        ]
+      },
+      "display_name": "Codex CLI",
+      "env_overrides": [
+        {
+          "replaces": "~/.codex",
+          "var": "CODEX_HOME"
+        }
+      ],
+      "hooks": {
+        "events": [
+          {
+            "fallback": {
+              "ask": "deny"
+            },
+            "matcher": ".*",
+            "name": "PreToolUse",
+            "request": {
+              "cwd": "/cwd",
+              "permission_mode": "/permission_mode",
+              "session_id": "/session_id",
+              "tool_input": "/tool_input",
+              "tool_name": "/tool_name",
+              "tool_use_id": "/tool_use_id"
+            },
+            "responses": {
+              "allow": {
+                "exit_code": 0,
+                "stdout": null
+              },
+              "deny": {
+                "exit_code": 0,
+                "stdout": {
+                  "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "permissionDecision": "deny",
+                    "permissionDecisionReason": "{message}"
+                  }
+                }
+              }
+            },
+            "role": "pre_tool",
+            "verdicts": [
+              "allow",
+              "deny"
+            ]
+          },
+          {
+            "name": "SessionStart",
+            "request": {
+              "cwd": "/cwd",
+              "session_id": "/session_id"
+            },
+            "responses": {
+              "none": {
+                "exit_code": 0,
+                "stdout": null
+              }
+            },
+            "role": "session_start",
+            "verdicts": []
+          }
+        ],
+        "fail_closed_option": null,
+        "install": {
+          "enterprise": {
+            "lock": {
+              "key": "allow_managed_hooks_only",
+              "value": true
+            },
+            "paths": {
+              "linux": [
+                "/etc/codex/requirements.toml"
+              ],
+              "macos": [
+                "/etc/codex/requirements.toml"
+              ],
+              "windows": [
+                "%ProgramData%\\OpenAI\\Codex\\requirements.toml"
+              ]
+            },
+            "tier": "managed"
+          },
+          "free": {
+            "paths": {
+              "any": [
+                "~/.codex/hooks.json"
+              ]
+            },
+            "tier": "user"
+          }
+        },
+        "registration": "codex_hooks",
+        "timeout_seconds": 10,
+        "trust": {
+          "instructions": "Open Codex, run /hooks and trust the Privometry hook once.",
+          "required": true,
+          "tiers": [
+            "user",
+            "project"
+          ]
+        }
+      },
+      "mcp_sources": [
+        {
+          "format": "toml",
+          "paths": {
+            "any": [
+              "~/.codex/config.toml"
+            ]
+          },
+          "pointer": "/mcp_servers",
+          "tier": "user"
+        }
+      ],
+      "mcp_tools": {
+        "name_template": "mcp__{server}__{tool}"
+      },
+      "notes": [
+        "Codex hooks fail open on crash or timeout and cannot ask; Privometry sends deny with a message for ask verdicts.",
+        "Hosted tools such as web search are not hookable."
+      ],
+      "posture_checks": [
+        "auto_approve_mode",
+        "sandbox_disabled",
+        "unapproved_mcp_server",
+        "secret_in_config"
+      ],
+      "schema": "privometry.adapter/v1",
+      "tool_kinds": {
+        "*": "other",
+        "Bash": "shell_exec",
+        "apply_patch": "file_write",
+        "mcp__*": "mcp_call",
+        "spawn_agent": "subagent_spawn"
+      },
+      "tool_targets": {
+        "Bash": {
+          "command": "/command"
+        },
+        "apply_patch": {
+          "patch": "/command"
+        }
+      },
+      "verified": [],
+      "versions": ">=0.14.0 <1.0.0"
+    },
+    {
+      "agent": "cursor",
+      "config_tiers": [
+        {
+          "format": "json",
+          "holds": [
+            "hooks"
+          ],
+          "paths": {
+            "any": [
+              "~/.cursor/hooks.json"
+            ]
+          },
+          "tier": "user"
+        },
+        {
+          "format": "json",
+          "holds": [
+            "hooks"
+          ],
+          "paths": {
+            "any": [
+              ".cursor/hooks.json"
+            ]
+          },
+          "tier": "project"
+        },
+        {
+          "format": "mdc",
+          "holds": [
+            "rules"
+          ],
+          "paths": {
+            "any": [
+              ".cursor/rules/*.mdc"
+            ]
+          },
+          "tier": "project"
+        },
+        {
+          "format": "json",
+          "holds": [
+            "hooks"
+          ],
+          "paths": {
+            "linux": [
+              "/etc/cursor/hooks.json"
+            ],
+            "macos": [
+              "/Library/Application Support/Cursor/hooks.json"
+            ],
+            "windows": [
+              "C:\\ProgramData\\Cursor\\hooks.json"
+            ]
+          },
+          "tier": "managed"
+        }
+      ],
+      "detect": {
+        "app_bundles": {
+          "macos": [
+            "/Applications/Cursor.app"
+          ],
+          "windows": [
+            "%LOCALAPPDATA%\\Programs\\cursor\\Cursor.exe"
+          ]
+        },
+        "binaries": [
+          "cursor",
+          "cursor-agent"
+        ],
+        "processes": [
+          "Cursor",
+          "cursor-agent"
+        ],
+        "version_cmd": [
+          "cursor",
+          "--version"
+        ]
+      },
+      "display_name": "Cursor",
+      "hooks": {
+        "events": [
+          {
+            "name": "beforeShellExecution",
+            "request": {
+              "agent_version": "/cursor_version",
+              "command": "/command",
+              "cwd": "/cwd",
+              "session_id": "/conversation_id",
+              "workspace_roots": "/workspace_roots"
+            },
+            "responses": {
+              "allow": {
+                "exit_code": 0,
+                "stdout": {
+                  "permission": "allow"
+                }
+              },
+              "ask": {
+                "exit_code": 0,
+                "stdout": {
+                  "agent_message": "{message}",
+                  "permission": "ask",
+                  "user_message": "{message}"
+                }
+              },
+              "deny": {
+                "exit_code": 0,
+                "stdout": {
+                  "agent_message": "{message}",
+                  "permission": "deny",
+                  "user_message": "{message}"
+                }
+              }
+            },
+            "role": "pre_shell",
+            "verdicts": [
+              "allow",
+              "ask",
+              "deny"
+            ]
+          },
+          {
+            "name": "beforeMCPExecution",
+            "request": {
+              "agent_version": "/cursor_version",
+              "mcp_server": "/mcp_server_name",
+              "session_id": "/conversation_id",
+              "tool_input": "/tool_input",
+              "tool_name": "/tool_name"
+            },
+            "responses": {
+              "allow": {
+                "exit_code": 0,
+                "stdout": {
+                  "permission": "allow"
+                }
+              },
+              "ask": {
+                "exit_code": 0,
+                "stdout": {
+                  "agent_message": "{message}",
+                  "permission": "ask",
+                  "user_message": "{message}"
+                }
+              },
+              "deny": {
+                "exit_code": 0,
+                "stdout": {
+                  "agent_message": "{message}",
+                  "permission": "deny",
+                  "user_message": "{message}"
+                }
+              }
+            },
+            "role": "pre_mcp",
+            "verdicts": [
+              "allow",
+              "ask",
+              "deny"
+            ]
+          },
+          {
+            "fallback": {
+              "ask": "deny"
+            },
+            "name": "beforeReadFile",
+            "request": {
+              "agent_version": "/cursor_version",
+              "file_path": "/file_path",
+              "session_id": "/conversation_id"
+            },
+            "responses": {
+              "allow": {
+                "exit_code": 0,
+                "stdout": {
+                  "permission": "allow"
+                }
+              },
+              "deny": {
+                "exit_code": 0,
+                "stdout": {
+                  "agent_message": "{message}",
+                  "permission": "deny",
+                  "user_message": "{message}"
+                }
+              }
+            },
+            "role": "pre_file_read",
+            "verdicts": [
+              "allow",
+              "deny"
+            ]
+          },
+          {
+            "fallback": {
+              "ask": "deny"
+            },
+            "matcher": "^(Write|Delete|Task)$",
+            "name": "preToolUse",
+            "request": {
+              "agent_version": "/cursor_version",
+              "cwd": "/cwd",
+              "session_id": "/conversation_id",
+              "tool_input": "/tool_input",
+              "tool_name": "/tool_name",
+              "tool_use_id": "/tool_use_id"
+            },
+            "responses": {
+              "allow": {
+                "exit_code": 0,
+                "stdout": {
+                  "permission": "allow"
+                }
+              },
+              "deny": {
+                "exit_code": 0,
+                "stdout": {
+                  "agent_message": "{message}",
+                  "permission": "deny",
+                  "user_message": "{message}"
+                }
+              }
+            },
+            "role": "pre_tool",
+            "verdicts": [
+              "allow",
+              "deny"
+            ]
+          },
+          {
+            "name": "sessionStart",
+            "request": {
+              "session_id": "/conversation_id",
+              "workspace_roots": "/workspace_roots"
+            },
+            "responses": {
+              "none": {
+                "exit_code": 0,
+                "stdout": null
+              }
+            },
+            "role": "session_start",
+            "verdicts": []
+          }
+        ],
+        "fail_closed_option": {
+          "key": "failClosed",
+          "value": true
+        },
+        "install": {
+          "enterprise": {
+            "paths": {
+              "linux": [
+                "/etc/cursor/hooks.json"
+              ],
+              "macos": [
+                "/Library/Application Support/Cursor/hooks.json"
+              ],
+              "windows": [
+                "C:\\ProgramData\\Cursor\\hooks.json"
+              ]
+            },
+            "tier": "managed"
+          },
+          "free": {
+            "paths": {
+              "any": [
+                "~/.cursor/hooks.json"
+              ]
+            },
+            "tier": "user"
+          }
+        },
+        "payload_markers": [
+          "/cursor_version"
+        ],
+        "registration": "cursor_hooks",
+        "timeout_seconds": 10,
+        "trust": {
+          "required": false
+        }
+      },
+      "mcp_sources": [
+        {
+          "format": "json",
+          "paths": {
+            "any": [
+              "~/.cursor/mcp.json"
+            ]
+          },
+          "pointer": "/mcpServers",
+          "tier": "user"
+        },
+        {
+          "format": "json",
+          "paths": {
+            "any": [
+              ".cursor/mcp.json"
+            ]
+          },
+          "pointer": "/mcpServers",
+          "tier": "project"
+        }
+      ],
+      "mcp_tools": {
+        "name_template": "MCP:{tool}",
+        "server_pointer": "/mcp_server_name"
+      },
+      "notes": [
+        "beforeReadFile payloads include file content; the hook client must never log or forward it.",
+        "Cursor also runs Claude Code hooks by default; the daemon dedupes using payload_markers."
+      ],
+      "posture_checks": [
+        "auto_approve_mode",
+        "unapproved_mcp_server",
+        "secret_in_config"
+      ],
+      "schema": "privometry.adapter/v1",
+      "tool_kinds": {
+        "*": "other",
+        "Delete": "file_delete",
+        "Grep": "file_read",
+        "MCP:*": "mcp_call",
+        "Read": "file_read",
+        "Shell": "shell_exec",
+        "Task": "subagent_spawn",
+        "Write": "file_write"
+      },
+      "tool_targets": {
+        "Delete": {
+          "path": "/file_path"
+        },
+        "Shell": {
+          "command": "/command"
+        },
+        "Write": {
+          "path": "/file_path"
+        }
+      },
+      "verified": [],
+      "versions": ">=1.7.0 <3.0.0"
+    }
+  ],
+  "min_sensor_version": "0.1.0",
+  "published_at": "2026-10-23T06:00:00.000Z",
+  "schema": "privometry.adapter_set/v1",
+  "set_version": 0
+}

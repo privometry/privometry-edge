@@ -1,0 +1,5 @@
+# Keep LF line endings on Windows checkouts too: fixtures, golden files and
+# signed vectors are compared byte for byte.
+* text=auto eol=lf
+*.png binary
+*.ico binary

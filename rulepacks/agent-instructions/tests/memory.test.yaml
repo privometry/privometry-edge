@@ -1,0 +1,53 @@
+schema: privometry.ruletest/v1
+tests:
+  - name: asks before an agent edits CLAUDE.md
+    covers: ask-instruction-edit
+    facts: { action: file_write, target_path: /home/dev/api/CLAUDE.md, path_class: repo, target_class: memory_file, risk: low }
+    expect: { verdict: ask, rule: ask-instruction-edit }
+  - name: asks before a shell redirect appends to AGENTS.md
+    covers: ask-instruction-edit
+    facts: { action: shell_exec, program: echo, target_path: /home/dev/api/AGENTS.md, path_class: repo, target_class: memory_file, risk: low }
+    expect: { verdict: ask, rule: ask-instruction-edit }
+  - name: Claude Code's own automatic memory is not asked about
+    covers: ask-instruction-edit
+    facts: { action: file_write, target_path: /home/dev/.claude/projects/-home-dev-api/memory/MEMORY.md, path_class: home, target_class: memory_file, risk: medium }
+    expect: { verdict: ask, rules: [] }
+  - name: editing ordinary code is unaffected
+    covers: ask-instruction-edit
+    facts: { action: file_write, target_path: /home/dev/api/src/main.go, path_class: repo, target_class: code, risk: low }
+    expect: { verdict: allow }
+
+  - name: blocks a CLAUDE.md edit after injected content
+    covers: block-memory-edit-after-injection
+    facts: { action: file_write, target_path: /home/dev/api/CLAUDE.md, path_class: repo, target_class: memory_file, injection_seen: true, risk: low }
+    expect: { verdict: deny, rule: block-memory-edit-after-injection }
+  - name: blocks automatic memory edits after injected content too
+    covers: block-memory-edit-after-injection
+    facts: { action: file_write, target_path: /home/dev/.claude/projects/-home-dev-api/memory/notes.md, path_class: home, target_class: memory_file, injection_seen: true, risk: medium }
+    expect: { verdict: deny, rule: block-memory-edit-after-injection }
+  - name: injected content does not block code edits
+    covers: block-memory-edit-after-injection
+    facts: { action: file_write, target_class: code, path_class: repo, injection_seen: true, risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before writing an instruction to skip approvals
+    covers: ask-safety-weakening-write
+    facts: { action: file_write, target_class: code, path_class: repo, injection_detected: high, risk: low }
+    expect: { verdict: ask, rule: ask-safety-weakening-write }
+  - name: a low-confidence match is not asked about
+    covers: ask-safety-weakening-write
+    facts: { action: file_write, target_class: code, path_class: repo, injection_detected: low, risk: low }
+    expect: { verdict: allow }
+
+  - name: asks before writing invisible characters
+    covers: ask-hidden-content-write
+    facts: { action: file_write, target_class: code, path_class: repo, hidden_content: true, risk: low }
+    expect: { verdict: ask, rule: ask-hidden-content-write }
+  - name: an MCP call carrying hidden text asks
+    covers: ask-hidden-content-write
+    facts: { action: mcp_call, mcp_server: notion, mcp_tool: create_page, hidden_content: true, risk: medium }
+    expect: { verdict: ask, rules: [privometry/agent-instructions:ask-hidden-content-write] }
+  - name: plain text is not hidden content
+    covers: ask-hidden-content-write
+    facts: { action: file_write, target_class: code, path_class: repo, risk: low }
+    expect: { verdict: allow }

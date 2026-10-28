@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/riskfeed/v1/riskfeed.schema.json",
+  "title": "Privometry risk feed v1",
+  "description": "A risk feed snapshot or delta: how risky each known MCP server, skill, plugin or IDE extension is. Delivered as the payload of a DSSE envelope (payloadType application/vnd.privometry.riskfeed+json) signed with the feed key. Devices reject any document whose sequence is not higher than the one they hold.",
+  "type": "object",
+  "required": ["schema", "feed", "kind", "sequence", "published_at", "expires_at", "methodology_version", "entries"],
+  "properties": {
+    "schema": { "const": "privometry.riskfeed/v1" },
+    "feed": { "enum": ["community", "curated"] },
+    "kind": { "enum": ["snapshot", "delta"] },
+    "sequence": { "type": "integer", "minimum": 1, "description": "Only increases; prevents rollback." },
+    "base_sequence": { "type": "integer", "minimum": 1, "description": "Delta only: the sequence this delta applies on top of." },
+    "published_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+    "expires_at": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/timestamp",
+      "description": "Devices still use an expired feed, and raise a health finding once it is older than 7 days."
+    },
+    "methodology_version": { "$ref": "../../common/v1/common.schema.json#/$defs/semver" },
+    "entries": { "type": "array", "items": { "$ref": "#/$defs/entry" } },
+    "removed": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "../../common/v1/common.schema.json#/$defs/component_id" },
+      "description": "Delta only: components dropped from the feed."
+    },
+    "ext": { "$ref": "../../common/v1/common.schema.json#/$defs/ext" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "delta" } } },
+      "then": { "required": ["base_sequence"] },
+      "else": { "properties": { "base_sequence": false, "removed": false } }
+    }
+  ],
+  "$defs": {
+    "level": { "enum": ["low", "medium", "high", "critical"] },
+    "signal": {
+      "enum": [
+        "known_malicious", "tool_description_injection", "shell_exec_tool", "file_write_tool", "network_egress",
+        "credential_access", "unpinned_version", "unsigned_release", "publisher_changed", "new_package",
+        "low_adoption", "unmaintained", "open_advisory", "obfuscated_code", "other"
+      ]
+    },
+    "subscore": {
+      "type": "object",
+      "required": ["points", "signals"],
+      "properties": {
+        "points": { "type": "integer", "minimum": 0, "maximum": 25 },
+        "signals": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/signal" } }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": ["component_id", "kind", "source", "versions", "score", "level", "signals", "default_verdict", "updated_at", "curation", "score_breakdown"],
+      "properties": {
+        "component_id": { "$ref": "../../common/v1/common.schema.json#/$defs/component_id" },
+        "kind": { "enum": ["mcp_server", "skill", "plugin", "ide_extension"] },
+        "source": {
+          "type": "object",
+          "required": ["ecosystem", "name"],
+          "properties": {
+            "ecosystem": { "enum": ["npm", "pypi", "oci", "github", "url", "vscode_marketplace", "open_vsx", "other"] },
+            "name": { "type": "string", "minLength": 1, "maxLength": 512 },
+            "publisher": { "type": "string", "maxLength": 256 }
+          }
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["version"],
+            "properties": {
+              "version": { "type": "string", "minLength": 1, "maxLength": 128 },
+              "digest": { "$ref": "../../common/v1/common.schema.json#/$defs/sha256", "description": "Digest of the published package." },
+              "tool_manifest_hash": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/sha256",
+                "description": "SHA-256 of the canonical tool manifest (names, descriptions, input schemas). The edge compares it with what a running server reports and falls back to ask on a mismatch (tool_manifest_changed)."
+              }
+            }
+          }
+        },
+        "score": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Sum of the four subscores, after overrides. Higher is riskier." },
+        "level": { "$ref": "#/$defs/level" },
+        "signals": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/signal" } },
+        "score_breakdown": {
+          "type": "object",
+          "required": ["capability", "provenance", "behavior", "reputation"],
+          "properties": {
+            "capability": { "$ref": "#/$defs/subscore" },
+            "provenance": { "$ref": "#/$defs/subscore" },
+            "behavior": { "$ref": "#/$defs/subscore" },
+            "reputation": { "$ref": "#/$defs/subscore" },
+            "override": {
+              "enum": ["known_malicious", "tool_description_injection", "advisory_floor"],
+              "description": "Set when an override replaced the sum."
+            }
+          }
+        },
+        "advisories": { "type": "array", "items": { "$ref": "#/$defs/advisory" } },
+        "default_verdict": { "$ref": "../../common/v1/common.schema.json#/$defs/verdict" },
+        "updated_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "curation": { "enum": ["community", "curated"] }
+      },
+      "allOf": [
+        { "if": { "properties": { "score": { "maximum": 24 } } }, "then": { "properties": { "level": { "const": "low" } } } },
+        { "if": { "properties": { "score": { "minimum": 25, "maximum": 49 } } }, "then": { "properties": { "level": { "const": "medium" } } } },
+        { "if": { "properties": { "score": { "minimum": 50, "maximum": 74 } } }, "then": { "properties": { "level": { "const": "high" } } } },
+        { "if": { "properties": { "score": { "minimum": 75 } } }, "then": { "properties": { "level": { "const": "critical" } } } },
+        {
+          "if": { "properties": { "signals": { "contains": { "enum": ["known_malicious", "tool_description_injection"] } } } },
+          "then": { "properties": { "score": { "const": 100 }, "default_verdict": { "const": "deny" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "mcp_server" } } },
+          "then": { "properties": { "component_id": { "pattern": "^mcp_" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "skill" } } },
+          "then": { "properties": { "component_id": { "pattern": "^skl_" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "plugin" } } },
+          "then": { "properties": { "component_id": { "pattern": "^plg_" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "ide_extension" } } },
+          "then": { "properties": { "component_id": { "pattern": "^ext_" } } }
+        }
+      ]
+    },
+    "advisory": {
+      "type": "object",
+      "required": ["id", "severity", "summary", "affected", "published_at"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^PRIVOMETRY-ADV-[0-9]{4}-[0-9]{4,}$" },
+        "aliases": { "type": "array", "items": { "type": "string", "maxLength": 64 }, "description": "For example CVE or GHSA IDs." },
+        "severity": { "$ref": "#/$defs/level" },
+        "cvss": {
+          "type": "object",
+          "required": ["version", "vector", "score"],
+          "properties": {
+            "version": { "enum": ["3.1", "4.0"] },
+            "vector": { "type": "string", "pattern": "^CVSS:(3\\.1|4\\.0)/" },
+            "score": { "type": "number", "minimum": 0, "maximum": 10 }
+          }
+        },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "affected": { "type": "string", "minLength": 1, "maxLength": 256, "description": "Version range, for example \">=1.2.0 <1.4.3\"." },
+        "fixed": { "type": "array", "items": { "type": "string" } },
+        "references": { "type": "array", "items": { "$ref": "../../common/v1/common.schema.json#/$defs/https_url" } },
+        "published_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" }
+      }
+    }
+  }
+}

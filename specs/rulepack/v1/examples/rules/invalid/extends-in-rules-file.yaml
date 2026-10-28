@@ -1,0 +1,14 @@
+schema: privometry.rules/v1
+rules:
+  - id: ask-terraform-destroy
+    category: catastrophic
+    when: { action: shell_exec, program: terraform, subcommand: destroy }
+    verdict: ask
+    message: Confirm terraform destroy.
+  - id: ask-terraform-apply-destroy
+    category: catastrophic
+    when: { action: shell_exec, program: terraform, subcommand: apply, flags: [-destroy] }
+    verdict: ask
+    message: Confirm terraform apply -destroy.
+    fail_mode: closed
+extends: [privometry/secrets@^1]

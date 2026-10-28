@@ -1,0 +1,12 @@
+schema: privometry.detectors/v1
+detectors:
+  - id: aws-key
+    title: AWS key
+    category: credential
+    kind: pattern
+    severity: high
+    confidence: high
+    secret_type: aws_access_key
+    applies_to: [action_argument]
+    pattern: 'AKIA[0-9A-Z]{16}'
+    samples: { match: [a], no_match: [] }

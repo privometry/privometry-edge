@@ -1,0 +1,1228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://privometry.dev/specs/adapter/v1/adapter.schema.json",
+  "title": "Privometry adapter definition v1",
+  "description": "Describes one coding agent as data: how to detect it, where its config lives, how to register Privometry's hook, how to read each hook payload and how to answer in the agent's native format. Written in YAML, validated as JSON. Shipped as a signed set so path or format changes need no binary release.",
+  "type": "object",
+  "required": [
+    "schema",
+    "agent",
+    "display_name",
+    "versions",
+    "detect",
+    "config_tiers",
+    "hooks"
+  ],
+  "properties": {
+    "schema": {
+      "const": "privometry.adapter/v1"
+    },
+    "agent": {
+      "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "versions": {
+      "type": "string",
+      "pattern": "^(>=|>|<=|<|=)?[0-9]+\\.[0-9]+\\.[0-9]+( (>=|>|<=|<)[0-9]+\\.[0-9]+\\.[0-9]+)?$",
+      "description": "Supported version range, for example \">=2.1.295 <3.0.0\"."
+    },
+    "verified": {
+      "type": "array",
+      "description": "Agent versions whose recorded fixtures pass in CI. Empty means the definition is based on documentation only.",
+      "items": {
+        "type": "object",
+        "required": [
+          "version",
+          "fixtures"
+        ],
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "fixtures": {
+            "type": "string",
+            "description": "Folder under test/fixtures."
+          }
+        }
+      }
+    },
+    "detect": {
+      "type": "object",
+      "properties": {
+        "binaries": {
+          "$ref": "#/$defs/string_list"
+        },
+        "processes": {
+          "$ref": "#/$defs/string_list"
+        },
+        "app_bundles": {
+          "$ref": "#/$defs/os_paths",
+          "description": "Desktop app install locations."
+        },
+        "app_binaries": {
+          "$ref": "#/$defs/os_paths",
+          "description": "The agent's own binary inside a desktop app, such as the Codex engine inside ChatGPT.app. Its presence means the app is installed, and it answers version_cmd when the binary on PATH is missing or fails."
+        },
+        "ide_extension_ids": {
+          "$ref": "#/$defs/string_list"
+        },
+        "version_cmd": {
+          "$ref": "#/$defs/string_list"
+        },
+        "bypass_flags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^-{1,2}[A-Za-z][A-Za-z0-9-]*( [A-Za-z0-9_-]+)?$"
+          },
+          "description": "Command-line flags that make the agent skip its permission prompts or its hooks, such as --dangerously-skip-permissions. An entry may name a value (--approval-mode yolo), matched as the next argument or after =. The daemon reports a running agent started with one as an integrity event (hooks_bypassed), recording the flag and never the command line."
+        },
+        "process_patterns": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 3,
+            "pattern": "/$"
+          },
+          "description": "Path fragments that identify the agent whatever its program is called, such as @anthropic-ai/claude-code/ or the native installer's claude/versions/. Matched with / as the separator against the program and, for script runtimes (node, bun, deno, python), against the script. Used for bypass flags, silent agents and discovery."
+        },
+        "no_session_args": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+( [A-Za-z0-9_-]+)*$"
+          },
+          "description": "Arguments of long-running commands that start no agent session, such as \"mcp serve\" for claude mcp serve. Matched as consecutive arguments after the program. A process running one is never reported as a silent agent (hooks_silent)."
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "binaries"
+          ]
+        },
+        {
+          "required": [
+            "processes"
+          ]
+        },
+        {
+          "required": [
+            "app_bundles"
+          ]
+        },
+        {
+          "required": [
+            "ide_extension_ids"
+          ]
+        },
+        {
+          "required": [
+            "app_binaries"
+          ]
+        }
+      ]
+    },
+    "env_overrides": {
+      "type": "array",
+      "description": "Environment variables that relocate a config directory, checked before default paths.",
+      "items": {
+        "type": "object",
+        "required": [
+          "var",
+          "replaces"
+        ],
+        "properties": {
+          "var": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "replaces": {
+            "type": "string",
+            "description": "Path prefix the variable's value substitutes, for example ~/.claude."
+          }
+        }
+      }
+    },
+    "config_tiers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "tier",
+          "format",
+          "holds",
+          "paths"
+        ],
+        "properties": {
+          "tier": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/config_tier"
+          },
+          "format": {
+            "$ref": "#/$defs/file_format"
+          },
+          "holds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "settings",
+                "permissions",
+                "hooks",
+                "mcp_servers",
+                "skills",
+                "plugins",
+                "rules",
+                "other"
+              ]
+            }
+          },
+          "paths": {
+            "$ref": "#/$defs/os_paths"
+          },
+          "requires_trust": {
+            "type": "boolean",
+            "description": "The agent ignores this tier until the user trusts the project."
+          }
+        }
+      }
+    },
+    "mcp_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "tier",
+          "format",
+          "paths",
+          "pointer"
+        ],
+        "properties": {
+          "tier": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/config_tier"
+          },
+          "format": {
+            "$ref": "#/$defs/file_format"
+          },
+          "paths": {
+            "$ref": "#/$defs/os_paths"
+          },
+          "pointer": {
+            "$ref": "#/$defs/json_pointer_pattern",
+            "description": "Location of the server map inside the file. A segment that is exactly * visits every key at that level."
+          }
+        }
+      }
+    },
+    "memory_files": {
+      "type": "array",
+      "description": "Files the agent loads as standing instructions or memory, which shape every later session: the content scanner discovers, hashes and scans them, and target_class memory_file marks writes to them.",
+      "items": {
+        "type": "object",
+        "required": [
+          "tier",
+          "kind",
+          "format",
+          "paths"
+        ],
+        "properties": {
+          "tier": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/config_tier"
+          },
+          "kind": {
+            "enum": [
+              "instructions",
+              "rules",
+              "memory"
+            ],
+            "description": "instructions: a standing instruction file such as CLAUDE.md or AGENTS.md. rules: a folder of rule files the agent applies, sometimes only to matching paths. memory: notes the agent itself keeps between sessions."
+          },
+          "format": {
+            "$ref": "#/$defs/file_format"
+          },
+          "paths": {
+            "$ref": "#/$defs/os_paths"
+          },
+          "nested": {
+            "type": "boolean",
+            "description": "Project tier only: the same relative path also counts in any folder below the repo root, as with nested CLAUDE.md or AGENTS.md files."
+          },
+          "imports": {
+            "type": "boolean",
+            "description": "The agent follows @path imports in this file, so imported files are memory files too."
+          },
+          "written_by_agent": {
+            "type": "boolean",
+            "description": "The agent writes this file itself during normal use, for example automatic memory."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "tier": {
+                  "not": {
+                    "const": "project"
+                  }
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "nested": false
+              }
+            }
+          }
+        ]
+      }
+    },
+    "hooks": {
+      "$ref": "#/$defs/hooks"
+    },
+    "tool_kinds": {
+      "type": "object",
+      "description": "Agent tool name (wildcard * allowed) to Privometry action kind. First exact match wins, then the longest wildcard.",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9_:.*-]+$"
+      },
+      "additionalProperties": {
+        "$ref": "../../common/v1/common.schema.json#/$defs/action_kind"
+      }
+    },
+    "tool_targets": {
+      "type": "object",
+      "description": "Where each tool's target lives inside tool_input, keyed by agent tool name (wildcards allowed).",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9_:.*-]+$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "minProperties": 1,
+        "properties": {
+          "command": {
+            "$ref": "#/$defs/json_pointer"
+          },
+          "path": {
+            "$ref": "#/$defs/json_pointer"
+          },
+          "url": {
+            "$ref": "#/$defs/json_pointer"
+          },
+          "query": {
+            "$ref": "#/$defs/json_pointer"
+          },
+          "patch": {
+            "$ref": "#/$defs/json_pointer",
+            "description": "A multi-file patch whose paths the extractor parses."
+          },
+          "content": {
+            "$ref": "#/$defs/json_pointer",
+            "description": "Text the tool writes: file content or an edit's replacement. The content scanner checks it before the write; a non-string value is scanned as its string leaves."
+          }
+        }
+      }
+    },
+    "mcp_tools": {
+      "type": "object",
+      "description": "How MCP server and tool names appear in tool_name.",
+      "required": [
+        "name_template"
+      ],
+      "properties": {
+        "name_template": {
+          "type": "string",
+          "description": "Tool name layout using {server} and {tool}, for example mcp__{server}__{tool} or MCP:{tool}."
+        },
+        "server_pointer": {
+          "$ref": "#/$defs/json_pointer",
+          "description": "Payload field carrying the server name when the template has no {server}."
+        }
+      }
+    },
+    "posture_checks": {
+      "$ref": "#/$defs/string_list"
+    },
+    "notes": {
+      "$ref": "#/$defs/string_list"
+    }
+  },
+  "allOf": [
+    {
+      "description": "Claude Code and Codex read pre-tool decisions from hookSpecificOutput.",
+      "if": {
+        "properties": {
+          "hooks": {
+            "properties": {
+              "registration": {
+                "enum": [
+                  "claude_settings",
+                  "codex_hooks"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "hooks": {
+            "properties": {
+              "events": {
+                "items": {
+                  "if": {
+                    "properties": {
+                      "role": {
+                        "enum": [
+                          "pre_tool",
+                          "pre_shell",
+                          "pre_mcp",
+                          "pre_file_read"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "responses": {
+                        "propertyNames": {
+                          "enum": [
+                            "allow",
+                            "ask",
+                            "deny"
+                          ]
+                        },
+                        "additionalProperties": {
+                          "properties": {
+                            "stdout": {
+                              "oneOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "hookSpecificOutput"
+                                  ],
+                                  "properties": {
+                                    "hookSpecificOutput": {
+                                      "type": "object",
+                                      "required": [
+                                        "hookEventName",
+                                        "permissionDecision"
+                                      ],
+                                      "properties": {
+                                        "permissionDecision": {
+                                          "enum": [
+                                            "allow",
+                                            "ask",
+                                            "deny",
+                                            "defer"
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Cursor reads decisions from a top-level permission field.",
+      "if": {
+        "properties": {
+          "hooks": {
+            "properties": {
+              "registration": {
+                "const": "cursor_hooks"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "hooks": {
+            "properties": {
+              "events": {
+                "items": {
+                  "if": {
+                    "properties": {
+                      "role": {
+                        "enum": [
+                          "pre_tool",
+                          "pre_shell",
+                          "pre_mcp",
+                          "pre_file_read"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "responses": {
+                        "propertyNames": {
+                          "enum": [
+                            "allow",
+                            "ask",
+                            "deny"
+                          ]
+                        },
+                        "additionalProperties": {
+                          "properties": {
+                            "stdout": {
+                              "oneOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "permission"
+                                  ],
+                                  "properties": {
+                                    "permission": {
+                                      "enum": [
+                                        "allow",
+                                        "ask",
+                                        "deny"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Gemini CLI reads a BeforeTool decision from a top-level decision field and cannot ask.",
+      "if": {
+        "properties": {
+          "hooks": {
+            "properties": {
+              "registration": {
+                "const": "gemini_settings"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "hooks": {
+            "properties": {
+              "events": {
+                "items": {
+                  "if": {
+                    "properties": {
+                      "role": {
+                        "enum": [
+                          "pre_tool",
+                          "pre_shell",
+                          "pre_mcp",
+                          "pre_file_read"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "responses": {
+                        "propertyNames": {
+                          "enum": [
+                            "allow",
+                            "ask",
+                            "deny"
+                          ]
+                        },
+                        "additionalProperties": {
+                          "properties": {
+                            "stdout": {
+                              "oneOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "decision"
+                                  ],
+                                  "properties": {
+                                    "decision": {
+                                      "enum": [
+                                        "allow",
+                                        "deny",
+                                        "block"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Copilot CLI reads a preToolUse decision from a top-level permissionDecision field.",
+      "if": {
+        "properties": {
+          "hooks": {
+            "properties": {
+              "registration": {
+                "const": "copilot_hooks"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "hooks": {
+            "properties": {
+              "events": {
+                "items": {
+                  "if": {
+                    "properties": {
+                      "role": {
+                        "enum": [
+                          "pre_tool",
+                          "pre_shell",
+                          "pre_mcp",
+                          "pre_file_read"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "responses": {
+                        "propertyNames": {
+                          "enum": [
+                            "allow",
+                            "ask",
+                            "deny"
+                          ]
+                        },
+                        "additionalProperties": {
+                          "properties": {
+                            "stdout": {
+                              "oneOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "permissionDecision"
+                                  ],
+                                  "properties": {
+                                    "permissionDecision": {
+                                      "enum": [
+                                        "allow",
+                                        "ask",
+                                        "deny"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Antigravity reads a PreToolUse decision from a top-level decision field.",
+      "if": {
+        "properties": {
+          "hooks": {
+            "properties": {
+              "registration": {
+                "const": "antigravity_hooks"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "hooks": {
+            "properties": {
+              "events": {
+                "items": {
+                  "if": {
+                    "properties": {
+                      "role": {
+                        "enum": [
+                          "pre_tool",
+                          "pre_shell",
+                          "pre_mcp",
+                          "pre_file_read"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "responses": {
+                        "propertyNames": {
+                          "enum": [
+                            "allow",
+                            "ask",
+                            "deny"
+                          ]
+                        },
+                        "additionalProperties": {
+                          "properties": {
+                            "stdout": {
+                              "oneOf": [
+                                {
+                                  "type": "null"
+                                },
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "decision"
+                                  ],
+                                  "properties": {
+                                    "decision": {
+                                      "enum": [
+                                        "allow",
+                                        "auto_approve",
+                                        "deny",
+                                        "ask",
+                                        "force_ask",
+                                        "deny_unless_prior_grant"
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "string_list": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "json_pointer": {
+      "type": "string",
+      "pattern": "^(/([^~/]|~[01])*)*$"
+    },
+    "json_pointer_pattern": {
+      "type": "string",
+      "pattern": "^(/(\\*|([^~/*]|~[01])*))*$"
+    },
+    "file_format": {
+      "enum": [
+        "json",
+        "jsonc",
+        "toml",
+        "yaml",
+        "mdc",
+        "markdown",
+        "starlark"
+      ]
+    },
+    "os_paths": {
+      "type": "object",
+      "description": "Paths per OS; any applies to every OS. ~, %USERPROFILE%, %APPDATA%, %LOCALAPPDATA% and %ProgramData% are expanded; relative paths are relative to the repo root; * matches within one path segment.",
+      "minProperties": 1,
+      "propertyNames": {
+        "enum": [
+          "any",
+          "macos",
+          "linux",
+          "windows"
+        ]
+      },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "install_target": {
+      "type": "object",
+      "required": [
+        "tier",
+        "paths"
+      ],
+      "properties": {
+        "tier": {
+          "$ref": "../../common/v1/common.schema.json#/$defs/config_tier"
+        },
+        "paths": {
+          "$ref": "#/$defs/os_paths",
+          "description": "File Privometry writes its hook registration into."
+        },
+        "format": {
+          "$ref": "#/$defs/file_format"
+        },
+        "lock": {
+          "type": "object",
+          "description": "Setting that stops lower tiers from adding or removing hooks.",
+          "required": [
+            "key",
+            "value"
+          ],
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "value": {}
+          }
+        }
+      }
+    },
+    "hooks": {
+      "type": "object",
+      "required": [
+        "registration",
+        "install",
+        "events"
+      ],
+      "properties": {
+        "registration": {
+          "enum": [
+            "claude_settings",
+            "cursor_hooks",
+            "codex_hooks",
+            "gemini_settings",
+            "copilot_hooks",
+            "antigravity_hooks"
+          ],
+          "description": "Layout of the hook registration file; selects the writer guard install uses. gemini_settings: Gemini CLI settings.json, grouped like Claude Code with timeouts in milliseconds. copilot_hooks: a hooks file of Copilot CLI's own (version 1, camelCase events, one entry per command). antigravity_hooks: Antigravity's hooks.json, where each top-level key is a hook name holding event keys; Privometry writes the name privometry. PreToolUse and PostToolUse take matcher groups, other events a list of handlers; timeouts in seconds."
+        },
+        "install": {
+          "type": "object",
+          "required": [
+            "free"
+          ],
+          "properties": {
+            "free": {
+              "$ref": "#/$defs/install_target"
+            },
+            "enterprise": {
+              "$ref": "#/$defs/install_target"
+            }
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600
+        },
+        "fail_closed_option": {
+          "description": "Per-hook setting that makes the agent block the action when the hook crashes or times out. null when the agent has none.",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "key",
+                "value"
+              ],
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "value": {},
+                "min_version": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "trust": {
+          "type": "object",
+          "description": "Whether the agent ignores new hooks until the user approves them.",
+          "required": [
+            "required"
+          ],
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "tiers": {
+              "type": "array",
+              "items": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/config_tier"
+              }
+            },
+            "instructions": {
+              "type": "string"
+            }
+          }
+        },
+        "imported_by": {
+          "type": "array",
+          "description": "Other agents that also run this agent's hooks, so the daemon must dedupe.",
+          "items": {
+            "type": "object",
+            "required": [
+              "agent",
+              "default_enabled"
+            ],
+            "properties": {
+              "agent": {
+                "$ref": "../../common/v1/common.schema.json#/$defs/agent_product"
+              },
+              "default_enabled": {
+                "type": "boolean"
+              },
+              "setting": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "payload_markers": {
+          "type": "array",
+          "description": "Payload fields whose presence identifies this agent as the caller, used when another agent imports hooks.",
+          "items": {
+            "$ref": "#/$defs/json_pointer"
+          }
+        },
+        "disable_settings": {
+          "type": "array",
+          "description": "Settings that turn all of the agent's hooks off, read in every JSON and TOML config tier the definition lists that holds settings or hooks. The hook is reported disabled (guard state and heartbeat status disabled, integrity check hooks_disabled) when any of them holds its value. Empty when none is known.",
+          "items": {
+            "type": "object",
+            "required": [
+              "pointer",
+              "value"
+            ],
+            "properties": {
+              "pointer": {
+                "$ref": "#/$defs/json_pointer"
+              },
+              "value": {
+                "description": "The value that turns hooks off, compared after parsing."
+              }
+            }
+          }
+        },
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/hook_event"
+          }
+        }
+      }
+    },
+    "hook_event": {
+      "type": "object",
+      "required": [
+        "name",
+        "role",
+        "verdicts",
+        "request",
+        "responses"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The agent's event name, for example PreToolUse."
+        },
+        "role": {
+          "enum": [
+            "pre_tool",
+            "pre_shell",
+            "pre_mcp",
+            "pre_file_read",
+            "post_tool",
+            "permission_request",
+            "session_start",
+            "session_end",
+            "config_change",
+            "instructions_loaded",
+            "prompt_submit",
+            "subagent_start",
+            "subagent_stop"
+          ]
+        },
+        "matcher": {
+          "type": "string",
+          "description": "Matcher in the agent's own syntax, written verbatim into the registration."
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600,
+          "description": "Overrides hooks.timeout_seconds for this event, for agents that cap some events (Codex limits SessionEnd hooks to 3 seconds)."
+        },
+        "verdicts": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/verdict"
+          },
+          "description": "Verdicts the agent honors for this event. Empty for observe-only events."
+        },
+        "fallback": {
+          "type": "object",
+          "description": "Verdict sent instead of one the event cannot express, for example ask: deny. Recorded as decision.native_verdict.",
+          "propertyNames": {
+            "enum": [
+              "allow",
+              "ask",
+              "deny"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "../../common/v1/common.schema.json#/$defs/verdict"
+          }
+        },
+        "request": {
+          "type": "object",
+          "description": "JSON pointers into the stdin payload.",
+          "propertyNames": {
+            "enum": [
+              "session_id",
+              "tool_use_id",
+              "tool_name",
+              "tool_input",
+              "tool_response",
+              "prompt_id",
+              "prompt",
+              "cwd",
+              "command",
+              "file_path",
+              "mcp_server",
+              "mcp_tool",
+              "permission_mode",
+              "agent_version",
+              "workspace_roots",
+              "config_source",
+              "config_path",
+              "memory_type",
+              "load_reason"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/json_pointer"
+          }
+        },
+        "responses": {
+          "type": "object",
+          "description": "Native reply per verdict; none is the reply for observe-only events and for no opinion.",
+          "propertyNames": {
+            "enum": [
+              "allow",
+              "ask",
+              "deny",
+              "none"
+            ]
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/response"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "verdicts": {
+                "contains": {
+                  "const": "allow"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "responses": {
+                "required": [
+                  "allow"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "verdicts": {
+                "contains": {
+                  "const": "ask"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "responses": {
+                "required": [
+                  "ask"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "verdicts": {
+                "contains": {
+                  "const": "deny"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "responses": {
+                "required": [
+                  "deny"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "verdicts": {
+                "maxItems": 0
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "responses": {
+                "required": [
+                  "none"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "verdicts": {
+                "minItems": 1,
+                "not": {
+                  "contains": {
+                    "const": "ask"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "fallback"
+            ],
+            "properties": {
+              "fallback": {
+                "required": [
+                  "ask"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "response": {
+      "type": "object",
+      "required": [
+        "exit_code"
+      ],
+      "description": "What the hook client prints and returns. String values may use {message}, {rule_id} and {event_name}; the hook client escapes them for JSON.",
+      "properties": {
+        "exit_code": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "stdout": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "stderr": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

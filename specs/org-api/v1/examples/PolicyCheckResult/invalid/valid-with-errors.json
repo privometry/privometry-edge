@@ -1,0 +1,12 @@
+{
+  "valid": true,
+  "name": "q4-rollout",
+  "errors": [
+    {
+      "detail": "x"
+    }
+  ],
+  "rules": [],
+  "cedar_policies": "",
+  "cedar_monitor_policies": ""
+}
