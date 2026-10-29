@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
+	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/scanner/parsers"
 )
 
@@ -29,7 +30,7 @@ func Disabled(a registry.Adapter, opts Options, projectDir string) *Disabling {
 		return nil
 	}
 	for _, p := range SettingsFiles(a, opts, projectDir) {
-		if setting := DisablesIn(a, filepath.Join(opts.Root, p.Path), p.Format); setting != "" {
+		if setting := DisablesIn(a, platform.UnderRoot(opts.Root, p.Path), p.Format); setting != "" {
 			return &Disabling{Path: p.Path, Tier: p.Tier, Setting: setting}
 		}
 	}
@@ -94,7 +95,7 @@ func SettingsFiles(a registry.Adapter, opts Options, projectDir string) []Settin
 			matches := []string{pattern}
 			if strings.ContainsAny(pattern, "*?[") {
 				matches = nil
-				found, _ := filepath.Glob(filepath.Join(opts.Root, pattern))
+				found, _ := filepath.Glob(platform.UnderRoot(opts.Root, pattern))
 				for _, m := range found {
 					matches = append(matches, strings.TrimPrefix(m, opts.Root))
 				}

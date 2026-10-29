@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 )
 
 func writeFile(t *testing.T, root, file, content string) {
@@ -40,6 +41,7 @@ func TestCheckDisabledByUserSetting(t *testing.T) {
 }
 
 func TestCheckDisabledByProjectSetting(t *testing.T) {
+	platformtest.UnixPaths(t)
 	a, opts, _ := setup(t, "", nil)
 	c, _ := Install(a, opts)
 	if err := c.Apply(); err != nil {

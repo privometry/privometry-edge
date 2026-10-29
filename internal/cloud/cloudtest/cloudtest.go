@@ -192,7 +192,7 @@ func NewEdge(t testing.TB, r *Region) *Edge {
 	e.Server = httptest.NewUnstartedServer(mux)
 	pool := x509.NewCertPool()
 	pool.AddCert(ca)
-	e.Server.TLS = &tls.Config{ClientAuth: tls.VerifyClientCertIfGiven, ClientCAs: pool}
+	e.Server.TLS = &tls.Config{MinVersion: tls.VersionTLS12, ClientAuth: tls.VerifyClientCertIfGiven, ClientCAs: pool}
 	e.Server.StartTLS()
 	t.Cleanup(e.Server.Close)
 	return e

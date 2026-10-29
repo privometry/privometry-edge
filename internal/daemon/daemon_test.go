@@ -18,6 +18,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/events"
 	"github.com/privometry/privometry-edge/internal/guard"
 	"github.com/privometry/privometry-edge/internal/ipc"
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/policy"
 	"github.com/privometry/privometry-edge/internal/timeline"
@@ -35,7 +36,7 @@ func newDaemon(t *testing.T) (*daemon.Daemon, string) {
 // agent config files on disk.
 func newDaemonAt(t *testing.T, home string) (*daemon.Daemon, string) {
 	t.Helper()
-	data, err := os.MkdirTemp("/tmp", "privometry-d-") // short path for the socket
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-d-") // short path for the socket
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -318,7 +319,7 @@ func TestSpoolFailModesAndSocket(t *testing.T) {
 // gives no opinion and records nothing, so each action is decided once.
 func TestCursorImportSkippedWhenCursorIsHooked(t *testing.T) {
 	home := t.TempDir()
-	data, err := os.MkdirTemp("/tmp", "privometry-c-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-c-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -565,7 +566,7 @@ allowlist:
 
 func TestMemoryFileHashingAndAttribution(t *testing.T) {
 	home := t.TempDir()
-	data, err := os.MkdirTemp("/tmp", "privometry-m-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-m-")
 	if err != nil {
 		t.Fatal(err)
 	}

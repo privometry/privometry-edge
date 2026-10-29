@@ -19,6 +19,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/daemon"
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/policy"
@@ -46,7 +47,7 @@ func (c *testClock) Advance(d time.Duration) {
 // An enrolled daemon uploads its timeline in order, retries after failures,
 // sends heartbeats and applies the commands they bring back.
 func TestEnrolledDaemonUploadsAndBeats(t *testing.T) {
-	data, err := os.MkdirTemp("/tmp", "privometry-d-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-d-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +159,7 @@ func TestEnrolledDaemonUploadsAndBeats(t *testing.T) {
 // The organization's catalog from the bundle decides MCP calls through the
 // privometry/mcp-allowlist rules, and MCP events carry the catalog status.
 func TestCatalogFromTheBundle(t *testing.T) {
-	data, err := os.MkdirTemp("/tmp", "privometry-d-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-d-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +229,7 @@ rules:
 // An ask that goes remote is denied at once, requested in the background, and
 // its retry is allowed exactly once after a person approves it.
 func TestRemoteApprovals(t *testing.T) {
-	data, err := os.MkdirTemp("/tmp", "privometry-d-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-d-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +317,7 @@ func firstApproval(t *testing.T, edge *cloudtest.Edge) string {
 // The risk feed decides MCP servers the organization's catalog does not list;
 // the catalog always wins.
 func TestRiskFeedOnMCPCalls(t *testing.T) {
-	data, err := os.MkdirTemp("/tmp", "privometry-d-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-d-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -389,7 +390,7 @@ func TestFingerprintsMatchAcrossDevices(t *testing.T) {
 	edge.Serve(edge.Signed(t, cloudtest.Bundle{Version: 1, CreatedAt: now, ExpiresAt: now.Add(30 * 24 * time.Hour)}))
 	token := "gh" + "p_" + strings.Repeat("Ab1", 12)
 	device := func(enrolled bool) (*daemon.Daemon, platform.Env, keystore.Store) {
-		data, err := os.MkdirTemp("/tmp", "privometry-f-")
+		data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-f-")
 		if err != nil {
 			t.Fatal(err)
 		}

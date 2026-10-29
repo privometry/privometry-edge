@@ -17,7 +17,9 @@ import (
 	"github.com/privometry/privometry-edge/internal/events"
 	"github.com/privometry/privometry-edge/internal/guard"
 	"github.com/privometry/privometry-edge/internal/ipc"
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 )
 
 func lifecycleDaemon(t *testing.T, home, data string, clock *testClock, boot time.Time) *daemon.Daemon {
@@ -53,6 +55,7 @@ func spool(t *testing.T, data string, at ...time.Time) {
 }
 
 func TestSensorStopped(t *testing.T) {
+	platformtest.UnixPaths(t)
 	home := t.TempDir()
 	t0 := time.Date(2026, 10, 28, 9, 0, 0, 0, time.UTC)
 	boot := t0.Add(-time.Hour)
@@ -70,7 +73,7 @@ func TestSensorStopped(t *testing.T) {
 		{name: "rebooted", down: 90 * time.Minute, boot: t0.Add(30 * time.Minute)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			data, _ := os.MkdirTemp("/tmp", "privometry-l-")
+			data, _ := os.MkdirTemp(ipctest.TempRoot, "privometry-l-")
 			defer os.RemoveAll(data)
 			clock := &testClock{now: t0}
 			first := lifecycleDaemon(t, home, data, clock, tc.boot)
@@ -110,8 +113,9 @@ func TestSensorStopped(t *testing.T) {
 }
 
 func TestUninstallsReportedByTheCLI(t *testing.T) {
+	platformtest.UnixPaths(t)
 	home := t.TempDir()
-	data, _ := os.MkdirTemp("/tmp", "privometry-u-")
+	data, _ := os.MkdirTemp(ipctest.TempRoot, "privometry-u-")
 	defer os.RemoveAll(data)
 	clock := &testClock{now: time.Date(2026, 10, 28, 9, 0, 0, 0, time.UTC)}
 	d := lifecycleDaemon(t, home, data, clock, clock.now.Add(-time.Hour))

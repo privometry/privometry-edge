@@ -14,6 +14,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
 	"github.com/privometry/privometry-edge/internal/daemon"
 	"github.com/privometry/privometry-edge/internal/ipc"
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/policy"
 	"github.com/privometry/privometry-edge/internal/timeline"
@@ -42,7 +43,7 @@ func (e *opError) Error() string { return e.msg }
 // file is kept, and a person can go back to one that scans clean.
 func TestMemorySnapshotsAndRestore(t *testing.T) {
 	home := t.TempDir()
-	data, err := os.MkdirTemp("/tmp", "privometry-s-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-s-")
 	if err != nil {
 		t.Fatal(err)
 	}

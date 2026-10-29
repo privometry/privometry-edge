@@ -12,6 +12,7 @@ import (
 
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
 	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 // Local stdio MCP servers in an agent's user-tier config can be wrapped so
@@ -142,7 +143,7 @@ func eachMCPSource(a registry.Adapter, opts Options, fn func(mcpSource) error) e
 			return err
 		}
 		for _, p := range paths {
-			realPath := filepath.Join(opts.Root, p)
+			realPath := platform.UnderRoot(opts.Root, p)
 			raw, err := os.ReadFile(realPath)
 			if errors.Is(err, fs.ErrNotExist) {
 				continue

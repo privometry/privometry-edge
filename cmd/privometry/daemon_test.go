@@ -14,6 +14,7 @@ import (
 	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
 	"github.com/privometry/privometry-edge/internal/daemon"
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/policy"
 )
@@ -23,7 +24,7 @@ func TestDaemonCommands(t *testing.T) {
 		t.Skip("service install is macOS and Linux only")
 	}
 	home := t.TempDir()
-	data, err := os.MkdirTemp("/tmp", "privometry-s-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-s-")
 	if err != nil {
 		t.Fatal(err)
 	}

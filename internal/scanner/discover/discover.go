@@ -765,7 +765,7 @@ func (d *discoverer) real(p string) string {
 	if d.opts.Root == "" {
 		return p
 	}
-	return filepath.Join(d.opts.Root, p)
+	return platform.UnderRoot(d.opts.Root, p)
 }
 
 // display shortens a path for reports: inside the repo it becomes relative,

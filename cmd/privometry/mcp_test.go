@@ -7,12 +7,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 func TestMCPCmd(t *testing.T) {
 	home := t.TempDir()
-	data, err := os.MkdirTemp("/tmp", "privometry-m-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-m-")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,9 +8,11 @@ import (
 
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 )
 
 func TestMCPServerPointerWildcard(t *testing.T) {
+	platformtest.UnixPaths(t)
 	d := discoverer{opts: Options{Env: platform.Env{Home: "/home/dev"}}}
 	cf := &ConfigFile{
 		Tier: contract.ConfigTierUser,

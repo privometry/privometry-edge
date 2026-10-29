@@ -17,6 +17,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 	"github.com/privometry/privometry-edge/internal/policy"
 	"github.com/privometry/privometry-edge/internal/policy/compiler"
 	"github.com/privometry/privometry-edge/internal/policy/merge"
@@ -84,6 +85,7 @@ func scan(t *testing.T, opts discover.Options) *scanner.Result {
 }
 
 func TestMachineAndRepo(t *testing.T) {
+	platformtest.UnixPaths(t)
 	res := scan(t, fixture(t, true, true))
 
 	agents := map[contract.AgentProduct]discover.Agent{}
@@ -319,6 +321,7 @@ func deref(b *bool) any {
 }
 
 func TestContentFindingsAtRest(t *testing.T) {
+	platformtest.UnixPaths(t)
 	opts := fixture(t, true, true)
 	put := func(rel, body string) {
 		t.Helper()
@@ -548,6 +551,7 @@ func TestParseChanges(t *testing.T) {
 
 // Gemini CLI and Copilot CLI configs, written into an otherwise empty machine.
 func TestGeminiAndCopilot(t *testing.T) {
+	platformtest.UnixPaths(t)
 	root := t.TempDir()
 	write := func(p, body string) {
 		t.Helper()
@@ -656,6 +660,7 @@ func TestGeminiAndCopilot(t *testing.T) {
 }
 
 func TestAntigravity(t *testing.T) {
+	platformtest.UnixPaths(t)
 	root := t.TempDir()
 	write := func(p, body string) {
 		t.Helper()

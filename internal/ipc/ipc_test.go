@@ -37,7 +37,7 @@ func TestRoundTrip(t *testing.T) {
 		var p map[string]any
 		_ = json.Unmarshal(r.Hook.Payload, &p)
 		return ipc.Response{OK: true, Stdout: "tool=" + p["tool_name"].(string), ExitCode: 0}
-	}, time.Second)
+	}, 5*time.Second) // the daemon's timeout; a 2 MB request under -race can take over a second on CI
 
 	if info, _ := os.Stat(addr); info.Mode().Perm() != 0o600 {
 		t.Errorf("socket mode %v", info.Mode().Perm())
@@ -51,7 +51,7 @@ func TestRoundTrip(t *testing.T) {
 		t.Fatalf("%+v %v", resp, err)
 	}
 	big := `{"tool_name":"Write","content":"` + strings.Repeat("x", 2<<20) + `"}`
-	if _, err := ipc.Call(addr, ipc.Request{Op: "hook", Hook: &ipc.HookRequest{Payload: json.RawMessage(big)}}, 2*time.Second); err != nil {
+	if _, err := ipc.Call(addr, ipc.Request{Op: "hook", Hook: &ipc.HookRequest{Payload: json.RawMessage(big)}}, 5*time.Second); err != nil {
 		t.Fatalf("2 MB payload: %v", err)
 	}
 

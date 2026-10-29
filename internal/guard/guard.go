@@ -101,7 +101,7 @@ var ErrUnsupported = errors.New("guard: installing hooks for this agent is not s
 
 func settingsPath(a registry.Adapter, opts Options) (string, string, error) {
 	if opts.File != "" {
-		return opts.File, filepath.Join(opts.Root, opts.File), nil
+		return opts.File, platform.UnderRoot(opts.Root, opts.File), nil
 	}
 	paths, err := a.Paths(a.Hooks.Install.Free.Paths, opts.Env, "")
 	if err != nil {
@@ -110,7 +110,7 @@ func settingsPath(a registry.Adapter, opts Options) (string, string, error) {
 	if len(paths) == 0 {
 		return "", "", fmt.Errorf("guard: %s has no install path on %s", a.Agent, opts.Env.OS())
 	}
-	return paths[0], filepath.Join(opts.Root, paths[0]), nil
+	return paths[0], platform.UnderRoot(opts.Root, paths[0]), nil
 }
 
 func load(realPath string) ([]byte, *object, error) {

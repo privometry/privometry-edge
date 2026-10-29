@@ -13,6 +13,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/daemon"
 	"github.com/privometry/privometry-edge/internal/events"
 	"github.com/privometry/privometry-edge/internal/guard"
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/policy"
 	"github.com/privometry/privometry-edge/internal/timeline"
@@ -20,7 +21,7 @@ import (
 
 func TestIntegrity(t *testing.T) {
 	home := t.TempDir()
-	data, err := os.MkdirTemp("/tmp", "privometry-i-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-i-")
 	if err != nil {
 		t.Fatal(err)
 	}

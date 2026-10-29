@@ -1,7 +1,6 @@
 package timeline_test
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
@@ -68,10 +68,7 @@ func TestAppendSequenceAndQuery(t *testing.T) {
 	if b, _ := s.Events(timeline.Query{Session: "ses_B"}); len(b) != 25 {
 		t.Errorf("session filter: %d", len(b))
 	}
-	info, err := os.Stat(path)
-	if err != nil || info.Mode().Perm() != 0o600 {
-		t.Errorf("database must be private: %v %v", info.Mode(), err)
-	}
+	platformtest.Private(t, path)
 }
 
 func TestDeviceIDAndSessions(t *testing.T) {

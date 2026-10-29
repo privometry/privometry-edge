@@ -337,7 +337,7 @@ func Install(p *Plan, opts Options) error {
 	// Create the data directory first, private, so the service manager does
 	// not create it with its default mode when it opens the log file.
 	if dir, err := opts.Env.DataDir(); err == nil {
-		if err := platform.EnsurePrivateDir(filepath.Join(opts.Root, dir)); err != nil {
+		if err := platform.EnsurePrivateDir(platform.UnderRoot(opts.Root, dir)); err != nil {
 			return err
 		}
 	}
@@ -348,7 +348,7 @@ func Install(p *Plan, opts Options) error {
 	switch {
 	case err == nil && p.Fallback != nil:
 		// The task works now: a Run key install is not needed any more.
-		if _, err := os.Stat(filepath.Join(opts.Root, p.Fallback.Path)); err == nil {
+		if _, err := os.Stat(platform.UnderRoot(opts.Root, p.Fallback.Path)); err == nil {
 			_ = unload(p.Fallback, opts)
 		}
 		return nil
@@ -360,7 +360,7 @@ func Install(p *Plan, opts Options) error {
 	if _, ferr := load(p.Fallback, opts); ferr != nil {
 		return fmt.Errorf("%w; starting privometryd from the Run key instead failed too: %w", err, ferr)
 	}
-	os.Remove(filepath.Join(opts.Root, p.Path)) // so Check and Restart see the Run key install
+	os.Remove(platform.UnderRoot(opts.Root, p.Path)) // so Check and Restart see the Run key install
 	p.Note = fmt.Sprintf("Windows refused the logon task (%v), so privometryd starts from %s\\%s at logon instead, and privometryd -supervise restarts it if it stops.",
 		err, RunKey, RunValue)
 	return nil
@@ -369,7 +369,7 @@ func Install(p *Plan, opts Options) error {
 // load writes the plan's file, runs its Load commands and starts its Start
 // command. It returns the index of the command that failed.
 func load(p *Plan, opts Options) (int, error) {
-	realPath := filepath.Join(opts.Root, p.Path)
+	realPath := platform.UnderRoot(opts.Root, p.Path)
 	if err := os.MkdirAll(filepath.Dir(realPath), 0o755); err != nil { //nolint:gosec // service manager folders (LaunchAgents, systemd user units) are 0755
 		return -1, err
 	}
@@ -398,7 +398,7 @@ func unload(p *Plan, opts Options) error {
 	for _, cmd := range p.Unload {
 		_, _ = opts.Run(cmd[0], cmd[1:]...) // not loaded is fine
 	}
-	err := os.Remove(filepath.Join(opts.Root, p.Path))
+	err := os.Remove(platform.UnderRoot(opts.Root, p.Path))
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
@@ -413,7 +413,7 @@ func stopSupervisor(opts Options) {
 	if err != nil {
 		return
 	}
-	pid, err := os.ReadFile(filepath.Join(opts.Root, winJoin(dir, "privometryd-supervisor.lock")))
+	pid, err := os.ReadFile(platform.UnderRoot(opts.Root, winJoin(dir, "privometryd-supervisor.lock")))
 	if n, _ := strconv.Atoi(strings.TrimSpace(string(pid))); err != nil || n <= 0 {
 		return
 	}
@@ -426,8 +426,8 @@ func runKeyInstalled(p *Plan, opts Options) bool {
 	if p.Fallback == nil {
 		return false
 	}
-	_, task := os.Stat(filepath.Join(opts.Root, p.Path))
-	_, run := os.Stat(filepath.Join(opts.Root, p.Fallback.Path))
+	_, task := os.Stat(platform.UnderRoot(opts.Root, p.Path))
+	_, run := os.Stat(platform.UnderRoot(opts.Root, p.Fallback.Path))
 	return task != nil && run == nil
 }
 
@@ -464,7 +464,7 @@ var (
 func Check(p *Plan, opts Options) Status {
 	s := Status{Path: p.Path}
 	if runKeyInstalled(p, opts) {
-		got, _ := os.ReadFile(filepath.Join(opts.Root, p.Fallback.Path))
+		got, _ := os.ReadFile(platform.UnderRoot(opts.Root, p.Fallback.Path))
 		s.Path, s.RunKey = p.Fallback.Path, true
 		_, err := opts.Run("reg", "query", RunKey, "/v", RunValue)
 		s.Installed, s.Current = err == nil, bytes.Equal(got, p.Fallback.file())
@@ -472,7 +472,7 @@ func Check(p *Plan, opts Options) Status {
 		s.Running = s.PID != 0
 		return s
 	}
-	got, err := os.ReadFile(filepath.Join(opts.Root, p.Path))
+	got, err := os.ReadFile(platform.UnderRoot(opts.Root, p.Path))
 	if err != nil {
 		return s
 	}
@@ -502,7 +502,7 @@ func Check(p *Plan, opts Options) Status {
 			s.Running = true
 			// privometryd writes its PID into the lock file it holds.
 			if dir, err := opts.Env.DataDir(); err == nil {
-				if pid, err := os.ReadFile(filepath.Join(opts.Root, winJoin(dir, "privometryd.lock"))); err == nil {
+				if pid, err := os.ReadFile(platform.UnderRoot(opts.Root, winJoin(dir, "privometryd.lock"))); err == nil {
 					s.PID, _ = strconv.Atoi(strings.TrimSpace(string(pid)))
 				}
 			}
@@ -518,7 +518,7 @@ func windowsDaemon(opts Options) int {
 	if err != nil {
 		return 0
 	}
-	raw, err := os.ReadFile(filepath.Join(opts.Root, winJoin(dir, "privometryd.lock")))
+	raw, err := os.ReadFile(platform.UnderRoot(opts.Root, winJoin(dir, "privometryd.lock")))
 	pid, _ := strconv.Atoi(strings.TrimSpace(string(raw)))
 	if err != nil || pid <= 0 {
 		return 0

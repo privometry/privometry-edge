@@ -3,13 +3,13 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/privometry/privometry-edge/internal/community"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 )
 
 // TestCommunityPackFlow follows a pack from its publisher to a user: keygen,
@@ -36,9 +36,7 @@ func TestCommunityPackFlow(t *testing.T) {
 	if out, code := cli("packs", "keygen", "--publisher", "example", "--out", filepath.Join(pub, "example")); code != 0 || !strings.Contains(out, "Fingerprint sha256:") {
 		t.Fatalf("keygen: %d %s", code, out)
 	}
-	if info, err := os.Stat(filepath.Join(pub, "example.key")); err != nil || info.Mode().Perm() != 0o600 {
-		t.Errorf("the key file must be private: %v %v", info, err)
-	}
+	platformtest.Private(t, filepath.Join(pub, "example.key"))
 	signed := filepath.Join(pub, "helm-guard.pack.json")
 	if out, code := cli("packs", "sign", "../../rulepacks/community/example-helm-guard", "--key", filepath.Join(pub, "example.key"), "--out", signed); code != 0 {
 		t.Fatalf("sign: %d %s", code, out)

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"os/user"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -230,4 +231,20 @@ func under(p, dir string) (string, bool) {
 		return strings.ReplaceAll(p[len(dir)+1:], `\`, "/"), true
 	}
 	return "", false
+}
+
+// UnderRoot maps a logical path p into root, a folder tests use in place of
+// the file system's root. A drive letter in p becomes a folder, so a simulated
+// C:\Users\dev lands at root\C\Users\dev on any host. An empty root leaves p
+// as the real path.
+func UnderRoot(root, p string) string {
+	if root == "" {
+		return filepath.Join(p)
+	}
+	if v := filepath.VolumeName(p); v != "" {
+		p = strings.TrimSuffix(v, ":") + p[len(v):]
+	} else if len(p) >= 2 && p[1] == ':' {
+		p = p[:1] + p[2:] // a Windows path simulated on another host
+	}
+	return filepath.Join(root, p)
 }
