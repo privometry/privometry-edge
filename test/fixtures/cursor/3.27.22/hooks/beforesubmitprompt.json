@@ -1,0 +1,27 @@
+{
+  "conversation_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "generation_id": "e1bfd141-b6e9-48f4-bd89-c10903a490c1",
+  "model": "cursor-grok-4.6-medium",
+  "model_id": "grok-4.6",
+  "model_params": [
+    {
+      "id": "effort",
+      "value": "medium"
+    },
+    {
+      "id": "fast",
+      "value": "false"
+    }
+  ],
+  "composer_mode": "agent",
+  "prompt": "Run rm -rf build",
+  "attachments": [],
+  "session_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "hook_event_name": "beforeSubmitPrompt",
+  "cursor_version": "3.27.22",
+  "workspace_roots": [
+    "/home/dev/acme-api"
+  ],
+  "user_email": "dev@example.com",
+  "transcript_path": "/home/dev/.cursor/projects/home-dev-acme-api/agent-transcripts/845b8d28-a7cd-4c8a-a412-3ab696a33f29/845b8d28-a7cd-4c8a-a412-3ab696a33f29.jsonl"
+}

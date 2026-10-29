@@ -73,8 +73,8 @@ func (d *Daemon) mcp(r ipc.MCPRequest) (ipc.Response, error) {
 	case "result":
 		payload["tool_response"] = body
 	}
-	c := call{adapter: registry.Adapter{Agent: product, ToolKinds: map[string]contract.ActionKind{"*": contract.ActionKindMCPCall}},
-		event: shimEvent, product: product, payload: payload}
+	shim := registry.Adapter{Agent: product, ToolKinds: map[string]contract.ActionKind{"*": contract.ActionKindMCPCall}}
+	c := call{adapter: shim, tools: shim, event: shimEvent, product: product, payload: payload}
 	c.field = func(name string) any {
 		if ptr, ok := shimEvent.Request[name]; ok {
 			return lookup(payload, ptr)

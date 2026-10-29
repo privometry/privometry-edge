@@ -1,0 +1,17 @@
+{
+  "conversation_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "generation_id": "0895b723-a7b9-4685-9a87-fdd0b600fe8f",
+  "model": "grok-4.6",
+  "command": "ls -la",
+  "cwd": "/home/dev/acme-api",
+  "sandbox": true,
+  "tool_use_id": "2721838f-0379-46e4-b9a2-c960a9ef5589",
+  "session_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "hook_event_name": "beforeShellExecution",
+  "cursor_version": "3.27.22",
+  "workspace_roots": [
+    "/home/dev/acme-api"
+  ],
+  "user_email": "dev@example.com",
+  "transcript_path": null
+}

@@ -40,7 +40,25 @@ import (
 
 // replies are written on stdout for agents that expect a JSON reply even
 // when the hook has no opinion. Antigravity's documentation shows {}.
-var replies = map[string]string{"antigravity": "{}"}
+var replies = map[string]map[string]string{
+	"antigravity": {"*": "{}"},
+	// Cursor 3.27 blocks a fail-closed hook that prints nothing. Shell and MCP
+	// calls ask, so the developer still approves or rejects them; preToolUse
+	// and file reads cannot ask.
+	"cursor": {
+		"beforeShellExecution": `{"permission":"ask"}`, "beforeMCPExecution": `{"permission":"ask"}`,
+		"beforeReadFile": `{"permission":"allow"}`, "preToolUse": `{"permission":"allow"}`,
+	},
+}
+
+// reply is what the recorder prints for an agent's event, so the agent goes on
+// as if no hook were installed.
+func reply(agent, event string) string {
+	if r, ok := replies[agent][event]; ok {
+		return r
+	}
+	return replies[agent]["*"]
+}
 
 // starts says how to start each agent in the project.
 var starts = map[contract.AgentProduct]string{
@@ -102,7 +120,7 @@ func hook(args []string, stdin io.Reader, stdout, stderr io.Writer) {
 	if err := record(stdin, *agent, *event, *out); err != nil {
 		fmt.Fprintln(stderr, "hook-recorder:", err)
 	}
-	_, _ = io.WriteString(stdout, replies[*agent])
+	_, _ = io.WriteString(stdout, reply(*agent, *event))
 }
 
 func record(stdin io.Reader, agent, event, out string) error {
@@ -316,7 +334,7 @@ func sanitize(args []string, env platform.Env, stdout io.Writer) error {
 		if err != nil {
 			return err
 		}
-		text := clean.Replace(string(raw))
+		text := scrubEmails(clean.Replace(string(raw)))
 		base := strings.ToLower(event)
 		if tool := toolName(a, event, text); tool != "" {
 			base += "-" + tool
@@ -367,6 +385,8 @@ func cleaner(env platform.Env, project string) *strings.Replacer {
 				add(realPath, to) // /private/tmp/x on macOS for /tmp/x
 			}
 			add(abs, to)
+			// Cursor names transcript folders after the path with / as -.
+			add(dashed(abs), dashed(to))
 		}
 	}
 	paths(project, "/home/dev/acme-api")
@@ -394,7 +414,24 @@ func cleaner(env platform.Env, project string) *strings.Replacer {
 	return strings.NewReplacer(sorted...)
 }
 
+func dashed(p string) string {
+	return strings.Trim(strings.NewReplacer("/", "-", "\\", "-", ":", "").Replace(p), "-")
+}
+
 var unsafeName = regexp.MustCompile(`[^a-z0-9]+`)
+
+var emailRE = regexp.MustCompile(`[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}`)
+
+// scrubEmails replaces email addresses, such as the user_email Cursor puts in
+// every payload, with dev@example.com. git@host remote addresses are kept.
+func scrubEmails(s string) string {
+	return emailRE.ReplaceAllStringFunc(s, func(m string) string {
+		if strings.HasPrefix(m, "git@") {
+			return m
+		}
+		return "dev@example.com"
+	})
+}
 
 // toolName is the tool a tool event is about, as a file name part.
 func toolName(a registry.Adapter, event, payload string) string {

@@ -40,7 +40,7 @@ type piece struct {
 func (c call) pieces(actions []intent.Action) []piece {
 	var out []piece
 	toolName := c.str("tool_name")
-	target, _ := c.adapter.ToolTarget(toolName)
+	target, _ := c.tools.ToolTarget(toolName)
 	input := c.field("tool_input")
 	written := ""
 	if target.Content != "" {
@@ -227,7 +227,7 @@ func actionTaken(verdict string) events.ContentFindingActionTaken {
 // scanOutput checks what a finished tool brought into the session: injected
 // instructions mark the session, and every finding is recorded.
 func (d *Daemon) scanOutput(c call, sess *sessionInfo, toolName string) {
-	switch c.adapter.ToolKind(toolName) {
+	switch c.tools.ToolKind(toolName) {
 	case "file_write", "file_delete":
 		return // their output echoes the input, scanned before the action
 	}

@@ -1,0 +1,17 @@
+{
+  "conversation_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "generation_id": "c4dac0f7-449a-433d-a98d-a64b89914dd9",
+  "model": "grok-4.6",
+  "command": "curl -sI https://example.com",
+  "cwd": "",
+  "sandbox": true,
+  "tool_use_id": "09dffb8d-8930-4b8d-9e8f-1ab68bd09c57",
+  "session_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "hook_event_name": "beforeShellExecution",
+  "cursor_version": "3.27.22",
+  "workspace_roots": [
+    "/home/dev/acme-api"
+  ],
+  "user_email": "dev@example.com",
+  "transcript_path": "/home/dev/.cursor/projects/home-dev-acme-api/agent-transcripts/845b8d28-a7cd-4c8a-a412-3ab696a33f29/845b8d28-a7cd-4c8a-a412-3ab696a33f29.jsonl"
+}

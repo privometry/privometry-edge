@@ -1,9 +1,12 @@
 # Shipped adapter definition. Validated against specs/adapter/v1 by internal/adapters/registry tests.
+# Verified against a recorded 3.27.22 session (test/fixtures/cursor/3.27.22).
 schema: privometry.adapter/v1
 agent: cursor
 display_name: Cursor
-versions: ">=1.7.0 <3.0.0"
-verified: []
+versions: ">=1.7.0 <4.0.0"
+verified:
+  - version: 3.27.22
+    fixtures: cursor/3.27.22
 detect:
   binaries: [cursor, cursor-agent]
   processes: [Cursor, cursor-agent]
@@ -85,13 +88,14 @@ hooks:
     - name: beforeMCPExecution
       role: pre_mcp
       verdicts: [allow, ask, deny]
-      request: { session_id: /conversation_id, tool_name: /tool_name, tool_input: /tool_input, mcp_server: /mcp_server_name, agent_version: /cursor_version }
+      # tool_input is a JSON string here, an object on preToolUse.
+      request: { session_id: /conversation_id, tool_name: /tool_name, tool_input: /tool_input, mcp_server: /mcp_server_name, agent_version: /cursor_version, workspace_roots: /workspace_roots }
       responses: *cursor_replies
     - name: beforeReadFile
       role: pre_file_read
       verdicts: [allow, deny]
       fallback: { ask: deny }
-      request: { session_id: /conversation_id, file_path: /file_path, agent_version: /cursor_version }
+      request: { session_id: /conversation_id, file_path: /file_path, agent_version: /cursor_version, workspace_roots: /workspace_roots }
       responses:
         allow: { exit_code: 0, stdout: { permission: allow } }
         deny: { exit_code: 0, stdout: { permission: deny, user_message: "{message}", agent_message: "{message}" } }
@@ -100,7 +104,8 @@ hooks:
       matcher: "^(Write|Delete|Task)$"
       verdicts: [allow, deny]
       fallback: { ask: deny }
-      request: { session_id: /conversation_id, tool_use_id: /tool_use_id, tool_name: /tool_name, tool_input: /tool_input, cwd: /cwd, agent_version: /cursor_version }
+      # No cwd in 3.27.22: the daemon uses the first workspace root.
+      request: { session_id: /conversation_id, tool_use_id: /tool_use_id, tool_name: /tool_name, tool_input: /tool_input, cwd: /cwd, agent_version: /cursor_version, workspace_roots: /workspace_roots }
       responses:
         allow: { exit_code: 0, stdout: { permission: allow } }
         deny: { exit_code: 0, stdout: { permission: deny, user_message: "{message}", agent_message: "{message}" } }
@@ -121,7 +126,9 @@ tool_kinds:
   "*": other
 tool_targets:
   Shell: { command: /command }
-  Write: { path: /file_path, content: /content } # content field from the documentation, not yet recorded
+  Read: { path: /file_path }
+  Grep: { path: /file_path }
+  Write: { path: /file_path, content: /content }
   Delete: { path: /file_path }
 mcp_tools:
   name_template: "MCP:{tool}"
@@ -129,4 +136,6 @@ mcp_tools:
 posture_checks: [auto_approve_mode, project_mcp_server, unpinned_mcp_server, project_hook, secret_in_config, writable_managed_config]
 notes:
   - beforeReadFile payloads include file content; the hook client must never log or forward it.
-  - Cursor also runs Claude Code hooks by default; the daemon dedupes using payload_markers.
+  - Cursor also runs Claude Code hooks by default, with Cursor's payload and tool names (Shell, MCP:tool); the daemon detects them by payload_markers and reads the tools through this definition.
+  - Every 3.27.22 payload carries user_email; fixtures replace it with dev@example.com.
+  - A fail-closed hook that prints nothing blocks the call in 3.27.22, so every pre event must reply.

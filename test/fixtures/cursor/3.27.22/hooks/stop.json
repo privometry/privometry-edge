@@ -1,0 +1,30 @@
+{
+  "conversation_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "generation_id": "d0495e05-f8e8-443c-ada9-d2fe9c7e62c3",
+  "model": "cursor-grok-4.6-medium",
+  "model_id": "grok-4.6",
+  "model_params": [
+    {
+      "id": "effort",
+      "value": "medium"
+    },
+    {
+      "id": "fast",
+      "value": "false"
+    }
+  ],
+  "status": "completed",
+  "loop_count": 0,
+  "input_tokens": 30603,
+  "output_tokens": 136,
+  "cache_read_tokens": 20224,
+  "cache_write_tokens": 0,
+  "session_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "hook_event_name": "stop",
+  "cursor_version": "3.27.22",
+  "workspace_roots": [
+    "/home/dev/acme-api"
+  ],
+  "user_email": "dev@example.com",
+  "transcript_path": "/home/dev/.cursor/projects/home-dev-acme-api/agent-transcripts/845b8d28-a7cd-4c8a-a412-3ab696a33f29/845b8d28-a7cd-4c8a-a412-3ab696a33f29.jsonl"
+}

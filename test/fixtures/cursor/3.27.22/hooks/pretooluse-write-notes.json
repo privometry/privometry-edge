@@ -1,0 +1,19 @@
+{
+  "conversation_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "generation_id": "e754ebcf-592a-407c-8e86-fa628ffefd4f",
+  "model": "grok-4.6",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "/home/dev/acme-api/notes.md",
+    "content": "# Acme API notes\n\n- The build folder holds generated files.\n- Release day is Friday.\n"
+  },
+  "tool_use_id": "call-802c4354-4c7f-467b-8225-22cd75adf23a-2\nfc_eeda541a-b221-96a7-9fb6-a4b3b4558db0_0",
+  "session_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "hook_event_name": "preToolUse",
+  "cursor_version": "3.27.22",
+  "workspace_roots": [
+    "/home/dev/acme-api"
+  ],
+  "user_email": "dev@example.com",
+  "transcript_path": "/home/dev/.cursor/projects/home-dev-acme-api/agent-transcripts/845b8d28-a7cd-4c8a-a412-3ab696a33f29/845b8d28-a7cd-4c8a-a412-3ab696a33f29.jsonl"
+}

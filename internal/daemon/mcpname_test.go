@@ -24,7 +24,7 @@ func TestCopilotMCPServerSplit(t *testing.T) {
 		{"github-mcp-server-list_issues", "github-mcp-server", "list_issues", []string{"github", "github-mcp-server"}},
 		{"github-mcp-server-list_issues", "github", "mcp-server-list_issues", nil}, // a server the scan has not seen
 	} {
-		c := call{adapter: copilot, field: func(name string) any {
+		c := call{adapter: copilot, tools: copilot, field: func(name string) any {
 			if name == "tool_name" {
 				return tc.tool
 			}
