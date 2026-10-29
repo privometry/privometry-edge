@@ -135,6 +135,12 @@ func TestLookups(t *testing.T) {
 	if tt, ok := agy.ToolTarget("run_command"); !ok || tt.Command != "/CommandLine" || agy.ToolKind("browser_click") != "other" {
 		t.Errorf("antigravity targets %+v", tt)
 	}
+	codex, _ := r.Get(contract.AgentProductCodexCLI)
+	for tool, want := range map[string]string{"spawn_agent": "subagent_spawn", "collaborationspawn_agent": "subagent_spawn", "collaborationwait_agent": "other"} {
+		if got := codex.ToolKind(tool); got != want {
+			t.Errorf("codex ToolKind(%s) = %s, want %s", tool, got, want)
+		}
+	}
 	copilot, _ := r.Get(contract.AgentProductCopilotCLI)
 	for tool, want := range map[string]string{"bash": "shell_exec", "create": "file_write", "view": "file_read", "some-mcp-tool": "other"} {
 		if got := copilot.ToolKind(tool); got != want {

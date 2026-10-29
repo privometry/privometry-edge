@@ -1,0 +1,15 @@
+{
+  "session_id": "01a186da-38a0-7572-88d8-1e9371afe70f",
+  "turn_id": "01a186db-262d-7a70-ac8c-fe12d9444581",
+  "transcript_path": "/home/dev/.codex/sessions/2026/10/29/rollout-2026-10-29T14-20-10-01a186da-38a0-7572-88d8-1e9371afe70f.jsonl",
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-5.6-sol",
+  "permission_mode": "default",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "rg --files -g '*' -g '!/.git' | sort"
+  },
+  "tool_response": ".codex/hooks.json\nbuild/out.txt\nnotes.md\n",
+  "tool_use_id": "exec-d3f681e6-51df-4e63-a280-f2e415b5d37d"
+}

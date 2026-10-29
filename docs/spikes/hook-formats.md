@@ -52,6 +52,16 @@ Sources: [Claude Code hooks](https://code.claude.com/docs/en/hooks.md), [Claude 
 - End to end (0.164.0, `privometry guard install`, trusted once): Codex runs `privometry-hook` on all five registered events, honors the `hookSpecificOutput` deny (the model reported the command "blocked by a PreToolUse hook" with Privometry's reason), and shows no timeout warning with `SessionEnd` registered at 3 seconds. The timeline shows the policy verdict (`ASKED` for `cat .env`) while Codex received a deny.
 - A model can misread a prompt into a dangerous command: asked to run "rm -rf build ." as a sentence, it ran `rm -rf build .`. The read-only sandbox stopped it; the payload is kept as a fixture.
 
+## What the recordings showed (Codex CLI 0.165.0)
+
+Recorded 2026-10-29 in an interactive session with `--sandbox workspace-write --ask-for-approval on-request`, with the recorder also registered for `PermissionRequest`, `Stop`, `SubagentStart` and `SubagentStop`.
+
+- `PermissionRequest` fires when a command needs more than the sandbox allows, after `PreToolUse` and before the approval prompt. It carries `tool_name` and `tool_input.command`, with Codex's approval question in `tool_input.description`, and no `tool_use_id`, so it is joined to its `PreToolUse` by `turn_id` and command. It fired both for the command the developer approved and for the one refused.
+- A network command first runs in the sandbox and fails: `PreToolUse`, then `PostToolUse` with an empty `tool_response`. Codex then retries it escalated: a second `PreToolUse`, `PermissionRequest`, and on approval `PostToolUse` with the output. So `PostToolUse` also follows a command the sandbox let run but cut off from the network; a command refused at the prompt has none, and the turn ends without `Stop`.
+- `Stop` fires at the end of each turn with `stop_hook_active` and `last_assistant_message`.
+- Subagent tools are `collaborationspawn_agent` (`tool_input`: `task_name`, `fork_turns`, and `message`, which Codex encrypts) and `collaborationwait_agent`, not `spawn_agent`. `SubagentStart` and `SubagentStop` carry `agent_id` and `agent_type`; `SubagentStop` adds `agent_transcript_path` and `last_assistant_message`. The subagent's own tool events carry `agent_id` and `agent_type` and the parent's `session_id` and `turn_id`.
+- No `SessionEnd` was recorded when the session closed. 0.164.0 sent one under `codex exec`.
+
 ## Consequences for the design
 
 1. **The adapter contracts use agent-specific response shapes.** Claude Code and Codex expect `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": ..., "permissionDecisionReason": ...}}`. Cursor expects `{"permission": ..., "user_message": ..., "agent_message": ...}`. `specs/adapter/v1` and its examples now enforce these shapes.
@@ -66,7 +76,9 @@ Sources: [Claude Code hooks](https://code.claude.com/docs/en/hooks.md), [Claude 
 
 - [ ] Record Cursor payloads: install the recorder in a test project's `.cursor/hooks.json` and run one agent session in the IDE.
 - [x] Record Codex payloads (0.164.0), including the hook-trust flow.
-- [ ] Record a Codex `PermissionRequest` from an interactive session with on-request approvals, and `Stop` and subagent events.
+- [x] Record a Codex `PermissionRequest` from an interactive session with on-request approvals, and `Stop` and subagent events (0.165.0).
+- [ ] Decide what Privometry does at a Codex `PermissionRequest`: it is a second checkpoint for commands that leave the sandbox, which the daemon has no role handler for yet.
+- [ ] Find out whether interactive Codex sends `SessionEnd`.
 - [ ] Record a Claude Code MCP call (`mcp_server` field) and a `WebFetch`.
 - [ ] Measure the hook round trip each agent adds, to set the latency budget against real overhead.
 

@@ -1,0 +1,15 @@
+{
+  "session_id": "01a186da-38a0-7572-88d8-1e9371afe70f",
+  "turn_id": "01a186dc-8610-7390-bb48-bc1b1e51c4d2",
+  "transcript_path": "/home/dev/.codex/sessions/2026/10/29/rollout-2026-10-29T14-20-10-01a186da-38a0-7572-88d8-1e9371afe70f.jsonl",
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-5.6-sol",
+  "permission_mode": "default",
+  "tool_name": "collaborationwait_agent",
+  "tool_input": {
+    "timeout_ms": 120000
+  },
+  "tool_response": "{\"message\":\"Wait completed.\",\"timed_out\":false}",
+  "tool_use_id": "call_e7f5e49479cf4974a3e40c4f8c66bd32"
+}

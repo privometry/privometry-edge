@@ -1,0 +1,11 @@
+{
+  "session_id": "01a186da-38a0-7572-88d8-1e9371afe70f",
+  "turn_id": "01a186dc-9172-7942-a4c5-f5567f5d7bc5",
+  "transcript_path": "/home/dev/.codex/sessions/2026/10/29/rollout-2026-10-29T14-22-44-01a186dc-913b-77d0-953a-041839d36746.jsonl",
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "SubagentStart",
+  "model": "gpt-5.6-sol",
+  "permission_mode": "default",
+  "agent_id": "01a186dc-913b-77d0-953a-041839d36746",
+  "agent_type": "default"
+}
