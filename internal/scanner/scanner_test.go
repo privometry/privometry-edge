@@ -152,8 +152,8 @@ func TestMachineAndRepo(t *testing.T) {
 	want := map[string]int{
 		"auto_approve_mode": 5, // claude bypass + Bash(*), cursor Shell(*), codex never + profile
 		"sandbox_disabled":  1,
-		"secret_in_config":  3, // two env values and a token in a URL
-		"project_hook":      2, "project_mcp_server": 1,
+		"secret_in_config":  3,                          // two env values and a token in a URL
+		"project_hook":      2, "project_mcp_server": 2, // .mcp.json, read by Claude Code and Copilot CLI
 		"unpinned_mcp_server": 2, "managed_hooks_only_off": 1, "writable_managed_config": 1,
 	}
 	keys := func(m map[string]int) []string {
@@ -207,8 +207,8 @@ func TestRepoOnly(t *testing.T) {
 			t.Errorf("repo mode finding outside the repo: %+v", f)
 		}
 	}
-	if len(res.Findings) != 3 {
-		t.Errorf("repo findings = %d, want 3 (two project hooks, one project MCP server)", len(res.Findings))
+	if len(res.Findings) != 4 {
+		t.Errorf("repo findings = %d, want 4 (two project hooks, and .mcp.json for Claude Code and Copilot CLI)", len(res.Findings))
 	}
 
 	var buf bytes.Buffer
@@ -239,7 +239,7 @@ func TestRepoOnly(t *testing.T) {
 	if err := json.Unmarshal(buf.Bytes(), &sarif); err != nil {
 		t.Fatal(err)
 	}
-	if sarif.Version != "2.1.0" || len(sarif.Runs) != 1 || len(sarif.Runs[0].Results) != 3 {
+	if sarif.Version != "2.1.0" || len(sarif.Runs) != 1 || len(sarif.Runs[0].Results) != 4 {
 		t.Fatalf("unexpected SARIF: %s", buf.String())
 	}
 	run := sarif.Runs[0]
@@ -482,7 +482,7 @@ func TestChangedFiles(t *testing.T) {
 	}
 	for path, want := range map[string]string{
 		".claude/settings.json":   "medium Changed a file Claude Code reads",
-		".mcp.json":               "medium Changed a file Claude Code reads from this repo (MCP servers)",
+		".mcp.json":               "medium Changed a file Claude Code and Copilot CLI read from this repo (MCP servers)",
 		"docs/sub/AGENTS.md":      "low Deleted a file",
 		".privometry/policy.yaml": "medium Changed the repo's Privometry policy",
 	} {

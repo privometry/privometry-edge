@@ -32,6 +32,9 @@ type call struct {
 	payload any
 	field   func(name string) any
 	probe   bool // decide, but record nothing (privometry doctor)
+	// servers lists the MCP server names the last scan found for this agent,
+	// for tool names that do not say where the server name ends.
+	servers func() []string
 }
 
 func (c call) str(name string) string {
@@ -67,6 +70,7 @@ func (d *Daemon) hook(h ipc.HookRequest) (ipc.Response, error) {
 		return ipc.Response{}, fmt.Errorf("payload: %w", err)
 	}
 	c := call{adapter: a, event: ev, product: a.Agent, payload: payload}
+	c.servers = func() []string { return d.serverNames(c.product) }
 	c.field = func(name string) any {
 		ptr, ok := ev.Request[name]
 		if !ok {
@@ -238,8 +242,12 @@ func (c call) actions() (toolName string, out []intent.Action) {
 	case "shell_exec":
 		return toolName, []intent.Action{{Kind: kind, Command: get(target.Command)}}
 	case "file_read", "file_write", "file_delete":
-		if target.Patch != "" {
-			for _, p := range patchFiles(get(target.Patch)) {
+		patch := get(target.Patch)
+		if s, ok := input.(string); ok {
+			patch = s // Copilot CLI sends apply_patch's patch as the whole of toolArgs
+		}
+		if patch != "" {
+			for _, p := range patchFiles(patch) {
 				out = append(out, intent.Action{Kind: p.kind, Path: p.path})
 			}
 			if len(out) > 0 {
@@ -256,10 +264,26 @@ func (c call) actions() (toolName string, out []intent.Action) {
 			if t, ok := c.adapter.MCPToolOf(toolName, s); ok {
 				tool = t // the server name may contain the separator (Gemini's mcp_my_server_tool)
 			}
+		} else if s, t, ok := c.knownServer(toolName); ok {
+			server, tool = s, t // Copilot's github-mcp-server-list_issues names no boundary
 		}
 		return toolName, []intent.Action{{Kind: kind, MCPServer: server, MCPTool: tool}}
 	}
 	return toolName, []intent.Action{{Kind: kind}}
+}
+
+// knownServer splits an MCP tool name at the longest server name the last
+// scan found for the agent.
+func (c call) knownServer(toolName string) (server, tool string, ok bool) {
+	if c.servers == nil {
+		return "", "", false
+	}
+	for _, s := range c.servers() {
+		if t, found := c.adapter.MCPToolOf(toolName, s); found && len(s) > len(server) {
+			server, tool, ok = s, t, true
+		}
+	}
+	return server, tool, ok
 }
 
 // patchFile is one file an apply_patch body touches.

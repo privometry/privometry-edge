@@ -1,0 +1,13 @@
+{
+  "sessionId": "98782661-4fe6-4ef0-abd4-7e158130d3fc",
+  "timestamp": 1793265755412,
+  "cwd": "/home/dev/acme-api",
+  "toolName": "tickets-lookup_ticket",
+  "toolArgs": {
+    "id": "T-1042"
+  },
+  "toolResult": {
+    "resultType": "success",
+    "textResultForLlm": "Ticket T-1042: printer on floor 3 is offline. Status: open."
+  }
+}

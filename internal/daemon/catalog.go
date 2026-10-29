@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/privometry/privometry-edge/internal/cloud/bundles"
 	"github.com/privometry/privometry-edge/internal/cloud/inventory"
@@ -68,6 +69,20 @@ func (d *Daemon) catalog() *bundles.BundleCatalog {
 	d.catalogState.stamp, d.catalogState.catalog = stamp, cat
 	d.mu.Unlock()
 	return cat
+}
+
+// serverNames lists the MCP servers the last scan found for product.
+func (d *Daemon) serverNames(product contract.AgentProduct) []string {
+	prefix := string(product) + "\x00"
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	var out []string
+	for k := range d.catalogState.servers {
+		if name, ok := strings.CutPrefix(k, prefix); ok {
+			out = append(out, name)
+		}
+	}
+	return out
 }
 
 // rememberServers keeps the MCP servers a scan found, for catalog matching.

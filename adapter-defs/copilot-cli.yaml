@@ -1,11 +1,13 @@
 # Shipped adapter definition. Validated against specs/adapter/v1 by internal/adapters/registry tests.
-# Based on the GitHub Copilot CLI hooks reference; the fixtures in
-# test/fixtures/copilot_cli/documented are built from it, not recorded.
+# Based on the GitHub Copilot CLI hooks reference, and verified against a
+# recorded 1.0.105 session (test/fixtures/copilot_cli/1.0.105).
 schema: privometry.adapter/v1
 agent: copilot_cli
 display_name: Copilot CLI
 versions: ">=1.0.0 <2.0.0"
-verified: []
+verified:
+  - version: 1.0.105
+    fixtures: copilot_cli/1.0.105
 detect:
   binaries: [copilot]
   processes: [copilot]
@@ -56,6 +58,11 @@ mcp_sources:
     format: json
     paths: { any: ["~/.copilot/mcp-config.json"] }
     pointer: /mcpServers
+  # copilot mcp --help (1.0.105) lists these workspace sources.
+  - tier: project
+    format: json
+    paths: { any: [".mcp.json", ".github/mcp.json"] }
+    pointer: /mcpServers
 memory_files:
   - tier: user
     kind: instructions
@@ -91,8 +98,10 @@ hooks:
   fail_closed_option: null
   trust: { required: false }
   events:
-    # camelCase events: camelCase payloads, epoch-millisecond timestamps, and
-    # toolArgs as a JSON-encoded string (the daemon decodes it).
+    # camelCase events: camelCase payloads and epoch-millisecond timestamps.
+    # 1.0.105 sends toolArgs as an object, or for apply_patch as the patch
+    # text itself; the reference showed a JSON-encoded string, which the
+    # daemon still decodes.
     - name: preToolUse
       role: pre_tool
       verdicts: [allow, ask, deny]
@@ -139,8 +148,11 @@ tool_kinds:
   grep: file_read
   create: file_write
   edit: file_write
+  apply_patch: file_write
   web_fetch: network_fetch
   task: subagent_spawn
+  # MCP tools are <server>-<tool>; built-in tools have no hyphen.
+  "*-*": mcp_call
   "*": other
 tool_targets:
   bash: { command: /command }
@@ -151,8 +163,10 @@ tool_targets:
   create: { path: /path, content: /file_text }
   edit: { path: /path, content: /new_str }
   web_fetch: { url: /url }
+mcp_tools:
+  name_template: "{server}-{tool}"
 posture_checks: [project_mcp_server, unpinned_mcp_server, project_hook, secret_in_config, writable_managed_config]
 notes:
   - preToolUse hooks fail closed when they crash or exit non-zero, but open when they time out. Ask is treated as deny in autopilot mode and by the cloud agent.
-  - MCP tool names are not documented, so MCP calls are classified as other until payloads are recorded.
+  - MCP tools are named <server>-<tool> (tickets-lookup_ticket). Server names may hold hyphens (the built-in github-mcp-server), so the daemon splits at the longest server name the last scan found, and at the first hyphen for a server it has not seen.
   - Copilot also runs the hooks in a repository's .claude/settings.json; Privometry installs Claude Code's hook at user scope, which Copilot does not read.

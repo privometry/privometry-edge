@@ -62,6 +62,17 @@ Recorded 2026-10-29 in an interactive session with `--sandbox workspace-write --
 - Subagent tools are `collaborationspawn_agent` (`tool_input`: `task_name`, `fork_turns`, and `message`, which Codex encrypts) and `collaborationwait_agent`, not `spawn_agent`. `SubagentStart` and `SubagentStop` carry `agent_id` and `agent_type`; `SubagentStop` adds `agent_transcript_path` and `last_assistant_message`. The subagent's own tool events carry `agent_id` and `agent_type` and the parent's `session_id` and `turn_id`.
 - No `SessionEnd` was recorded when the session closed. 0.164.0 sent one under `codex exec`.
 
+## What the recordings showed (Copilot CLI 1.0.105)
+
+Recorded 2026-10-29 in an interactive session in a trusted scratch project, with the recorder registered in `.github/hooks/` and a local stdio MCP server configured in the project's `.mcp.json`. The Homebrew cask installs a native binary, not the npm package.
+
+- Payloads are camelCase with epoch-millisecond `timestamp`s: `sessionId`, `cwd`, `toolName`, `toolArgs`, and on `postToolUse` `toolResult` (`resultType`, `textResultForLlm`). `sessionStart` carries `source` (`new`) and `initialPrompt`; `sessionEnd` carries `reason` (`user_exit`).
+- `toolArgs` is an object, not the JSON-encoded string the reference showed. For `apply_patch` it is the patch text itself (`*** Begin Patch`, `*** Update File:`, `*** Add File:`).
+- File edits and new files went through `apply_patch`; the session used no `create` or `edit`. Reads are `view` (`path`), fetches `web_fetch` (`url`, `max_length`), shell `bash` (`command`, `description`).
+- MCP tools are `<server>-<tool>` (`tickets-lookup_ticket`), with no server field in the payload. Copilot's built-in `github-mcp-server` holds hyphens itself, so the split needs the known server names.
+- A command the developer refused at Copilot's prompt has `preToolUse` and no `postToolUse`. Asked twice to `rm -rf build`, the model first inspected the folder with another command each time.
+- `copilot mcp --help` lists workspace MCP sources, `.mcp.json` and `.github/mcp.json`, beside `~/.copilot/mcp-config.json`, so the definition reads both. `copilot mcp list` run in the untrusted scratch folder showed only the built-in server; whether the recorded session loaded the server from `.mcp.json` or from `--additional-mcp-config` was not captured.
+
 ## Consequences for the design
 
 1. **The adapter contracts use agent-specific response shapes.** Claude Code and Codex expect `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": ..., "permissionDecisionReason": ...}}`. Cursor expects `{"permission": ..., "user_message": ..., "agent_message": ...}`. `specs/adapter/v1` and its examples now enforce these shapes.

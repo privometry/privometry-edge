@@ -158,8 +158,12 @@ func changedFiles(reg *registry.Registry, opts Options) []posture.Finding {
 		if !ok {
 			continue
 		}
+		reads := "reads"
+		if len(f.agents) > 1 {
+			reads = "read"
+		}
 		out = append(out, posture.Finding{Check: "agent_file_changed", Severity: f.severity, Agent: f.product, Tier: contract.ConfigTierProject,
-			Path: c.Path, Message: fmt.Sprintf("%s a file %s reads from this repo (%s).", verb, strings.Join(f.agents, " and "), f.what),
+			Path: c.Path, Message: fmt.Sprintf("%s a file %s %s from this repo (%s).", verb, strings.Join(f.agents, " and "), reads, f.what),
 			Fix: "Review the change: agents act on these files without asking, for everyone who opens this repo."})
 	}
 	return out

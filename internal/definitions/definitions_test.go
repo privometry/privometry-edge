@@ -323,6 +323,7 @@ var builtInDigests = map[string]string{
 	"adapters 4":      "sha256:9ab141f9406295f29e4b0185c4dd1e12c9bc0d390597a4805bbfc649012c633d", // Antigravity, bypass flags
 	"adapters 5":      "sha256:51f543b4c59231ab28d693af62b509f8da73c31113bc1ba8137201f22dc42d89", // disable settings, process patterns, no-session args
 	"adapters 6":      "sha256:f0232c5040e31bc31e2cd14e4bd106c0253e5f85b5ba081df518eace9f4e29aa", // Codex verified against 0.165.0, collaborationspawn_agent
+	"adapters 7":      "sha256:374b8fd0e22c6eeacc976de9c366c766d87d3e0ce8ecc4326b16b54cd61a48ee", // Copilot CLI verified against 1.0.105, MCP names, workspace MCP config
 	"detectorpacks 1": "sha256:67d93563fd3d144e907d1876fc7e8c315e9940df94fe109e11e2b1ff63425c85",
 	"detectorpacks 2": "sha256:0f489f0e56f3d87283af25a57dc4610f9c317237a3707b3055a20a518732b01c", // SCAN-13 exfiltration detectors
 	"detectorpacks 3": "sha256:11231588848668b267435ce73074732c68769cae18e46c22f701a5112517433b", // maintainers URL on GitHub

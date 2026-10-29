@@ -60,9 +60,13 @@ func (c call) pieces(actions []intent.Action) []piece {
 			}
 		}
 	}
-	if target.Patch != "" && len(actions) > 0 {
+	patch := lookup(input, target.Patch)
+	if s, ok := input.(string); ok {
+		patch = s // Copilot CLI sends apply_patch's patch as the whole of toolArgs
+	}
+	if patch != nil && len(actions) > 0 {
 		// apply_patch: scan the lines the patch adds, once for the call.
-		if added := addedLines(content.Flatten(lookup(input, target.Patch))); added != "" {
+		if added := addedLines(content.Flatten(patch)); added != "" {
 			out = append(out, piece{source: content.SourceFileWrite, text: added, path: actions[0].Path})
 		}
 	}

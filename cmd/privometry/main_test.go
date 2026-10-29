@@ -26,7 +26,7 @@ func TestScanRepoOnly(t *testing.T) {
 		code int
 		out  string
 	}{
-		{"table", []string{"--no-machine", "--repo", repo}, 0, "WORTH FIXING (3)"},
+		{"table", []string{"--no-machine", "--repo", repo}, 0, "WORTH FIXING (4)"},
 		{"json", []string{"--no-machine", "--repo", repo, "--format", "json"}, 0, `"schema": "privometry.scan/v0"`},
 		{"sarif", []string{"--no-machine", "--repo", repo, "--format", "sarif"}, 0, `"version": "2.1.0"`},
 		{"fail on medium", []string{"--no-machine", "--repo", repo, "--fail-on", "medium"}, 1, "WORTH FIXING"},

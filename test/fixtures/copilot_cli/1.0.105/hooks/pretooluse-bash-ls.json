@@ -1,0 +1,10 @@
+{
+  "sessionId": "98782661-4fe6-4ef0-abd4-7e158130d3fc",
+  "timestamp": 1793265652249,
+  "cwd": "/home/dev/acme-api",
+  "toolName": "bash",
+  "toolArgs": {
+    "command": "ls -la",
+    "description": "List current folder contents"
+  }
+}
