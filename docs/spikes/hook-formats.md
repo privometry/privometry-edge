@@ -7,7 +7,7 @@ Date: 2026-10-23. Goal: confirm how each P1 agent lets Privometry intercept a to
 | Agent | Pre-tool hook | Evidence | Fixtures |
 |---|---|---|---|
 | Claude Code 2.1.304 | `PreToolUse`, full allow / ask / deny | Recorded from a real headless session | `test/fixtures/claude_code/2.1.304/hooks/` (14 payloads) |
-| Cursor | `preToolUse` plus `beforeShellExecution`, `beforeMCPExecution`, `beforeReadFile` | Official docs only | Pending: needs a run in the Cursor IDE |
+| Cursor 3.27.22 | `preToolUse` plus `beforeShellExecution`, `beforeMCPExecution`, `beforeReadFile` | Recorded from a real IDE agent session | `test/fixtures/cursor/3.27.22/hooks/` (20 payloads, 5 of them from the Claude Code hooks Cursor runs) |
 | Codex CLI 0.164.0 | `PreToolUse`, allow / deny only | Recorded from real `codex exec` sessions | `test/fixtures/codex_cli/0.164.0/hooks/` (14 payloads) |
 
 Sources: [Claude Code hooks](https://code.claude.com/docs/en/hooks.md), [Claude Code settings](https://code.claude.com/docs/en/settings.md), [Cursor hooks](https://cursor.com/docs/hooks.md), [Cursor third-party hooks](https://cursor.com/docs/reference/third-party-hooks.md), [Codex hooks](https://developers.openai.com/codex/hooks.md), [Codex managed configuration](https://developers.openai.com/codex/enterprise/managed-configuration.md).
@@ -73,6 +73,18 @@ Recorded 2026-10-29 in an interactive session in a trusted scratch project, with
 - A command the developer refused at Copilot's prompt has `preToolUse` and no `postToolUse`. Asked twice to `rm -rf build`, the model first inspected the folder with another command each time.
 - `copilot mcp --help` lists workspace MCP sources, `.mcp.json` and `.github/mcp.json`, beside `~/.copilot/mcp-config.json`, so the definition reads both. `copilot mcp list` run in the untrusted scratch folder showed only the built-in server; whether the recorded session loaded the server from `.mcp.json` or from `--additional-mcp-config` was not captured.
 
+## What the recordings showed (Cursor 3.27.22)
+
+Recorded 2026-10-29 in the Cursor IDE agent, with the recorder in the scratch project's `.cursor/hooks.json` on 13 events, the Claude Code recorder in its `.claude/settings.json`, and a local stdio MCP server in `.cursor/mcp.json`.
+
+- Every payload carries `conversation_id` (equal to `session_id`), `generation_id`, `model`, `hook_event_name`, `cursor_version`, `workspace_roots`, `user_email` and `transcript_path`. The fixtures replace the email with `dev@example.com`; the recorder now does this itself.
+- A `failClosed: true` hook that prints nothing blocks the call ("blocked by a Cursor hook that's set to fail closed"). Every pre event must reply, which the hook client already does.
+- `preToolUse` fired only for `Write` (edits and new files alike, `tool_input` with `file_path` and `content`), and has no `cwd`. `tool_use_id` can hold a newline. Shell, reads and MCP went to their own events.
+- `beforeShellExecution` has `command`, `cwd`, `sandbox` (`true`) and `tool_use_id`. For `rm -rf build` it sent `cwd: ""`. Cursor ran the command in its sandbox, it exited 0, and `build/out.txt` was still there afterwards. The daemon now falls back to the first of `workspace_roots` when `cwd` is missing or empty; before, both cases looked like the home folder, so project writes were asked about (denied, since `preToolUse` cannot ask) and the `rm` was blocked.
+- `beforeMCPExecution` sends `tool_name` without the server, `mcp_server_name`, the server's `command`, and `tool_input` as a JSON string. `beforeReadFile` carries the file `content` and `attachments`.
+- Cursor ran the project's Claude Code hooks for every tool, with Cursor's payload (`hook_event_name: preToolUse`, `cursor_version`) and Cursor's tool names: `Shell`, `Read`, `Grep`, `Write`, `MCP:lookup_ticket`. The daemon used to read those through Claude Code's tool table, which made a shell command `other`; it now uses the definition of the agent the payload markers name. The imported call shares `tool_use_id` with Cursor's own event.
+- The other events fired as documented: `beforeSubmitPrompt` (`prompt`, `attachments`, `composer_mode`), `afterShellExecution` (`output`, `duration`), `afterMCPExecution` (`result_json`), `afterFileEdit` (`edits` with `old_string` and `new_string`), `postToolUse`, `afterAgentResponse` (`text`, token counts), and `stop` (`status`, `loop_count`). `sessionEnd` did not fire when the chat was closed. The definition does not register these yet.
+
 ## Consequences for the design
 
 1. **The adapter contracts use agent-specific response shapes.** Claude Code and Codex expect `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": ..., "permissionDecisionReason": ...}}`. Cursor expects `{"permission": ..., "user_message": ..., "agent_message": ...}`. `specs/adapter/v1` and its examples now enforce these shapes.
@@ -85,7 +97,9 @@ Recorded 2026-10-29 in an interactive session in a trusted scratch project, with
 
 ## Still open
 
-- [ ] Record Cursor payloads: install the recorder in a test project's `.cursor/hooks.json` and run one agent session in the IDE.
+- [x] Record Cursor payloads (3.27.22), including the Claude Code hooks Cursor runs.
+- [ ] Decide whether the Cursor definition registers `beforeSubmitPrompt` and `postToolUse`, which the other agents' definitions use for prompt and tool-output events.
+- [ ] Find out when Cursor sends `sessionEnd`.
 - [x] Record Codex payloads (0.164.0), including the hook-trust flow.
 - [x] Record a Codex `PermissionRequest` from an interactive session with on-request approvals, and `Stop` and subagent events (0.165.0).
 - [ ] Decide what Privometry does at a Codex `PermissionRequest`: it is a second checkpoint for commands that leave the sandbox, which the daemon has no role handler for yet.

@@ -10,6 +10,7 @@ Real agent config files and hook payloads, organized as `<agent>/<version>/<kind
 | `gemini_cli/documented/hooks/` | Constructed from the Gemini CLI hooks and tools references (field names, `tool_input` keys, `mcp_context`); not recorded. Replace with a recorded `gemini_cli/<version>/` once a signed-in session is available | — |
 | `copilot_cli/1.0.105/hooks/` | Interactive session with `scripts/hook-recorder` on every event: `bash`, `view`, `apply_patch` (update and add), `web_fetch`, a local stdio MCP tool, and `rm -rf build` refused at Copilot's prompt | 2026-10-29 |
 | `copilot_cli/documented/hooks/` | Constructed from the GitHub Copilot CLI hooks reference (camelCase events, `toolArgs` as a JSON string). Kept beside the recording: it covers the JSON-string form of `toolArgs` and policy cases the session did not hit | — |
+| `cursor/3.27.22/hooks/` | IDE agent session with `scripts/hook-recorder` on 13 events: listing, reading and editing `notes.md`, creating `todo.md`, `curl`, a local stdio MCP tool, and `rm -rf build`. `claude-*.json` are the same session's calls to the project's Claude Code hooks, which Cursor runs with its own payload | 2026-10-29 |
 | `antigravity/documented/hooks/` | Constructed from the Antigravity hooks reference (named hooks, camelCase payloads, `toolCall.name` and `toolCall.args`, `workspacePaths`); not recorded. Replace with a recorded `antigravity/<version>/` | — |
 
 Recording a new version, without touching the agent's user-level config:

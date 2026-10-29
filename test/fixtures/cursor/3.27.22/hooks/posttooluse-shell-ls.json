@@ -1,0 +1,23 @@
+{
+  "conversation_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "generation_id": "d0495e05-f8e8-443c-ada9-d2fe9c7e62c3",
+  "model": "grok-4.6",
+  "tool_name": "Shell",
+  "tool_input": {
+    "command": "ls -la",
+    "cwd": "",
+    "timeout": 30000
+  },
+  "tool_output": "{\"output\":\"total 16\\ndrwx------@  8 dev  staff   256 29 Oct 18:35 .\\ndrwx------@  6 dev  staff   192 29 Oct 18:35 ..\\ndrwx------@  3 dev  staff    96 29 Oct 18:35 .claude\\ndrwx------@  4 dev  staff   128 29 Oct 18:35 .cursor\\ndrwxr-xr-x@ 13 dev  staff   416 29 Oct 18:40 .git\\ndrwxr-xr-x@  3 dev  staff    96 29 Oct 18:35 build\\n-rw-r--r--@  1 dev  staff    87 29 Oct 18:35 notes.md\\n-rw-r--r--@  1 dev  staff  1290 29 Oct 18:35 tickets_mcp.py\\n\",\"exitCode\":0}",
+  "duration": 4629.327,
+  "tool_use_id": "b9f3bc71-6bca-40ab-a5fa-e6bd93a24729",
+  "cwd": "",
+  "session_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "hook_event_name": "postToolUse",
+  "cursor_version": "3.27.22",
+  "workspace_roots": [
+    "/home/dev/acme-api"
+  ],
+  "user_email": "dev@example.com",
+  "transcript_path": null
+}

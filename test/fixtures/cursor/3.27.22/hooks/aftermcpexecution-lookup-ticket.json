@@ -1,0 +1,19 @@
+{
+  "conversation_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "generation_id": "08212652-1371-454a-ae01-4395a83e0bda",
+  "model": "grok-4.6",
+  "tool_name": "lookup_ticket",
+  "tool_input": "{\"id\":\"T-1042\"}",
+  "result_json": "{\"content\":[{\"type\":\"text\",\"text\":\"Ticket T-1042: printer on floor 3 is offline. Status: open.\"}],\"isError\":false}",
+  "duration": 1992.918,
+  "tool_use_id": "e4ce5d51-1ee3-4d09-9688-8fe607e2d01d",
+  "mcp_server_name": "tickets",
+  "session_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "hook_event_name": "afterMCPExecution",
+  "cursor_version": "3.27.22",
+  "workspace_roots": [
+    "/home/dev/acme-api"
+  ],
+  "user_email": "dev@example.com",
+  "transcript_path": "/home/dev/.cursor/projects/home-dev-acme-api/agent-transcripts/845b8d28-a7cd-4c8a-a412-3ab696a33f29/845b8d28-a7cd-4c8a-a412-3ab696a33f29.jsonl"
+}

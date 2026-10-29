@@ -147,6 +147,60 @@ func TestCopilotRecordedSession(t *testing.T) {
 	}
 }
 
+// The recorded 3.27.22 session: Cursor's own events, and the Claude Code
+// hooks Cursor runs (claude-*.json), which carry Cursor's tool names.
+func TestCursorRecordedSession(t *testing.T) {
+	d, _ := newDaemon(t)
+	r := replay{t, d, "cursor", "3.27.22"}
+	r.observe("sessionStart", "sessionstart.json")
+	// Everything stayed inside the project. preToolUse sends no cwd, and the
+	// rm -rf build shell hook sent cwd "": both fall back to workspace_roots.
+	for event, names := range map[string][]string{
+		"beforeShellExecution": {"beforeshellexecution-ls.json", "beforeshellexecution-curl.json", "beforeshellexecution-rm.json"},
+		"beforeReadFile":       {"beforereadfile-notes.json"},
+		"preToolUse":           {"pretooluse-write-notes.json", "pretooluse-write-todo.json"},
+		"beforeMCPExecution":   {"beforemcpexecution-lookup-ticket.json"},
+	} {
+		for _, name := range names {
+			if v, why := reply(t, r.send(event, name), "permission", "user_message"); v != "allow" {
+				t.Errorf("%s: %s %s", name, v, why)
+			}
+		}
+	}
+	byTool := eventsByTool(t, d)
+	if a := byTool["Write"].Event.Action; a == nil || a.Kind != "file_write" || a.PathClass == "" {
+		t.Errorf("Write: %+v", a)
+	}
+	// tool_input arrives as a JSON string on beforeMCPExecution.
+	if e := byTool["lookup_ticket"].Event; e.MCP == nil || e.MCP.ServerName != "tickets" || e.MCP.Tool != "lookup_ticket" {
+		t.Errorf("MCP call: %+v", e.MCP)
+	}
+
+	// Without Cursor's own hook, the imported Claude Code calls decide, and
+	// read Shell and MCP:tool through Cursor's definition.
+	d, _ = newDaemon(t)
+	for _, name := range []string{"claude-pretooluse-shell-rm.json", "claude-pretooluse-read-notes.json",
+		"claude-pretooluse-write-todo.json", "claude-pretooluse-mcp-lookup-ticket.json"} {
+		raw, err := os.ReadFile("../../test/fixtures/cursor/3.27.22/hooks/" + name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if v, _ := decision(t, hook(t, d, "claude_code", "PreToolUse", raw)); v == "" {
+			t.Errorf("%s: no decision", name)
+		}
+	}
+	byTool = eventsByTool(t, d)
+	if e := byTool["Shell"].Event; e.Agent == nil || e.Agent.Product != "cursor" || e.Action.Kind != "shell_exec" || !strings.HasPrefix(byTool["Shell"].TargetClear, "rm -rf build") {
+		t.Errorf("imported Shell: %+v %q", e.Action, byTool["Shell"].TargetClear)
+	}
+	if a := byTool["MCP:lookup_ticket"].Event.Action; a == nil || a.Kind != "mcp_call" {
+		t.Errorf("imported MCP: %+v", a)
+	}
+	if a := byTool["Write"].Event.Action; a == nil || a.Kind != "file_write" {
+		t.Errorf("imported Write: %+v", a)
+	}
+}
+
 func TestCopilotDocumentedSession(t *testing.T) {
 	d, _ := newDaemon(t)
 	r := replay{t, d, "copilot_cli", ""}

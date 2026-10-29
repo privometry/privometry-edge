@@ -1,0 +1,19 @@
+{
+  "conversation_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "generation_id": "4e1f50ab-8ddd-4c6b-8580-91504ae577d4",
+  "model": "grok-4.6",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "/home/dev/acme-api/todo.md",
+    "content": "write tests.\n"
+  },
+  "tool_use_id": "call-db12020b-7044-4de1-ab36-1cb57fbb9dac-3\nfc_9e01c3de-b40d-9792-bb03-f23308bb4c24_0",
+  "session_id": "845b8d28-a7cd-4c8a-a412-3ab696a33f29",
+  "hook_event_name": "preToolUse",
+  "cursor_version": "3.27.22",
+  "workspace_roots": [
+    "/home/dev/acme-api"
+  ],
+  "user_email": "dev@example.com",
+  "transcript_path": "/home/dev/.cursor/projects/home-dev-acme-api/agent-transcripts/845b8d28-a7cd-4c8a-a412-3ab696a33f29/845b8d28-a7cd-4c8a-a412-3ab696a33f29.jsonl"
+}

@@ -27,6 +27,7 @@ import (
 // adapter's request pointers.
 type call struct {
 	adapter registry.Adapter
+	tools   registry.Adapter // names the payload's tools: the caller's definition, not the adapter's, for imported hooks
 	event   registry.HookEvent
 	product contract.AgentProduct // may differ from the adapter when another agent imports its hooks
 	payload any
@@ -35,6 +36,20 @@ type call struct {
 	// servers lists the MCP server names the last scan found for this agent,
 	// for tool names that do not say where the server name ends.
 	servers func() []string
+}
+
+// cwd is the working folder, or the first workspace root when the agent sends
+// none: Cursor's preToolUse has no cwd, and its shell hook can send "".
+func (c call) cwd() string {
+	if cwd := c.str("cwd"); cwd != "" {
+		return cwd
+	}
+	if roots, ok := c.field("workspace_roots").([]any); ok && len(roots) > 0 {
+		if s, ok := roots[0].(string); ok {
+			return s
+		}
+	}
+	return ""
 }
 
 func (c call) str(name string) string {
@@ -69,7 +84,7 @@ func (d *Daemon) hook(h ipc.HookRequest) (ipc.Response, error) {
 	if err := dec.Decode(&payload); err != nil {
 		return ipc.Response{}, fmt.Errorf("payload: %w", err)
 	}
-	c := call{adapter: a, event: ev, product: a.Agent, payload: payload}
+	c := call{adapter: a, tools: a, event: ev, product: a.Agent, payload: payload}
 	c.servers = func() []string { return d.serverNames(c.product) }
 	c.field = func(name string) any {
 		ptr, ok := ev.Request[name]
@@ -88,7 +103,8 @@ func (d *Daemon) hook(h ipc.HookRequest) (ipc.Response, error) {
 		}
 		return v
 	}
-	c.product = d.caller(a, payload)
+	c.tools = d.caller(a, payload)
+	c.product = c.tools.Agent
 	if h.Probe != "" && d.takeProbe(h.Probe) {
 		c.probe = true
 		switch ev.Role {
@@ -156,8 +172,9 @@ func (d *Daemon) promptSubmit(c call) error {
 }
 
 // caller detects another agent running this agent's hooks, from the payload
-// markers in that agent's definition.
-func (d *Daemon) caller(a registry.Adapter, payload any) contract.AgentProduct {
+// markers in that agent's definition. Cursor sends its own tool names (Shell,
+// MCP:tool) to the Claude Code hooks it runs.
+func (d *Daemon) caller(a registry.Adapter, payload any) registry.Adapter {
 	for _, other := range a.Hooks.ImportedBy {
 		o, ok := d.cfg.Registry.Get(other.Agent)
 		if !ok {
@@ -165,11 +182,11 @@ func (d *Daemon) caller(a registry.Adapter, payload any) contract.AgentProduct {
 		}
 		for _, ptr := range o.Hooks.PayloadMarkers {
 			if parsers.Lookup(payload, ptr) != nil {
-				return o.Agent
+				return o
 			}
 		}
 	}
-	return a.Agent
+	return a
 }
 
 func none(ev registry.HookEvent) ipc.Response {
@@ -186,7 +203,7 @@ func (d *Daemon) session(c call) (*sessionInfo, error) {
 	if native == "" {
 		native = "unknown"
 	}
-	cwd := c.str("cwd")
+	cwd := c.cwd()
 	git := platform.GitRoot(cwd)
 	s, err := d.store.Session(string(c.product), native, platform.GitRemote(git), d.cfg.Now())
 	if err != nil {
@@ -219,7 +236,7 @@ func (c call) actions() (toolName string, out []intent.Action) {
 		return "Read", []intent.Action{{Kind: "file_read", Path: c.str("file_path")}}
 	case registry.HookEventRolePreMCP:
 		server, tool := c.str("mcp_server"), c.str("tool_name")
-		if s, t, ok := c.adapter.MCPTool(tool); ok {
+		if s, t, ok := c.tools.MCPTool(tool); ok {
 			tool = t
 			if server == "" {
 				server = s
@@ -228,9 +245,9 @@ func (c call) actions() (toolName string, out []intent.Action) {
 		return c.str("tool_name"), []intent.Action{{Kind: "mcp_call", MCPServer: server, MCPTool: tool}}
 	}
 	toolName = c.str("tool_name")
-	kind := c.adapter.ToolKind(toolName)
+	kind := c.tools.ToolKind(toolName)
 	input := c.field("tool_input")
-	target, _ := c.adapter.ToolTarget(toolName)
+	target, _ := c.tools.ToolTarget(toolName)
 	get := func(ptr string) string {
 		if ptr == "" {
 			return ""
@@ -258,10 +275,10 @@ func (c call) actions() (toolName string, out []intent.Action) {
 	case "network_fetch":
 		return toolName, []intent.Action{{Kind: kind, URL: get(target.URL)}}
 	case "mcp_call":
-		server, tool, _ := c.adapter.MCPTool(toolName)
+		server, tool, _ := c.tools.MCPTool(toolName)
 		if s := c.str("mcp_server"); s != "" {
 			server = s
-			if t, ok := c.adapter.MCPToolOf(toolName, s); ok {
+			if t, ok := c.tools.MCPToolOf(toolName, s); ok {
 				tool = t // the server name may contain the separator (Gemini's mcp_my_server_tool)
 			}
 		} else if s, t, ok := c.knownServer(toolName); ok {
@@ -279,7 +296,7 @@ func (c call) knownServer(toolName string) (server, tool string, ok bool) {
 		return "", "", false
 	}
 	for _, s := range c.servers() {
-		if t, found := c.adapter.MCPToolOf(toolName, s); found && len(s) > len(server) {
+		if t, found := c.tools.MCPToolOf(toolName, s); found && len(s) > len(server) {
 			server, tool, ok = s, t, true
 		}
 	}
@@ -318,7 +335,7 @@ func (d *Daemon) decide(c call) (ipc.Response, error) {
 	var sess *sessionInfo
 	var err error
 	if c.probe {
-		cwd := c.str("cwd")
+		cwd := c.cwd()
 		git := platform.GitRoot(cwd)
 		sess = &sessionInfo{Cwd: cwd, Git: git, Root: intent.WorkspaceRoot(cwd, d.cfg.Env.Home, git)}
 	} else if sess, err = d.session(c); err != nil {
@@ -501,7 +518,7 @@ func (d *Daemon) postTool(c call) (ipc.Response, error) {
 	}
 	toolName := c.str("tool_name")
 	d.scanOutput(c, sess, toolName)
-	if k := c.adapter.ToolKind(toolName); k == "file_write" || k == "file_delete" {
+	if k := c.tools.ToolKind(toolName); k == "file_write" || k == "file_delete" {
 		_, actions := c.actions()
 		for _, p := range d.memoryTargets(actions, sess) {
 			d.memoryWritten(c, p)
@@ -561,13 +578,13 @@ func (d *Daemon) trustedMCP(c call, sess *sessionInfo) bool {
 // not counted, so the flag stays meaningful.
 func untrustedSource(c call) string {
 	tool := c.str("tool_name")
-	switch c.adapter.ToolKind(tool) {
+	switch c.tools.ToolKind(tool) {
 	case "network_fetch", "web_search":
 		return "web_fetch"
 	case "mcp_call":
 		return "mcp_response"
 	case "shell_exec":
-		target, _ := c.adapter.ToolTarget(tool)
+		target, _ := c.tools.ToolTarget(tool)
 		cmd, _ := parsers.Lookup(c.field("tool_input"), target.Command).(string)
 		cmds, _ := intent.ParseShell(cmd)
 		for _, x := range cmds {

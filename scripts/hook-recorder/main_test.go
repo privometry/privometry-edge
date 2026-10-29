@@ -105,3 +105,35 @@ func TestRecordAndSanitize(t *testing.T) {
 		t.Error("a recorded version is not overwritten")
 	}
 }
+
+func TestScrubEmails(t *testing.T) {
+	in := `{"user_email": "jane.doe+ci@corp.example.co.uk", "remote": "git@github.com:acme/api.git", "url": "https://example.com"}`
+	want := `{"user_email": "dev@example.com", "remote": "git@github.com:acme/api.git", "url": "https://example.com"}`
+	if got := scrubEmails(in); got != want {
+		t.Errorf("scrubEmails:\n got %s\nwant %s", got, want)
+	}
+}
+
+func TestCursorReplies(t *testing.T) {
+	for event, want := range map[string]string{"preToolUse": `{"permission":"allow"}`, "beforeShellExecution": `{"permission":"ask"}`, "stop": ""} {
+		if got := reply("cursor", event); got != want {
+			t.Errorf("cursor %s: %q, want %q", event, got, want)
+		}
+	}
+	if reply("antigravity", "PreToolUse") != "{}" || reply("claude_code", "PreToolUse") != "" {
+		t.Error("other agents' replies changed")
+	}
+}
+
+func TestCleanerDashedPaths(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Cursor's dashed folder names are recorded on macOS")
+	}
+	home := t.TempDir()
+	project := filepath.Join(home, "rec-cursor")
+	in := filepath.Join(home, ".cursor", "projects", dashed(project), "agent-transcripts", "t.jsonl")
+	got := cleaner(testEnv(home), project).Replace(in)
+	if want := "/home/dev/.cursor/projects/home-dev-acme-api/agent-transcripts/t.jsonl"; got != want {
+		t.Errorf("got %s, want %s", got, want)
+	}
+}

@@ -82,7 +82,8 @@ Week estimates assume 2–3 engineers.
 ## Open items
 
 - [x] Codex CLI pre-tool hook exists, but has no `ask` and no fail-closed switch; see `docs/spikes/hook-formats.md`.
-- [ ] Record Cursor payloads (spike follow-up). Codex 0.164.0 and 0.165.0 are recorded (`test/fixtures/codex_cli/`) and verified, including `PermissionRequest`, `Stop` and subagent events from an interactive 0.165.0 session; what Privometry does at a Codex `PermissionRequest` is still open (`docs/spikes/hook-formats.md`).
+- [x] Record Cursor payloads (spike follow-up): 3.27.22 is recorded (`test/fixtures/cursor/3.27.22/`) and verified. It showed `preToolUse` has no `cwd`, the shell hook can send an empty one, and the Claude Code hooks Cursor runs use Cursor's tool names; the daemon now handles all three.
+- [ ] Decide what Privometry does at a Codex `PermissionRequest` (`docs/spikes/hook-formats.md`). Codex 0.164.0 and 0.165.0 are recorded (`test/fixtures/codex_cli/`) and verified, including `PermissionRequest`, `Stop` and subagent events from an interactive 0.165.0 session.
 - [x] Fix the adapter response shape in Contracts v1 (`hookSpecificOutput` for Claude Code and Codex, `permission` for Cursor).
 - [x] `release` and root key custody (decided 2026-10-28): the release key is a GitHub Actions secret of the protected `release` environment, read only by `release.yml`'s sign job, moving to a cloud key service later by a root-signed rotation; the root key is an offline Ed25519 seed held in two places by two people. `scripts/release-keygen` makes either; see `internal/trust/keys/README.md`.
 - [x] Create the release key and commit `release-keys.json` (`release:gh-2026`, 2026-10-29).
