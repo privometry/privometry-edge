@@ -1,10 +1,12 @@
 package intent
 
 import (
+	"encoding/base64"
 	"fmt"
 	"slices"
 	"strings"
 	"testing"
+	"unicode/utf16"
 )
 
 var ctx = Context{Cwd: "/home/dev/work/api", Home: "/home/dev", RepoRoot: "/home/dev/work/api"}
@@ -104,6 +106,70 @@ func TestExtractShell(t *testing.T) {
 			}
 		}
 	}
+}
+
+// TestWindowsRecursiveDelete covers cmd.exe and PowerShell spellings of a
+// recursive delete, such as the rmdir /s /q d:\ that wiped a drive in the
+// December 2025 Antigravity incident.
+func TestWindowsRecursiveDelete(t *testing.T) {
+	win := Context{Cwd: `C:\Users\dev\work\api`, Home: `C:\Users\dev`, RepoRoot: `C:\Users\dev\work\api`}
+	cases := []struct {
+		line string
+		want []string
+	}{
+		// cmd.exe: rmdir, rd, del and erase with /s, in any case
+		{`rmdir /s /q d:\`, []string{"critical intent=recursive_delete class=system"}},
+		{`RD /S /Q D:\`, []string{"critical intent=recursive_delete class=system"}},
+		{`rd /s /q C:\Users\dev`, []string{"critical intent=recursive_delete class=home"}},
+		{`rmdir /s /q %USERPROFILE%`, []string{"critical intent=recursive_delete class=home"}},
+		{`rd /s /q "C:\Program Files\App"`, []string{"critical intent=recursive_delete class=system"}},
+		{`rd /s /q C:\Users\dev\work\..\..\..`, []string{"critical intent=recursive_delete class=system"}},
+		{`del /s /q C:\Users\dev\*`, []string{"critical intent=recursive_delete class=home"}},
+		{`erase /f /s /q C:\Users\dev\.ssh`, []string{"critical intent=recursive_delete class=secret_store"}},
+		{`rd /s /q \`, []string{"critical intent=recursive_delete class=system"}},
+		{`rd /s /q build`, []string{"low intent=recursive_delete class=repo"}},
+		{`rmdir /q C:\Users\dev\old`, []string{"medium class=home"}},
+		{`del C:\Users\dev\notes.txt`, []string{"medium class=home"}},
+		{`cd /d D:\ && rd /s /q .`, []string{"none class=other", "none class=system", "critical intent=recursive_delete class=system"}},
+		// PowerShell: Remove-Item and its aliases with -Recurse, abbreviated and in any case
+		{`Remove-Item -Recurse -Force C:\Users\dev`, []string{"critical intent=recursive_delete class=home"}},
+		{`Remove-Item -Path 'D:\' -Recurse -Force`, []string{"critical intent=recursive_delete class=system"}},
+		{`remove-item D:\ -recurse`, []string{"critical intent=recursive_delete class=system"}},
+		{`Remove-Item -LiteralPath:C:\Windows -Recurse`, []string{"critical intent=recursive_delete class=system"}},
+		{`Remove-Item -Recurse -Force D:\..`, []string{"critical intent=recursive_delete class=system"}},
+		{`ri C:\ -r`, []string{"critical intent=recursive_delete class=system"}},
+		{`rm -r -fo $env:USERPROFILE`, []string{"critical intent=recursive_delete class=home"}},
+		{`rm -Recurse -Force ~\Documents`, []string{"critical intent=recursive_delete class=home"}},
+		{`rd $HOME\.aws -Recurse -Force`, []string{"critical intent=recursive_delete class=secret_store"}},
+		{`rmdir -rec C:\Users\dev\old`, []string{"critical intent=recursive_delete class=home"}},
+		{`del -Recurse D:\data -ErrorAction SilentlyContinue`, []string{"high intent=recursive_delete class=other"}},
+		{`Remove-Item .\dist,D:\ -Recurse`, []string{"low intent=recursive_delete class=repo", "critical intent=recursive_delete class=system"}},
+		{`Remove-Item -Force -Verbose C:\Users\dev\old`, []string{"medium class=home"}},
+		{`Remove-Item -Recurse -Force .\node_modules`, []string{"low intent=recursive_delete class=repo"}},
+		// wrappers
+		{`cmd /c rmdir /s /q d:\`, []string{"critical intent=recursive_delete class=system"}},
+		{`cmd.exe /c "rmdir /s /q d:\"`, []string{"critical intent=recursive_delete class=system"}},
+		{`C:\Windows\System32\cmd.exe /S /C "rd /s /q C:\Users\dev"`, []string{"critical intent=recursive_delete class=home"}},
+		{`powershell -Command "Remove-Item -Recurse -Force $env:USERPROFILE"`, []string{"critical intent=recursive_delete class=home"}},
+		{`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command Remove-Item -Recurse -Force 'C:\Program Files\App'`, []string{"critical intent=recursive_delete class=system"}},
+		{`pwsh -c "Write-Output x; Remove-Item D:\ -Recurse"`, []string{"medium", "critical intent=recursive_delete class=system"}},
+		{"powershell -EncodedCommand " + encodePowerShell(`Remove-Item -Recurse -Force D:\`), []string{"critical intent=recursive_delete class=system"}},
+		{`powershell "Remove-Item C:\Users\dev -Recurse"`, []string{"critical intent=recursive_delete class=home"}},
+	}
+	for _, tc := range cases {
+		got := summaries(Extract(Action{Kind: "shell_exec", Command: tc.line}, win))
+		if !slices.Equal(got, tc.want) {
+			t.Errorf("%s\n   got  %q\n   want %q", tc.line, got, tc.want)
+		}
+	}
+}
+
+func encodePowerShell(s string) string {
+	var b []byte
+	for _, u := range utf16.Encode([]rune(s)) {
+		b = append(b, byte(u), byte(u>>8))
+	}
+	return base64.StdEncoding.EncodeToString(b)
 }
 
 func TestExtractTools(t *testing.T) {

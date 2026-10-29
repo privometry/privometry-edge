@@ -126,6 +126,33 @@ func TestDecisions(t *testing.T) {
 	}
 }
 
+// TestWindowsDeletes runs cmd.exe and PowerShell recursive deletes, such as
+// the rmdir /s /q d:\ of the December 2025 Antigravity drive wipe, through
+// the shipped packs.
+func TestWindowsDeletes(t *testing.T) {
+	p := load(t)
+	win := intent.Context{Cwd: `C:\Users\dev\work\api`, Home: `C:\Users\dev`, RepoRoot: `C:\Users\dev\work\api`}
+	cases := []struct{ line, verdict, rule string }{
+		{`rmdir /s /q d:\`, "deny", "privometry/core-catastrophic:system-recursive-delete"},
+		{`cmd /c "rd /s /q C:\Users\dev"`, "deny", "privometry/core-catastrophic:home-recursive-delete"},
+		{`powershell -Command "Remove-Item -Recurse -Force $env:USERPROFILE\.ssh"`, "deny", "privometry/core-catastrophic:secret-store-recursive-delete"},
+		{`Remove-Item -Recurse -Force D:\`, "deny", "privometry/core-catastrophic:system-recursive-delete"},
+		{`Remove-Item -Recurse -Force .\node_modules`, "allow", ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.line, func(t *testing.T) {
+			d, err := p.Decide(policy.Input{Agent: engine.Agent{Product: "antigravity", Pattern: "interactive"},
+				Repo: "github.com/acme/api", Action: shell(tc.line), Context: win})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if d.Verdict != tc.verdict || tc.rule == "" && len(d.RuleIDs) > 0 || tc.rule != "" && !slices.Contains(d.RuleIDs, tc.rule) {
+				t.Errorf("got %s %v (%s), want %s %q", d.Verdict, d.RuleIDs, d.Reason, tc.verdict, tc.rule)
+			}
+		})
+	}
+}
+
 // TestLatencyBudget keeps policy decisions well inside the 10 ms p95 hook
 // budget, which also has to cover IPC and the hook client's start-up.
 func TestLatencyBudget(t *testing.T) {

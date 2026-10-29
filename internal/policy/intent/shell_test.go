@@ -32,6 +32,19 @@ func TestParseShell(t *testing.T) {
 		{"/usr/local/bin/terraform.exe apply -destroy", []want{{"terraform", "apply", []string{"-destroy"}}}},
 		{"aws --profile prod s3 rb s3://acme-backups --force", []want{{"aws", "s3 rb s3://acme-backups", []string{"--profile", "--force"}}}},
 		{"rm -- -weird-name", []want{{"rm", "-weird-name", nil}}},
+		// Windows: backslash paths survive, cmd.exe switches are flags, wrappers are unwrapped
+		{`rmdir /s /q d:\`, []want{{"rmdir", "d:/", []string{"/s", "/q"}}}},
+		{`RD /S /Q "C:\Program Files\App"`, []want{{"RD", "C:/Program Files/App", []string{"/S", "/s", "/Q", "/q"}}}},
+		{`del /a:h /s C:\x\*.tmp`, []want{{"del", "C:/x/*.tmp", []string{"/a", "/s"}}}},
+		{`cmd.exe /c "rmdir /s /q d:\"`, []want{{"rmdir", "d:/", []string{"/s"}}}},
+		{`cmd /c cd /d C:\x && rd /s /q .`, []want{{"cd", "/d C:/x", nil}, {"rd", ".", []string{"/s"}}}},
+		{`Remove-Item -Path:'C:\a b' -Recurse -Force -ErrorAction SilentlyContinue`, []want{{"Remove-Item", "C:/a b", []string{"-Recurse", "-Force", "-ErrorAction"}}}},
+		{`Remove-Item C:\a,.\b -Recurse`, []want{{"Remove-Item", "C:/a ./b", []string{"-Recurse"}}}},
+		{`powershell -NoProfile -c "Remove-Item -Recurse $env:USERPROFILE\x"`, []want{{"Remove-Item", "$env:USERPROFILE/x", []string{"-Recurse"}}}},
+		// bash escapes are untouched
+		{`rm -rf My\ Folder "a\"b"`, []want{{"rm", `My Folder a"b`, []string{"-r"}}}},
+		{`printf 'a\nb' > out.txt`, []want{{"printf", `a\nb`, nil}}},
+		{`sed -i 's:\(x\):y:' f`, []want{{"sed", `s:\(x\):y: f`, []string{"-i"}}}},
 	}
 	for _, tc := range cases {
 		cmds, err := ParseShell(tc.line)
@@ -85,6 +98,18 @@ func TestParseShellDetails(t *testing.T) {
 	cmds, _ = ParseShell(deep)
 	if len(cmds) != 1 || cmds[0].Program != "sh" {
 		t.Errorf("nesting beyond maxDepth should stop at a shell: %+v", cmds)
+	}
+}
+
+func TestParseShellPowerShellFlags(t *testing.T) {
+	// -Force and -Verbose are PowerShell parameters, not -f -o -r -c -e groups.
+	cmds, _ := ParseShell(`Remove-Item -Force -Verbose C:\x`)
+	if slices.Contains(cmds[0].Flags, "-r") {
+		t.Errorf("flags %v split a PowerShell parameter", cmds[0].Flags)
+	}
+	cmds, _ = ParseShell("rm -rf x")
+	if !slices.Contains(cmds[0].Flags, "-r") {
+		t.Errorf("rm -rf still splits: %v", cmds[0].Flags)
 	}
 }
 

@@ -10,7 +10,9 @@ action ──► intent.Extract ──► one request per command and target ─
 
 ## Extraction (`internal/policy/intent`)
 
-**Shell parsing.** Commands are parsed with `mvdan.cc/sh`, so pipelines, `&&` chains, subshells and `$(...)` are all seen. Wrappers are peeled (`sudo`, `doas`, `env`, `timeout`, `nice`, `xargs`, `nohup`, `time`, `stdbuf`, …), and the parser descends into `sh -c`, `bash -c`, `eval`, `find -exec`, and package runners (`npx prisma migrate reset` yields both `npx` and `prisma`). Nesting stops at depth 4. A line that does not parse is treated as high risk.
+**Shell parsing.** Commands are parsed with `mvdan.cc/sh`, so pipelines, `&&` chains, subshells and `$(...)` are all seen. Wrappers are peeled (`sudo`, `doas`, `env`, `timeout`, `nice`, `xargs`, `nohup`, `time`, `stdbuf`, …), and the parser descends into `sh -c`, `bash -c`, `eval`, `find -exec`, and package runners (`npx prisma migrate reset` yields both `npx` and `prisma`), and on Windows into `cmd /c` and `powershell`/`pwsh` `-Command` or `-EncodedCommand`. Nesting stops at depth 4. A line that does not parse is treated as high risk.
+
+**Windows command lines** go through the same parser. Before parsing, backslashes in Windows paths (those starting `C:\`, `.\`, `..\`, `~\`, `%VAR%\`, `$env:VAR\` or `$HOME\`, or a lone `\` ending the line, the current drive's root) become forward slashes, so the shell grammar does not read them as escapes. `rmdir`, `rd`, `del` and `erase` take cmd.exe switches (`/s`, `/Q`) as flags. PowerShell's `Remove-Item` and its aliases (`ri`, `rm`, `rmdir`, `rd`, `del`, `erase`) take parameters in any case and abbreviated, `-Path:value`, and comma-separated path lists.
 
 **Working directory:** `cd` and `pushd` change where later commands in the same line resolve relative paths, so `cd ~ && rm -rf old` targets the home folder. Subshells and conditional branches are not scoped separately.
 
@@ -22,7 +24,7 @@ action ──► intent.Extract ──► one request per command and target ─
 
 | Intent | Detected from |
 |---|---|
-| `recursive_delete` | `rm -r`, `find -delete`; per target, so the path class decides severity |
+| `recursive_delete` | `rm -r`, `find -delete`, cmd.exe `rmdir`/`rd`/`del`/`erase` with `/s`, PowerShell `Remove-Item` (or an alias) with `-Recurse`; per target, so the path class decides severity |
 | `force_push` | `git push` with `--force`, `-f`, `--force-with-lease`, `--mirror` or a `+` refspec |
 | `db_drop` | `DROP DATABASE/SCHEMA/TABLE`, `TRUNCATE`, `FLUSHALL`, `dropDatabase()` in any argument; `dropdb`, `mysqladmin drop`, `prisma migrate reset`, `rails db:drop`, `manage.py flush`, `supabase db reset` |
 | `secret_read` | Reading a secret file; `env`, `printenv` |
@@ -87,4 +89,4 @@ Measured on an M-series Mac: p50 11 µs, p95 55 µs per decision; a three-comman
 - `catalog_status` is never set: it needs the bundle catalog and risk feed (P2).
 - Organization policies are merged from their YAML source; using a signed bundle's precompiled Cedar arrives with bundle sync (P2).
 - Inline interpreter code (`python -c`, `node -e`) is not analysed beyond its risk level.
-- Windows paths are classified in forward-slash form and compared without regard to case (`C:\Users\dev\.ssh` is a secret store, `C:\Windows` and `Program Files` are system); `%USERPROFILE%` and `$env:USERPROFILE` count as the home folder, other `%VAR%` paths are not resolved. PowerShell commands are not parsed as shell intent.
+- Windows paths are classified in forward-slash form and compared without regard to case (`C:\Users\dev\.ssh` is a secret store, `C:\Windows` and `Program Files` are system); `%USERPROFILE%` and `$env:USERPROFILE` count as the home folder, other `%VAR%` paths are not resolved, and a bare drive root such as `D:\` is system. PowerShell is read with the POSIX shell grammar, which covers simple commands, `;`, `|` and quoting; not covered are pipeline input (`Get-ChildItem C:\x -Recurse | Remove-Item` has no path on `Remove-Item`), the `&` call operator at the start of a line (does not parse, so high risk), .NET calls such as `[IO.Directory]::Delete()`, script blocks, UNC paths (`\\server\share`), and relative paths without a leading `.\` (`build\out` reads as `buildout`, still in the same folder).

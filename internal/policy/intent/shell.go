@@ -4,8 +4,12 @@
 package intent
 
 import (
+	"encoding/base64"
 	"path"
+	"regexp"
+	"slices"
 	"strings"
+	"unicode/utf16"
 
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -37,6 +41,7 @@ func ParseShell(line string) ([]Command, error) {
 }
 
 func parse(line string, depth int, via []string) ([]Command, error) {
+	line = windowsPaths(line)
 	f, err := syntax.NewParser(syntax.Variant(syntax.LangBash)).Parse(strings.NewReader(line), "")
 	if err != nil {
 		return nil, err
@@ -116,6 +121,50 @@ func wordString(w *syntax.Word) (s string, lit bool) {
 		part(p, false)
 	}
 	return b.String(), lit
+}
+
+// windowsRootRE matches the start of a Windows path: a drive (C:\), .\ or
+// ..\, ~\, %VAR%\, $env:VAR\ or $HOME\, or a lone \ ending the line (the
+// current drive's root).
+var windowsRootRE = regexp.MustCompile(`^(?:[A-Za-z]:\\(?:[\w.\-$%~*? '"]|$)|\.{1,2}\\|~\\|%[A-Za-z_]\w*%\\|\$(?i:env:[A-Za-z_]\w*|home)\\|\\$)`)
+
+// windowsPaths writes the backslashes of Windows paths as forward slashes, as
+// paths are classified anyway, before the line is parsed: the shell grammar
+// reads them as escapes, so C:\Users\dev would become C:Usersdev and
+// "rmdir /s /q d:\" would never close its quote. A path starts at a word
+// boundary, or after = or : as in -Path:C:\x, with a windowsRootRE root and
+// runs to the next unquoted space or operator. Every other backslash stays a
+// shell escape.
+func windowsPaths(line string) string {
+	if !strings.Contains(line, `\`) {
+		return line
+	}
+	b := []byte(line)
+	var quote byte
+	inPath := false
+	for i := 0; i < len(b); i++ {
+		ch := b[i]
+		if inPath && quote == 0 && strings.IndexByte(" \t\n;|&<>()", ch) >= 0 {
+			inPath = false
+		}
+		if !inPath && (i == 0 || strings.IndexByte(" \t\n'\"=:,(", b[i-1]) >= 0) && windowsRootRE.MatchString(line[i:]) {
+			inPath = true
+		}
+		switch {
+		case ch == '\\' && inPath:
+			b[i] = '/'
+		case ch == '\\' && quote != '\'':
+			i++ // a shell escape: the next character is literal
+		case ch == '\'' || ch == '"':
+			switch quote {
+			case 0:
+				quote = ch
+			case ch:
+				quote = 0
+			}
+		}
+	}
+	return string(b)
 }
 
 // unescape removes shell backslash escapes, which the parser keeps in
@@ -213,6 +262,11 @@ func unwrap(words []string, cmd Command, depth int) []Command {
 				return inner
 			}
 		}
+		if line, ok := windowsShellLine(prog, args); ok {
+			if inner, err := parse(line, depth+1, via); err == nil {
+				return inner
+			}
+		}
 	}
 
 	cmd.Program = prog
@@ -233,6 +287,76 @@ func unwrap(words []string, cmd Command, depth int) []Command {
 		out = append(out, unwrap(runnerArgs, inner, depth+1)...)
 	}
 	return out
+}
+
+// psHostValueParams are powershell and pwsh parameters that take a value.
+var psHostValueParams = map[string]bool{"executionpolicy": true, "ex": true, "ep": true, "windowstyle": true, "w": true,
+	"inputformat": true, "inp": true, "if": true, "outputformat": true, "o": true, "of": true, "configurationname": true,
+	"config": true, "workingdirectory": true, "wd": true, "version": true, "v": true, "psconsolefile": true, "settingsfile": true,
+	"custompipename": true}
+
+// windowsShellLine returns the command line run by cmd /c (or /k) and by
+// powershell or pwsh -Command or -EncodedCommand. Windows PowerShell also runs
+// bare words as a command; pwsh runs them as a script, which then parses as
+// an unknown program.
+func windowsShellLine(prog string, args []string) (string, bool) {
+	switch strings.ToLower(prog) {
+	case "cmd":
+		for i, a := range args {
+			if strings.EqualFold(a, "/c") || strings.EqualFold(a, "/k") || strings.EqualFold(a, "/r") {
+				return joinWords(args[i+1:]), i+1 < len(args)
+			}
+		}
+	case "powershell", "pwsh":
+		for i := 0; i < len(args); i++ {
+			name, param := strings.CutPrefix(strings.ToLower(args[i]), "-")
+			switch {
+			case !param:
+				return joinWords(args[i:]), true
+			case name == "c" || len(name) >= 3 && strings.HasPrefix("command", name):
+				return joinWords(args[i+1:]), i+1 < len(args)
+			case name == "e" || name == "ec" || len(name) >= 3 && strings.HasPrefix("encodedcommand", name):
+				if i+1 < len(args) {
+					return decodePowerShell(args[i+1])
+				}
+				return "", false
+			case name == "f" || name == "file":
+				return "", false
+			case psHostValueParams[name]:
+				i++
+			}
+		}
+	}
+	return "", false
+}
+
+// decodePowerShell decodes an -EncodedCommand value: base64 of UTF-16LE.
+func decodePowerShell(s string) (string, bool) {
+	raw, err := base64.StdEncoding.DecodeString(s)
+	if err != nil || len(raw)%2 != 0 {
+		return "", false
+	}
+	units := make([]uint16, len(raw)/2)
+	for i := range units {
+		units[i] = uint16(raw[2*i]) | uint16(raw[2*i+1])<<8
+	}
+	return string(utf16.Decode(units)), true
+}
+
+// joinWords rebuilds a command line from words the outer shell already
+// split, quoting words with spaces so they stay whole.
+func joinWords(words []string) string {
+	if len(words) == 1 {
+		return words[0]
+	}
+	quoted := make([]string, len(words))
+	for i, w := range words {
+		quoted[i] = w
+		if w == "" || strings.ContainsAny(w, " \t\n") {
+			quoted[i] = "'" + strings.ReplaceAll(w, "'", `'\''`) + "'"
+		}
+	}
+	return strings.Join(quoted, " ")
 }
 
 // packageRunnerArgs returns the command a package runner executes, such as
@@ -339,34 +463,93 @@ var globalValueFlags = map[string]map[string]bool{
 	"go":        {"-run": true, "-bench": true, "-o": true, "-tags": true, "-ldflags": true, "-count": true, "-timeout": true, "-C": true},
 }
 
+// cmdSwitchPrograms take cmd.exe switches such as /s and /q, which are flags
+// rather than paths (rmdir /s is never a Unix folder named /s in practice).
+var cmdSwitchPrograms = map[string]bool{"rmdir": true, "rd": true, "del": true, "erase": true}
+
+var cmdSwitchRE = regexp.MustCompile(`^/[A-Za-z?](:.*)?$`)
+
+// removeItemNames are PowerShell's Remove-Item and its aliases, whose
+// parameters are case-insensitive and may be written -Name:value.
+var removeItemNames = map[string]bool{"remove-item": true, "ri": true, "rm": true, "rmdir": true, "rd": true, "del": true, "erase": true}
+
+// psValueParams are Remove-Item and common parameters that take a value which
+// is not a path. -Path and -LiteralPath values stay positional.
+var psValueParams = map[string]bool{"-filter": true, "-include": true, "-exclude": true, "-credential": true, "-stream": true,
+	"-erroraction": true, "-ea": true, "-warningaction": true, "-wa": true, "-informationaction": true, "-infa": true,
+	"-errorvariable": true, "-ev": true, "-warningvariable": true, "-wv": true, "-informationvariable": true, "-iv": true,
+	"-outvariable": true, "-ov": true, "-outbuffer": true, "-ob": true, "-pipelinevariable": true, "-pv": true}
+
+var psPathParams = map[string]bool{"-path": true, "-literalpath": true, "-lp": true, "-pspath": true}
+
+// psParamNames are Remove-Item's parameters and the common ones. A flag that
+// abbreviates one (-Force, -fo, -Verbose) is not a group of short flags, so
+// it is not split into letters such as -r.
+var psParamNames = []string{"path", "literalpath", "filter", "include", "exclude", "recurse", "force", "credential", "whatif",
+	"confirm", "stream", "verbose", "debug", "erroraction", "warningaction", "informationaction", "errorvariable",
+	"warningvariable", "informationvariable", "outvariable", "outbuffer", "pipelinevariable"}
+
+func psParam(flag string) bool {
+	name := strings.ToLower(strings.TrimPrefix(flag, "-"))
+	return slices.ContainsFunc(psParamNames, func(p string) bool { return strings.HasPrefix(p, name) })
+}
+
 // splitArgs separates flags from positional arguments. Flags keep the
 // spelling they were written with, without values ("--output=x" gives
 // "--output"); a group of single-dash letters is also split ("-rf" gives
-// "-rf", "-r" and "-f") so rules can name either form.
+// "-rf", "-r" and "-f") so rules can name either form. cmd.exe switches are
+// also given in lower case ("/S" gives "/S" and "/s").
 func splitArgs(prog string, args []string) (positional, flags []string) {
 	valueFlags := globalValueFlags[prog]
+	lower := strings.ToLower(prog)
+	switches, ps := cmdSwitchPrograms[lower], removeItemNames[lower]
 	afterDashes := false
 	for i := 0; i < len(args); i++ {
 		a := args[i]
 		switch {
+		case !afterDashes && switches && cmdSwitchRE.MatchString(a):
+			name, _, _ := strings.Cut(a, ":")
+			flags = appendUnique(appendUnique(flags, name), strings.ToLower(name))
 		case afterDashes || a == "-" || !strings.HasPrefix(a, "-"):
-			positional = append(positional, a)
+			positional = append(positional, psList(a, ps)...)
 		case a == "--":
 			afterDashes = true
 		default:
 			name, _, hasValue := strings.Cut(a, "=")
+			if ps && !hasValue {
+				var value string
+				name, value, hasValue = strings.Cut(a, ":")
+				if hasValue && psPathParams[strings.ToLower(name)] {
+					positional = append(positional, psList(value, ps)...)
+				}
+			}
 			flags = appendUnique(flags, name)
-			if isShortGroup(name) {
+			if isShortGroup(name) && !(ps && psParam(name)) {
 				for _, c := range name[1:] {
 					flags = appendUnique(flags, "-"+string(c))
 				}
 			}
-			if !hasValue && valueFlags[name] && i+1 < len(args) {
+			if !hasValue && (valueFlags[name] || ps && psValueParams[strings.ToLower(name)]) && i+1 < len(args) {
 				i++
 			}
 		}
 	}
 	return positional, flags
+}
+
+// psList splits a PowerShell array argument (a,b) into its items, so a second
+// path cannot hide behind the first.
+func psList(a string, ps bool) []string {
+	if !ps || !strings.Contains(a, ",") {
+		return []string{a}
+	}
+	var out []string
+	for _, s := range strings.Split(a, ",") {
+		if s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 func isShortGroup(f string) bool {

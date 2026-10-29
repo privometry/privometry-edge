@@ -12,6 +12,14 @@ tests:
     covers: home-recursive-delete
     facts: { action: shell_exec, program: rm, flags: [-r, -f], intent: [recursive_delete], path_class: repo, target_path: /home/dev/api/build, repo: github.com/acme/api, risk: low }
     expect: { verdict: allow }
+  - name: blocks PowerShell Remove-Item -Recurse on the Windows home folder
+    covers: home-recursive-delete
+    facts: { action: shell_exec, program: Remove-Item, flags: [-Recurse, -Force], intent: [recursive_delete], path_class: home, target_path: C:/Users/dev, risk: critical }
+    expect: { verdict: deny, rule: home-recursive-delete }
+  - name: blocks rd /s /q on the Windows home folder
+    covers: home-recursive-delete
+    facts: { action: shell_exec, program: rd, flags: [/s, /q], intent: [recursive_delete], path_class: home, target_path: C:/Users/dev, risk: critical }
+    expect: { verdict: deny, rule: home-recursive-delete }
   - name: a plain delete in home is not recursive
     covers: home-recursive-delete
     facts: { action: shell_exec, program: rm, path_class: home, target_path: /home/dev/notes.txt, risk: medium }
@@ -21,6 +29,18 @@ tests:
     covers: system-recursive-delete
     facts: { action: shell_exec, program: rm, flags: [-r, -f], intent: [recursive_delete], path_class: system, target_path: /, risk: critical }
     expect: { verdict: deny, rule: system-recursive-delete }
+  - name: blocks rmdir /s /q on a Windows drive root
+    covers: system-recursive-delete
+    facts: { action: shell_exec, program: rmdir, flags: [/s, /q], intent: [recursive_delete], path_class: system, target_path: d:/, risk: critical }
+    expect: { verdict: deny, rule: system-recursive-delete }
+  - name: blocks PowerShell Remove-Item -Recurse on a Windows drive root
+    covers: system-recursive-delete
+    facts: { action: shell_exec, program: Remove-Item, flags: [-Recurse, -Force], intent: [recursive_delete], path_class: system, target_path: D:/, risk: critical }
+    expect: { verdict: deny, rule: system-recursive-delete }
+  - name: rmdir without /s on a Windows drive root is not recursive
+    covers: system-recursive-delete
+    facts: { action: shell_exec, program: rmdir, flags: [/q], path_class: system, target_path: D:/, risk: high }
+    expect: { verdict: ask }
   - name: recursive delete in temp is not a system delete
     covers: system-recursive-delete
     facts: { action: shell_exec, program: rm, flags: [-r], intent: [recursive_delete], path_class: temp, target_path: /tmp/build-cache, risk: low }

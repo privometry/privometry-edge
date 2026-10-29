@@ -132,8 +132,8 @@ func shell(line string, ctx Context) []Request {
 		// Approximate: subshells and conditional branches are not scoped.
 		if (c.Program == "cd" || c.Program == "pushd") && !c.Dynamic {
 			target := "~"
-			if len(c.Positional) > 0 {
-				target = c.Positional[0]
+			if dirs := slices.DeleteFunc(slices.Clone(c.Positional), func(p string) bool { return strings.EqualFold(p, "/d") }); len(dirs) > 0 {
+				target = dirs[0] // cmd.exe's cd /d D:\x also changes drive
 			}
 			if dir, ok := ctx.resolve(target); ok && target != "-" {
 				ctx.Cwd = dir
@@ -268,7 +268,9 @@ func command(c Command, ctx Context) []Request {
 	return out
 }
 
-var deletePrograms = map[string]bool{"rm": true, "rmdir": true, "unlink": true, "shred": true, "srm": true, "trash": true}
+// deletePrograms are looked up in lower case: Windows program names are not case-sensitive.
+var deletePrograms = map[string]bool{"rm": true, "rmdir": true, "unlink": true, "shred": true, "srm": true, "trash": true,
+	"rd": true, "del": true, "erase": true, "remove-item": true, "ri": true}
 var writePrograms = map[string]bool{"cp": true, "mv": true, "mkdir": true, "touch": true, "ln": true, "chmod": true, "chown": true,
 	"tee": true, "truncate": true, "install": true, "rsync": true, "dd": true, "sed": false}
 var readPrograms = map[string]bool{"cat": true, "bat": true, "head": true, "tail": true, "less": true, "more": true, "grep": true,
@@ -287,9 +289,9 @@ func targetsOf(c Command) []target {
 		addPath(p, "read")
 	}
 	switch {
-	case deletePrograms[c.Program]:
+	case deletePrograms[strings.ToLower(c.Program)]:
 		op := "delete"
-		if c.Program == "rm" && (hasFlag(c, "-r") || hasFlag(c, "-R") || hasFlag(c, "--recursive")) {
+		if recursiveDelete(c) {
 			op = "recursive_delete"
 		}
 		for _, p := range c.Positional {
@@ -363,6 +365,17 @@ func targetsOf(c Command) []target {
 		}
 	}
 	return out
+}
+
+// recursiveDelete reports whether a delete command removes folders with
+// everything in them: rm -r, cmd.exe's rmdir, rd and del with /s, and
+// PowerShell's Remove-Item under any alias with -Recurse, which PowerShell
+// lets callers shorten to any prefix (-r, -rec) in any case.
+func recursiveDelete(c Command) bool {
+	return hasFlag(c, "--recursive") || slices.ContainsFunc(c.Flags, func(f string) bool {
+		name, ok := strings.CutPrefix(f, "-")
+		return f == "/s" || ok && name != "" && strings.HasPrefix("recurse", strings.ToLower(name))
+	})
 }
 
 // uploadSources returns local files a command sends elsewhere: curl -T,
@@ -569,7 +582,7 @@ func classifyProgram(c Command, r *riskAt) {
 		r.raise("critical", "writes directly to a device")
 	case readOnly[c.Program]:
 		r.raise("none", "read-only command")
-	case deletePrograms[c.Program] || writePrograms[c.Program] || readPrograms[c.Program] || c.Program == "sed":
+	case deletePrograms[strings.ToLower(c.Program)] || writePrograms[c.Program] || readPrograms[c.Program] || c.Program == "sed":
 		r.raise("none", "file command")
 	case c.Program == "git" && gitReadOnly[sub]:
 		r.raise("none", "read-only git command")
