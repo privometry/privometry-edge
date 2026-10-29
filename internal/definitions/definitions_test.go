@@ -22,6 +22,7 @@ import (
 	"github.com/privometry/privometry-oss/detectorpacks"
 	"github.com/privometry/privometry-oss/internal/definitions"
 	"github.com/privometry/privometry-oss/internal/signing"
+	"github.com/privometry/privometry-oss/internal/trust"
 )
 
 var now = time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC)
@@ -173,7 +174,8 @@ func TestRejectedAdapterSets(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			o := opts(t)
 			if c.noKeys {
-				o.Keys = nil // the release keys built in: none ship yet
+				o.Keys = nil // fall back to the release keys built in, as a build with none
+				trust.WithoutReleaseKeys(t)
 			}
 			raw := c.raw(t)
 			install(t, o, definitions.Adapters, raw)

@@ -16,6 +16,7 @@ import (
 	"github.com/privometry/privometry-oss/internal/events"
 	"github.com/privometry/privometry-oss/internal/platform"
 	"github.com/privometry/privometry-oss/internal/timeline"
+	"github.com/privometry/privometry-oss/internal/trust"
 )
 
 func TestDoctorAndBundle(t *testing.T) {
@@ -136,6 +137,7 @@ func keys(m map[string]string) []string {
 }
 
 func TestUpdateRefusesWithoutReleaseKeys(t *testing.T) {
+	trust.WithoutReleaseKeys(t)
 	var stdout, stderr bytes.Buffer
 	if code := run([]string{"update", "--check"}, &stdout, &stderr); code != 1 || !strings.Contains(stderr.String(), "no release signing keys") {
 		t.Errorf("exit %d: %s%s", code, stdout.String(), stderr.String())

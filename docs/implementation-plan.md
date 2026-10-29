@@ -85,7 +85,9 @@ Week estimates assume 2–3 engineers.
 - [ ] Record Cursor payloads (spike follow-up). Codex 0.164.0 is recorded (`test/fixtures/codex_cli/0.164.0`) and its definition verified; a Codex `PermissionRequest` still needs an interactive session.
 - [x] Fix the adapter response shape in Contracts v1 (`hookSpecificOutput` for Claude Code and Codex, `permission` for Cursor).
 - [x] `release` and root key custody (decided 2026-10-28): the release key is a GitHub Actions secret of the protected `release` environment, read only by `release.yml`'s sign job, moving to a cloud key service later by a root-signed rotation; the root key is an offline Ed25519 seed held in two places by two people. `scripts/release-keygen` makes either; see `internal/trust/keys/README.md`.
-- [ ] Create the release key and the root key, commit `release-keys.json` and `root-keys.json`, and set up the GitHub `release` environment (secret, variable, required reviewer, `v*` tags only). Until then every update and every installed definition set is refused.
+- [x] Create the release key and commit `release-keys.json` (`release:gh-2026`, 2026-10-29).
+- [ ] Set up the GitHub `release` environment: the `PRIVOMETRY_RELEASE_KEY` secret, the `PRIVOMETRY_RELEASE_KEY_NAME` variable, a required reviewer, `v*` tags only.
+- [ ] Ship `root-keys.json`. The offline root key exists (`root:offline-a`, 2026-10-29), but the control plane still signs its region key set with an online root seed (`PRIVOMETRY_ROOT_KEY`); it must first accept a key set signed offline, ahead of time, with the root key.
 - [ ] Name the root key's second holder, and who owns key rotation.
 - [x] Attach `adapters.json` and `detectorpacks.json` (from `scripts/sign-definitions`) to each release: `release.yml` signs and publishes them with `release.json`.
 - [x] Release manifest host: `privometry update` defaults to the latest GitHub release asset `release.json` of `privometry/privometry-oss`.

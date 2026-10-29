@@ -1,0 +1,13 @@
+{
+  "schema": "privometry.keyset/v1",
+  "version": 1,
+  "issued_at": "2026-10-29T03:08:06.000Z",
+  "keys": [
+    {
+      "keyid": "release:gh-2026:fcb3791229626593",
+      "role": "release",
+      "public_key": "ijtIPGzGZajlv4fw/1ryliyED28UpGcaLa9GPFYlux8=",
+      "not_before": "2026-10-29T03:08:06.000Z"
+    }
+  ]
+}

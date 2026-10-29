@@ -22,6 +22,7 @@ import (
 
 	"github.com/privometry/privometry-oss/internal/contract"
 	"github.com/privometry/privometry-oss/internal/signing"
+	"github.com/privometry/privometry-oss/internal/trust"
 )
 
 // testKey derives a key like scripts/gen-conformance: a TEST KEY with a
@@ -181,7 +182,7 @@ func TestUpdateRefusals(t *testing.T) {
 		}, nil, "binaries/3"},
 		{"no download for this platform", "0.4.2", func(_ *fixture, o *Options) { o.GOARCH = "riscv64" }, ErrNoArtifact, ""},
 		{"manifest over plain HTTP", "0.4.2", func(_ *fixture, o *Options) { o.ManifestURL = "http://example.com/release.json" }, nil, "not an HTTPS URL"},
-		{"no release keys built in", "0.4.2", func(_ *fixture, o *Options) { o.Keys = nil }, ErrNoReleaseKeys, ""},
+		{"no release keys built in", "0.4.2", func(_ *fixture, o *Options) { o.Keys = nil; trust.WithoutReleaseKeys(t) }, ErrNoReleaseKeys, ""},
 	}
 	for _, c := range cases {
 		f := newFixture(t, "0.5.0")

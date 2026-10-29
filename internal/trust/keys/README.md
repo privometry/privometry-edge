@@ -13,10 +13,10 @@ embedded at build time, for everything signed with the `release` role:
 The file is a `privometry.keyset/v1` document
 (`specs/common/v1/keyset.schema.json`) holding one or more `release` keys.
 
-No key set ships yet, so every update is refused with "this build has no
-release signing keys" and no signed definition set is accepted: the sensor
-runs on the definitions and detector packs built into it. Builds from source
-and package-manager installs are unaffected.
+It holds `release:gh-2026:fcb3791229626593` (created 2026-10-29), whose seed
+is the `PRIVOMETRY_RELEASE_KEY` secret below. Every binary built since then
+verifies releases, adapter definition sets and detector pack sets against it.
+Tests that need a build without release keys call `trust.WithoutReleaseKeys`.
 
 ## Custody (decided 2026-10-28)
 
@@ -45,8 +45,16 @@ with it.
 key set (`application/vnd.privometry.keyset+json`). An enrolled device gets
 its region's key set from `/edge/v1/enroll` and verifies it against these
 keys; the key set names the `policy` key that signs bundles and the `license`
-key that signs entitlements. No root key exists yet either, so a device pins
-the key set it gets at enrollment after checking that a root key listed in it
-signed it, and `privometry device status` says so.
+key that signs entitlements. Without `root-keys.json`, a device pins the key
+set it gets at enrollment after checking that a root key listed in it signed
+it, and `privometry device status` says so.
+
+The offline root key `root:offline-a:25358486e189b3d3` exists (2026-10-29),
+but its key set is not committed here yet. Today the control plane signs its
+region key set itself at startup with `PRIVOMETRY_ROOT_KEY`, so a binary that
+trusts only the offline key would refuse every control plane, and the only
+way around that would put the offline seed online. First the control plane
+must accept a key set signed ahead of time, offline, with the root key; then
+`root-keys.json` can ship.
 
 Never put test keys here: the conformance test keys have published seeds.

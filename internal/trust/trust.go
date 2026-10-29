@@ -37,6 +37,9 @@ func RootKeys() (*signing.KeySet, error) {
 
 // ReleaseKeys returns the release key set built into this binary.
 func ReleaseKeys() (*signing.KeySet, error) {
+	if noReleaseKeys {
+		return nil, ErrNoReleaseKeys
+	}
 	raw, err := keysFS.ReadFile("keys/release-keys.json")
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, ErrNoReleaseKeys
@@ -45,4 +48,15 @@ func ReleaseKeys() (*signing.KeySet, error) {
 		return nil, err
 	}
 	return signing.ParseKeySet(raw)
+}
+
+// noReleaseKeys makes ReleaseKeys answer as a build that carries none.
+var noReleaseKeys bool
+
+// WithoutReleaseKeys makes ReleaseKeys answer as a build that carries no
+// release keys until the test ends, for tests of that refusal. Tests that use
+// it must not run in parallel with tests that need the built-in keys.
+func WithoutReleaseKeys(t interface{ Cleanup(func()) }) {
+	noReleaseKeys = true
+	t.Cleanup(func() { noReleaseKeys = false })
 }

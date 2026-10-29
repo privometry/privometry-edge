@@ -8,9 +8,11 @@ import (
 	"testing"
 
 	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-oss/internal/trust"
 )
 
 func TestDefinitionsCmd(t *testing.T) {
+	trust.WithoutReleaseKeys(t) // "install without release keys" expects the refusal
 	data := t.TempDir()
 	env := platform.Env{GOOS: "linux", Home: t.TempDir(), Getenv: func(k string) string {
 		if k == "PRIVOMETRY_HOME" {
