@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// run executes a system tool (ps, lsof, powershell.exe) with a timeout and the C locale.
+// run executes a system tool (lsof, powershell.exe) with a timeout and the C locale.
 func run(name string, args ...string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
