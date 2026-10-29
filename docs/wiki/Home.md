@@ -1,6 +1,6 @@
 # Privometry Developer Wiki
 
-This wiki is the integration and maintenance guide for Privometry OSS. It covers the local Go edge, agent hooks, policy engine, contract generation, signed artifacts, and the boundary with the Java platform.
+This wiki is the integration and maintenance guide for privometry-edge. It covers the local Go edge, agent hooks, policy engine, contract generation, signed artifacts, and the boundary with the Java platform.
 
 ## Choose a path
 
