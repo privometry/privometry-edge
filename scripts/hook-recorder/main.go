@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -120,8 +121,25 @@ func record(stdin io.Reader, agent, event, out string) error {
 		pretty.Reset()
 		pretty.Write(raw) // keep non-JSON payloads verbatim
 	}
-	name := fmt.Sprintf("%s-%s-%s.json", agent, event, time.Now().UTC().Format("20060102T150405.000000000"))
-	return os.WriteFile(filepath.Join(out, name), pretty.Bytes(), 0o600)
+	// Two hooks can fire within one clock tick (Windows), so a counter after
+	// the time keeps names unique and in order, and nothing is overwritten.
+	at := time.Now().UTC().Format("20060102T150405.000000000")
+	for n := 0; n < 100; n++ {
+		name := fmt.Sprintf("%s-%s-%s%02d.json", agent, event, at, n)
+		f, err := os.OpenFile(filepath.Join(out, name), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+		if errors.Is(err, fs.ErrExist) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := f.Write(pretty.Bytes()); err != nil {
+			f.Close()
+			return err
+		}
+		return f.Close()
+	}
+	return fmt.Errorf("hook-recorder: 100 recordings of %s %s at %s", agent, event, at)
 }
 
 func adapter(agent string) (registry.Adapter, error) {
