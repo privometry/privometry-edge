@@ -1,0 +1,16 @@
+{
+  "session_id": "01a186da-38a0-7572-88d8-1e9371afe70f",
+  "turn_id": "01a186dc-9172-7942-a4c5-f5567f5d7bc5",
+  "agent_id": "01a186dc-913b-77d0-953a-041839d36746",
+  "agent_type": "default",
+  "transcript_path": "/home/dev/.codex/sessions/2026/10/29/rollout-2026-10-29T14-22-44-01a186dc-913b-77d0-953a-041839d36746.jsonl",
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PreToolUse",
+  "model": "gpt-5.6-sol",
+  "permission_mode": "default",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "wc -l notes.md"
+  },
+  "tool_use_id": "exec-53c29d33-e86a-489d-aa59-bffa4e546c14"
+}

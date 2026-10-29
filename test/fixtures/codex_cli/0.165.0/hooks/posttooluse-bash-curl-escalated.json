@@ -1,0 +1,15 @@
+{
+  "session_id": "01a186da-38a0-7572-88d8-1e9371afe70f",
+  "turn_id": "01a186db-deb8-79f2-96d1-464897635ac8",
+  "transcript_path": "/home/dev/.codex/sessions/2026/10/29/rollout-2026-10-29T14-20-10-01a186da-38a0-7572-88d8-1e9371afe70f.jsonl",
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "PostToolUse",
+  "model": "gpt-5.6-sol",
+  "permission_mode": "default",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "curl -sI https://example.com"
+  },
+  "tool_response": "HTTP/2 200 \r\ndate: Thu, 29 Oct 2026 08:52:09 GMT\r\ncontent-type: text/html; charset=utf-8\r\nserver: cloudflare\r\nlast-modified: Sat, 24 Oct 2026 11:34:40 GMT\r\nallow: GET, HEAD\r\naccept-ranges: bytes\r\nage: 4992\r\ncf-cache-status: HIT\r\ncf-ray: 0000000000000000-SJC\r\nalt-svc: h3=\":443\"; ma=86400\r\n\r\n",
+  "tool_use_id": "exec-e0619004-063a-46ea-9773-784c883fd1e2"
+}

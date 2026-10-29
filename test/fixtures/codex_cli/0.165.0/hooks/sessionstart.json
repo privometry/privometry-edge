@@ -1,0 +1,9 @@
+{
+  "session_id": "01a186da-38a0-7572-88d8-1e9371afe70f",
+  "transcript_path": "/home/dev/.codex/sessions/2026/10/29/rollout-2026-10-29T14-20-10-01a186da-38a0-7572-88d8-1e9371afe70f.jsonl",
+  "cwd": "/home/dev/acme-api",
+  "hook_event_name": "SessionStart",
+  "model": "gpt-5.6-sol",
+  "permission_mode": "default",
+  "source": "startup"
+}

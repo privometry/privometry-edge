@@ -6,6 +6,8 @@ versions: ">=0.14.0 <1.0.0"
 verified:
   - version: 0.164.0
     fixtures: codex_cli/0.164.0
+  - version: 0.165.0
+    fixtures: codex_cli/0.165.0
 detect:
   binaries: [codex]
   processes: [codex]
@@ -168,6 +170,9 @@ tool_kinds:
   apply_patch: file_write
   "mcp__*": mcp_call
   spawn_agent: subagent_spawn
+  # 0.165.0 names its subagent tools collaborationspawn_agent and
+  # collaborationwait_agent.
+  collaborationspawn_agent: subagent_spawn
   "*": other
 tool_targets:
   Bash: { command: /command }
