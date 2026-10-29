@@ -209,7 +209,7 @@ func categoryOf(r intent.Request) string {
 }
 
 // toolInput is the tool's arguments: tool_input, or for Copilot CLI toolArgs,
-// which arrives as a JSON-encoded string.
+// an object (a JSON-encoded string in older releases).
 func toolInput(agent string, p map[string]any) map[string]any {
 	if agent == "antigravity" {
 		call, _ := p["toolCall"].(map[string]any)
@@ -282,8 +282,13 @@ func copilotAction(p map[string]any) intent.Action {
 		return intent.Action{Kind: "file_read", Path: str(in["path"])}
 	case "create", "edit":
 		return intent.Action{Kind: "file_write", Path: str(in["path"])}
+	case "apply_patch":
+		return intent.Action{Kind: "file_write"}
 	case "web_fetch":
 		return intent.Action{Kind: "network_fetch", URL: str(in["url"])}
+	}
+	if strings.Contains(str(p["toolName"]), "-") {
+		return intent.Action{Kind: "mcp_call", MCPTool: str(p["toolName"])} // <server>-<tool>
 	}
 	return intent.Action{Kind: "other"}
 }

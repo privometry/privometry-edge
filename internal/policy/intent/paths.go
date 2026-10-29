@@ -140,7 +140,7 @@ func (c Context) isTemp(p string) bool {
 // agentConfigRE matches files that make an agent or git run commands later:
 // writing them is a persistence technique.
 var agentConfigRE = regexp.MustCompile(`(^|/)(\.claude/settings(\.local)?\.json|\.claude/plugins/installed_plugins\.json|\.claude\.json|\.mcp\.json|\.cursor/(hooks|mcp)\.json|\.codex/(config\.toml|hooks\.json)|` +
-	`\.gemini/settings\.json|\.copilot/(settings|mcp-config)\.json|\.copilot/hooks/[^/]+\.json|\.github/hooks/[^/]+\.json|\.github/copilot/settings(\.local)?\.json|` +
+	`\.gemini/settings\.json|\.copilot/(settings|mcp-config)\.json|\.copilot/hooks/[^/]+\.json|\.github/hooks/[^/]+\.json|\.github/mcp\.json|\.github/copilot/settings(\.local)?\.json|` +
 	`(\.agents|\.gemini/config)/(hooks|mcp_config)\.json|\.gemini/antigravity-cli/settings\.json|` +
 	`\.git/hooks/[^/]+|\.privometry/policy\.yaml|\.vscode/(settings|tasks)\.json|\.(bash|zsh)rc|\.profile|\.bash_profile|\.zprofile)$`)
 
@@ -158,7 +158,7 @@ var agentFileRE = regexp.MustCompile(`(^|/)(\.claude/settings(\.local)?\.json|\.
 	`\.claude/skills/([^/]+/){1,3}SKILL\.md|\.cursor/(hooks|mcp|cli-config)\.json|hooks\.json|` +
 	`\.codex/(config\.toml|hooks\.json)|requirements\.toml|\.codex/rules/[^/]+\.rules|\.privometry/policy\.yaml|` +
 	`\.gemini/settings\.json|(gemini-cli|GeminiCli)/settings\.json|\.gemini/skills/([^/]+/){1,3}SKILL\.md|` +
-	`\.copilot/(settings|config|mcp-config)\.json|\.copilot/hooks/[^/]+\.json|\.github/hooks/[^/]+\.json|\.github/copilot/settings(\.local)?\.json|` +
+	`\.copilot/(settings|config|mcp-config)\.json|\.copilot/hooks/[^/]+\.json|\.github/hooks/[^/]+\.json|\.github/mcp\.json|\.github/copilot/settings(\.local)?\.json|` +
 	`(github-copilot|GitHub/Copilot)/policy\.d/[^/]+\.json|\.(copilot|github)/skills/([^/]+/){1,3}SKILL\.md|` +
 	`\.gemini/antigravity-cli/settings\.json|(\.agents|\.gemini/config)/mcp_config\.json|(\.agents|\.gemini/config|\.gemini/antigravity-cli)/skills/([^/]+/){1,3}SKILL\.md)$`)
 

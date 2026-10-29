@@ -1,0 +1,14 @@
+{
+  "sessionId": "98782661-4fe6-4ef0-abd4-7e158130d3fc",
+  "timestamp": 1793265743601,
+  "cwd": "/home/dev/acme-api",
+  "toolName": "web_fetch",
+  "toolArgs": {
+    "url": "https://example.com",
+    "max_length": 2000
+  },
+  "toolResult": {
+    "resultType": "success",
+    "textResultForLlm": "Contents of https://example.com:\nThis domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes."
+  }
+}

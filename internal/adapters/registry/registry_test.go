@@ -142,7 +142,8 @@ func TestLookups(t *testing.T) {
 		}
 	}
 	copilot, _ := r.Get(contract.AgentProductCopilotCLI)
-	for tool, want := range map[string]string{"bash": "shell_exec", "create": "file_write", "view": "file_read", "some-mcp-tool": "other"} {
+	for tool, want := range map[string]string{"bash": "shell_exec", "create": "file_write", "apply_patch": "file_write", "view": "file_read",
+		"tickets-lookup_ticket": "mcp_call", "report_intent": "other"} {
 		if got := copilot.ToolKind(tool); got != want {
 			t.Errorf("copilot ToolKind(%s) = %s, want %s", tool, got, want)
 		}

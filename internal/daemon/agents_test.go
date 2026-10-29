@@ -11,17 +11,22 @@ import (
 	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
-// replay feeds documented payloads (test/fixtures/<agent>/documented/hooks)
-// through the shipped definition.
+// replay feeds fixture payloads (test/fixtures/<agent>/<version>/hooks, or
+// documented/ when version is empty) through the shipped definition.
 type replay struct {
-	t     *testing.T
-	d     *daemon.Daemon
-	agent string
+	t       *testing.T
+	d       *daemon.Daemon
+	agent   string
+	version string
 }
 
 func (r replay) send(event, name string) ipc.Response {
 	r.t.Helper()
-	raw, err := os.ReadFile("../../test/fixtures/" + r.agent + "/documented/hooks/" + name)
+	dir := r.version
+	if dir == "" {
+		dir = "documented"
+	}
+	raw, err := os.ReadFile("../../test/fixtures/" + r.agent + "/" + dir + "/hooks/" + name)
 	if err != nil {
 		r.t.Fatal(err)
 	}
@@ -61,7 +66,7 @@ func eventsByTool(t *testing.T, d *daemon.Daemon) map[string]timeline.Row {
 
 func TestGeminiDocumentedSession(t *testing.T) {
 	d, _ := newDaemon(t)
-	r := replay{t, d, "gemini_cli"}
+	r := replay{t, d, "gemini_cli", ""}
 	gemini := func(name string) (string, string) {
 		t.Helper()
 		return reply(t, r.send("BeforeTool", name), "decision", "reason")
@@ -100,9 +105,51 @@ func TestGeminiDocumentedSession(t *testing.T) {
 	}
 }
 
+// The recorded 1.0.105 session: toolArgs is an object, apply_patch sends the
+// patch itself, and MCP tools are <server>-<tool>.
+func TestCopilotRecordedSession(t *testing.T) {
+	d, _ := newDaemon(t)
+	r := replay{t, d, "copilot_cli", "1.0.105"}
+	copilot := func(name string) (string, string) {
+		t.Helper()
+		return reply(t, r.send("preToolUse", name), "permissionDecision", "permissionDecisionReason")
+	}
+	r.observe("sessionStart", "sessionstart.json")
+	r.observe("userPromptSubmitted", "userpromptsubmitted.json")
+	for _, name := range []string{"pretooluse-bash-ls.json", "pretooluse-view.json", "pretooluse-apply-patch-update.json", "pretooluse-apply-patch-add.json"} {
+		if v, _ := copilot(name); v != "allow" {
+			t.Errorf("%s: %s", name, v)
+		}
+	}
+	// The developer refused rm -rf build in Copilot; inside the project,
+	// policy allows it. The documented session covers the denials.
+	for _, name := range []string{"pretooluse-web-fetch.json", "pretooluse-mcp.json", "pretooluse-bash-rm-refused.json"} {
+		if v, _ := copilot(name); v == "" {
+			t.Errorf("%s: no decision", name)
+		}
+	}
+	r.observe("postToolUse", "posttooluse-bash-ls.json")
+	r.observe("postToolUse", "posttooluse-mcp.json")
+	r.observe("sessionEnd", "sessionend.json")
+
+	byTool := eventsByTool(t, d)
+	if row := byTool["bash"]; !strings.HasPrefix(row.TargetClear, "ls -la") && !strings.HasPrefix(row.TargetClear, "rm -rf build") {
+		t.Errorf("bash target %q", row.TargetClear)
+	}
+	if a := byTool["apply_patch"].Event.Action; a == nil || a.Kind != "file_write" || a.PathClass == "" {
+		t.Errorf("apply_patch: %+v", a)
+	}
+	if e := byTool["tickets-lookup_ticket"].Event; e.Action == nil || e.Action.Kind != "mcp_call" || e.MCP == nil || e.MCP.ServerName != "tickets" || e.MCP.Tool != "lookup_ticket" {
+		t.Errorf("MCP call: %+v %+v", e.Action, e.MCP)
+	}
+	if a := byTool["web_fetch"].Event.Action; a == nil || a.Kind != "network_fetch" {
+		t.Errorf("web_fetch: %+v", a)
+	}
+}
+
 func TestCopilotDocumentedSession(t *testing.T) {
 	d, _ := newDaemon(t)
-	r := replay{t, d, "copilot_cli"}
+	r := replay{t, d, "copilot_cli", ""}
 	copilot := func(name string) (string, string) {
 		t.Helper()
 		return reply(t, r.send("preToolUse", name), "permissionDecision", "permissionDecisionReason")
@@ -145,7 +192,7 @@ func TestCopilotDocumentedSession(t *testing.T) {
 
 func TestAntigravityDocumentedSession(t *testing.T) {
 	d, _ := newDaemon(t)
-	r := replay{t, d, "antigravity"}
+	r := replay{t, d, "antigravity", ""}
 	agy := func(name string) (string, string) {
 		t.Helper()
 		return reply(t, r.send("PreToolUse", name), "decision", "reason")

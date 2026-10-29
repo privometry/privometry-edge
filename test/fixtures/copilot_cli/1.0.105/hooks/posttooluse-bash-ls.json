@@ -1,0 +1,14 @@
+{
+  "sessionId": "98782661-4fe6-4ef0-abd4-7e158130d3fc",
+  "timestamp": 1793265652337,
+  "cwd": "/home/dev/acme-api",
+  "toolName": "bash",
+  "toolArgs": {
+    "command": "ls -la",
+    "description": "List current folder contents"
+  },
+  "toolResult": {
+    "resultType": "success",
+    "textResultForLlm": "total 24\ndrwx------@  8 dev  staff   256 29 Oct 14:38 .\ndrwx------@  5 dev  staff   160 29 Oct 14:37 ..\ndrwxr-xr-x@ 12 dev  staff   384 29 Oct 14:50 .git\ndrwx------@  3 dev  staff    96 29 Oct 14:38 .github\n-rw-r--r--@  1 dev  staff   227 29 Oct 14:37 .mcp.json\ndrwxr-xr-x@  3 dev  staff    96 29 Oct 14:37 build\n-rw-r--r--@  1 dev  staff    87 29 Oct 14:37 notes.md\n-rw-r--r--@  1 dev  staff  1290 29 Oct 14:37 tickets_mcp.py\n<shellId: 0 completed with exit code 0>"
+  }
+}
