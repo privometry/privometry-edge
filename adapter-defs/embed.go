@@ -9,7 +9,7 @@ import "embed"
 // whenever a definition here changes, so a signed set built from the old
 // definitions can never replace the new ones; internal/definitions pins the
 // content of each version in a test.
-const SetVersion = 8
+const SetVersion = 9
 
 // FS holds every *.yaml definition in this folder.
 //

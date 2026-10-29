@@ -1,13 +1,16 @@
 # Shipped adapter definition. Validated against specs/adapter/v1 by internal/adapters/registry tests.
-# Based on the Antigravity hooks, rules, MCP and permissions documentation;
-# the fixtures in test/fixtures/antigravity/documented are built from it, not
-# recorded. Covers the agy CLI, the desktop app and the IDE, which share the
-# global hooks file.
+# Based on the Antigravity hooks, rules, MCP and permissions documentation,
+# and verified against a recorded agy 1.4.10 session
+# (test/fixtures/antigravity/1.4.10), whose tool names differ from the
+# documented ones. Covers the agy CLI, the desktop app and the IDE, which
+# share the global hooks file.
 schema: privometry.adapter/v1
 agent: antigravity
 display_name: Antigravity
 versions: ">=1.1.21 <2.0.0"
-verified: []
+verified:
+  - version: 1.4.10
+    fixtures: antigravity/1.4.10
 detect:
   binaries: [agy]
   processes: [agy, Antigravity]
@@ -89,12 +92,15 @@ hooks:
         tool_name: /toolCall/name
         tool_input: /toolCall/args
         cwd: /workspacePaths/0
+        mcp_server: /toolCall/args/ServerName # call_mcp_tool
+        mcp_tool: /toolCall/args/ToolName
+      # 1.4.10 rejects the call when the reply has no decision.
       responses:
         allow: { exit_code: 0, stdout: { decision: allow } }
         # force_ask: ask also skips the prompt when the person once chose "Always Allow".
         ask: { exit_code: 0, stdout: { decision: force_ask, reason: "{message}" } }
         deny: { exit_code: 0, stdout: { decision: deny, reason: "{message}" } }
-    # Carries no tool output, only an error when the tool failed; the
+    # Carries no tool output, only an error ("" on success); the
     # documentation shows {} as its reply.
     - name: PostToolUse
       role: post_tool
@@ -111,6 +117,10 @@ hooks:
         none: { exit_code: 0, stdout: {} }
 tool_kinds:
   run_command: shell_exec
+  read_file: file_read
+  write_file: file_write
+  edit_file: file_write
+  call_mcp_tool: mcp_call
   view_file: file_read
   list_dir: file_read
   find_by_name: file_read
@@ -124,6 +134,9 @@ tool_kinds:
   "*": other
 tool_targets:
   run_command: { command: /CommandLine }
+  read_file: { path: /Path }
+  write_file: { path: /Path, content: /Content }
+  edit_file: { path: /Path, content: /Replacement }
   view_file: { path: /AbsolutePath }
   list_dir: { path: /DirectoryPath }
   find_by_name: { path: /SearchDirectory }
@@ -138,5 +151,7 @@ notes:
   - The global hooks file is shared by the agy CLI, the desktop app and the IDE, so one install covers all three. Workspace hooks load only in trusted folders.
   - A PreToolUse hook that crashes, times out or exits non-zero blocks the call (reported from testing with agy 1.1.21, not documented).
   - --dangerously-skip-permissions skips PreToolUse hooks entirely.
-  - MCP tools appear under their own names, without the server, so MCP calls are classified as other.
+  - "1.4.10 calls MCP tools through call_mcp_tool, with ServerName, ToolName and Arguments; the documented names (view_file, write_to_file, replace_file_content) were not seen."
+  - "1.4.10 also has PreInvocation, PostInvocation and Stop hooks; Stop needs a decision (stop, continue or block)."
+  - Before calling an MCP tool, agy reads the tool's schema from ~/.gemini/antigravity-cli/mcp/<server>/.
   - Hooks run with only allowed environment variables; privometry-hook finds the home folder from the account database when HOME is missing.

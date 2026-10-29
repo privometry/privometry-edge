@@ -80,7 +80,7 @@ func TestRecordAndSanitize(t *testing.T) {
 	hook([]string{"antigravity", "PreToolUse"}, strings.NewReader(payload), &stdout, os.Stderr)
 	hook([]string{"antigravity", "PreToolUse"}, strings.NewReader(payload), &stdout, os.Stderr)
 	hook([]string{"antigravity", "SessionStart"}, strings.NewReader(`{"conversationId":"c1"}`), &stdout, os.Stderr)
-	if stdout.String() != "{}{}{}" {
+	if stdout.String() != `{"decision":"ask"}{"decision":"ask"}{}` {
 		t.Errorf("replies %q", stdout.String())
 	}
 
@@ -120,7 +120,7 @@ func TestCursorReplies(t *testing.T) {
 			t.Errorf("cursor %s: %q, want %q", event, got, want)
 		}
 	}
-	if reply("antigravity", "PreToolUse") != "{}" || reply("claude_code", "PreToolUse") != "" {
+	if reply("antigravity", "PreToolUse") != `{"decision":"ask"}` || reply("antigravity", "SessionStart") != "{}" || reply("claude_code", "PreToolUse") != "" {
 		t.Error("other agents' replies changed")
 	}
 }

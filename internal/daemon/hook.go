@@ -284,6 +284,9 @@ func (c call) actions() (toolName string, out []intent.Action) {
 		} else if s, t, ok := c.knownServer(toolName); ok {
 			server, tool = s, t // Copilot's github-mcp-server-list_issues names no boundary
 		}
+		if t := c.str("mcp_tool"); t != "" {
+			tool = t // Antigravity's call_mcp_tool names the server and tool in its arguments
+		}
 		return toolName, []intent.Action{{Kind: kind, MCPServer: server, MCPTool: tool}}
 	}
 	return toolName, []intent.Action{{Kind: kind}}

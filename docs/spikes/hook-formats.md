@@ -85,6 +85,17 @@ Recorded 2026-10-29 in the Cursor IDE agent, with the recorder in the scratch pr
 - Cursor ran the project's Claude Code hooks for every tool, with Cursor's payload (`hook_event_name: preToolUse`, `cursor_version`) and Cursor's tool names: `Shell`, `Read`, `Grep`, `Write`, `MCP:lookup_ticket`. The daemon used to read those through Claude Code's tool table, which made a shell command `other`; it now uses the definition of the agent the payload markers name. The imported call shares `tool_use_id` with Cursor's own event.
 - The other events fired as documented: `beforeSubmitPrompt` (`prompt`, `attachments`, `composer_mode`), `afterShellExecution` (`output`, `duration`), `afterMCPExecution` (`result_json`), `afterFileEdit` (`edits` with `old_string` and `new_string`), `postToolUse`, `afterAgentResponse` (`text`, token counts), and `stop` (`status`, `loop_count`). `sessionEnd` did not fire when the chat was closed. The definition does not register these yet.
 
+## What the recordings showed (Antigravity 1.4.10)
+
+Recorded 2026-10-29 in an interactive, signed-in `agy` session in a trusted scratch project, with the recorder in `.agents/hooks.json` on six events and a local stdio MCP server in `.agents/mcp_config.json`.
+
+- The first run rejected every tool call with an empty message: the recorder replied `{}` to `PreToolUse`, and 1.4.10 requires `decision` (`allow`, `deny`, `ask`, `force_ask`, `deny_unless_prior_grant`, from the schema embedded in `agy`). `Stop` requires one too (`stop`, `continue`, `block`). `{}` was accepted for every other event. Privometry's own replies always carry a decision.
+- Every payload carries `conversationId`, `workspacePaths`, `artifactDirectoryPath`, `transcriptPath`, `modelName` and `lastUserInput` (the user's latest prompt). Tool events add `stepIdx` and `toolCall` (`name`, `args`); `PostToolUse` adds `error` (`""` on success) and no output.
+- The tool names are not the documented ones: `run_command` (`CommandLine`, `WaitMsBeforeAsync`, `toolSummary`), `read_file` (`Path`), `edit_file` (`Path`, `Target`, `Replacement`), `write_file` (`Path`, `Content`), `invoke_subagent` (`TypeName`, `Role`, `Prompt`), and `call_mcp_tool` (`ServerName`, `ToolName`, `Arguments`). The fetch prompt ran `curl`. The definition now maps these beside the documented names, and the daemon reads the MCP server and tool from `call_mcp_tool`'s arguments.
+- Before the MCP call, agy read the tool's schema and instructions from `~/.gemini/antigravity-cli/mcp/tickets/` with `read_file`.
+- `rm -rf build` refused at agy's prompt has `PreToolUse` and no `PostToolUse`.
+- `PreInvocation` and `PostInvocation` wrap each model call (`invocationNum`, `initialNumSteps`); `Stop` fires at the end of each turn (`terminationReason: NO_TOOL_CALL`, `fullyIdle`, `executionNum`, `error`). The definition does not register them.
+
 ## Consequences for the design
 
 1. **The adapter contracts use agent-specific response shapes.** Claude Code and Codex expect `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": ..., "permissionDecisionReason": ...}}`. Cursor expects `{"permission": ..., "user_message": ..., "agent_message": ...}`. `specs/adapter/v1` and its examples now enforce these shapes.
@@ -100,6 +111,8 @@ Recorded 2026-10-29 in the Cursor IDE agent, with the recorder in the scratch pr
 - [x] Record Cursor payloads (3.27.22), including the Claude Code hooks Cursor runs.
 - [ ] Decide whether the Cursor definition registers `beforeSubmitPrompt` and `postToolUse`, which the other agents' definitions use for prompt and tool-output events.
 - [ ] Find out when Cursor sends `sessionEnd`.
+- [x] Record Antigravity payloads (agy 1.4.10).
+- [ ] Find out whether an Antigravity hook's `allow` skips agy's own permission prompt.
 - [x] Record Codex payloads (0.164.0), including the hook-trust flow.
 - [x] Record a Codex `PermissionRequest` from an interactive session with on-request approvals, and `Stop` and subagent events (0.165.0).
 - [ ] Decide what Privometry does at a Codex `PermissionRequest`: it is a second checkpoint for commands that leave the sandbox, which the daemon has no role handler for yet.
