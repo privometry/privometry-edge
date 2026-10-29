@@ -16,6 +16,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/ipc"
 	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 	"github.com/privometry/privometry-edge/internal/policy"
 	"github.com/privometry/privometry-edge/internal/timeline"
 )
@@ -42,6 +43,7 @@ func (e *opError) Error() string { return e.msg }
 // TestMemorySnapshotsAndRestore covers PRD SCAN-14: every version of a memory
 // file is kept, and a person can go back to one that scans clean.
 func TestMemorySnapshotsAndRestore(t *testing.T) {
+	platformtest.UnixPaths(t)
 	home := t.TempDir()
 	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-s-")
 	if err != nil {

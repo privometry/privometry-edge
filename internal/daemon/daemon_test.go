@@ -20,6 +20,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/ipc"
 	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 	"github.com/privometry/privometry-edge/internal/policy"
 	"github.com/privometry/privometry-edge/internal/timeline"
 	"github.com/privometry/privometry-edge/specs"
@@ -264,6 +265,7 @@ func TestCodexAndCursor(t *testing.T) {
 }
 
 func TestSpoolFailModesAndSocket(t *testing.T) {
+	platformtest.UnixPaths(t)
 	d, data := newDaemon(t)
 	raw, err := os.ReadFile(filepath.Join(data, daemon.FailModesFile))
 	if err != nil || !strings.Contains(string(raw), `"catastrophic": "closed"`) {
@@ -318,6 +320,7 @@ func TestSpoolFailModesAndSocket(t *testing.T) {
 // When Cursor has its own Privometry hook, the Claude Code hook Cursor also runs
 // gives no opinion and records nothing, so each action is decided once.
 func TestCursorImportSkippedWhenCursorIsHooked(t *testing.T) {
+	platformtest.UnixPaths(t)
 	home := t.TempDir()
 	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-c-")
 	if err != nil {
@@ -565,6 +568,7 @@ allowlist:
 }
 
 func TestMemoryFileHashingAndAttribution(t *testing.T) {
+	platformtest.UnixPaths(t)
 	home := t.TempDir()
 	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-m-")
 	if err != nil {
@@ -905,6 +909,7 @@ func TestMCPShim(t *testing.T) {
 // TestMCPShimWatchesWhenTheHookDecides: with Codex's Privometry hook installed
 // and calling, the hook decides MCP calls and the shim only watches.
 func TestMCPShimWatchesWhenTheHookDecides(t *testing.T) {
+	platformtest.UnixPaths(t)
 	home := t.TempDir()
 	d, _ := newDaemonAt(t, home)
 	reg, err := registry.Load(adapterdefs.FS)
@@ -937,6 +942,7 @@ func TestMCPShimWatchesWhenTheHookDecides(t *testing.T) {
 // MCP tool names, so it cannot tell which server a call goes to; the shim
 // decides MCP calls even while that hook is active.
 func TestMCPShimEnforcesWhenTheHookCannotSeeMCP(t *testing.T) {
+	platformtest.UnixPaths(t)
 	home := t.TempDir()
 	d, _ := newDaemonAt(t, home)
 	reg, _ := registry.Load(adapterdefs.FS)

@@ -19,6 +19,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/ipc"
 	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
@@ -83,6 +84,7 @@ func (pt *procTable) Procs() daemon.Procs {
 }
 
 func TestSilentAgents(t *testing.T) {
+	platformtest.UnixPaths(t)
 	home := t.TempDir()
 	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-s-")
 	if err != nil {

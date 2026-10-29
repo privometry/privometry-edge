@@ -22,6 +22,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 	"github.com/privometry/privometry-edge/internal/policy"
 	"github.com/privometry/privometry-edge/internal/timeline"
 	"github.com/privometry/privometry-edge/specs"
@@ -317,6 +318,7 @@ func firstApproval(t *testing.T, edge *cloudtest.Edge) string {
 // The risk feed decides MCP servers the organization's catalog does not list;
 // the catalog always wins.
 func TestRiskFeedOnMCPCalls(t *testing.T) {
+	platformtest.UnixPaths(t)
 	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-d-")
 	if err != nil {
 		t.Fatal(err)

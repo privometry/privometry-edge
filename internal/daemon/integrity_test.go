@@ -15,11 +15,13 @@ import (
 	"github.com/privometry/privometry-edge/internal/guard"
 	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 	"github.com/privometry/privometry-edge/internal/policy"
 	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
 func TestIntegrity(t *testing.T) {
+	platformtest.UnixPaths(t)
 	home := t.TempDir()
 	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-i-")
 	if err != nil {
@@ -89,6 +91,7 @@ func TestIntegrity(t *testing.T) {
 }
 
 func TestHooksDisabled(t *testing.T) {
+	platformtest.UnixPaths(t)
 	home := t.TempDir()
 	d, _ := newDaemonAt(t, home)
 	reg, _ := registry.Load(adapterdefs.FS)

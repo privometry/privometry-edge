@@ -16,7 +16,7 @@ func NewID(prefix string) string { return prefix + "_" + ULID(time.Now()) }
 // ULID encodes t and 80 random bits as a 26-character ULID.
 func ULID(t time.Time) string {
 	var b [16]byte
-	ms := uint64(max(t.UnixMilli(), 0))                // ULIDs cannot encode times before 1970
+	ms := uint64(max(t.UnixMilli(), 0))                //nolint:gosec // clamped: ULIDs cannot encode times before 1970
 	binary.BigEndian.PutUint16(b[0:2], uint16(ms>>32)) //nolint:gosec // deliberate: the top 16 bits of the 48-bit timestamp
 	binary.BigEndian.PutUint32(b[2:6], uint32(ms))     //nolint:gosec // deliberate: the low 32 bits of the 48-bit timestamp
 	if _, err := rand.Read(b[6:]); err != nil {
