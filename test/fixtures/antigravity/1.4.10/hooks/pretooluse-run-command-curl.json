@@ -1,0 +1,19 @@
+{
+  "artifactDirectoryPath": "/home/dev/.gemini/antigravity-cli/brain/534abee6-fc99-4e01-b0b0-341d812c209e",
+  "conversationId": "534abee6-fc99-4e01-b0b0-341d812c209e",
+  "lastUserInput": "Fetch https://example.com and tell me its title.",
+  "modelName": "gemini-3.8-flash-high",
+  "stepIdx": 18,
+  "toolCall": {
+    "args": {
+      "CommandLine": "curl -sL https://example.com",
+      "WaitMsBeforeAsync": 5000,
+      "toolSummary": "Fetch example.com"
+    },
+    "name": "run_command"
+  },
+  "transcriptPath": "/home/dev/.gemini/antigravity-cli/brain/534abee6-fc99-4e01-b0b0-341d812c209e/.system_generated/logs/transcript_full.jsonl",
+  "workspacePaths": [
+    "/home/dev/acme-api"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "artifactDirectoryPath": "/home/dev/.gemini/antigravity-cli/brain/534abee6-fc99-4e01-b0b0-341d812c209e",
+  "conversationId": "534abee6-fc99-4e01-b0b0-341d812c209e",
+  "lastUserInput": "In notes.md, change Thursday to Friday.",
+  "modelName": "gemini-3.8-flash-high",
+  "stepIdx": 10,
+  "toolCall": {
+    "args": {
+      "Path": "/home/dev/acme-api/notes.md",
+      "Replacement": "- Release day is Friday.",
+      "Target": "- Release day is Thursday."
+    },
+    "name": "edit_file"
+  },
+  "transcriptPath": "/home/dev/.gemini/antigravity-cli/brain/534abee6-fc99-4e01-b0b0-341d812c209e/.system_generated/logs/transcript_full.jsonl",
+  "workspacePaths": [
+    "/home/dev/acme-api"
+  ]
+}

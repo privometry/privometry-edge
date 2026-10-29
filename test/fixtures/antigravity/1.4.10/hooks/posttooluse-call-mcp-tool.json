@@ -1,0 +1,22 @@
+{
+  "artifactDirectoryPath": "/home/dev/.gemini/antigravity-cli/brain/534abee6-fc99-4e01-b0b0-341d812c209e",
+  "conversationId": "534abee6-fc99-4e01-b0b0-341d812c209e",
+  "error": "",
+  "lastUserInput": "Look up ticket T-1042 with the tickets tool.",
+  "modelName": "gemini-3.8-flash-high",
+  "stepIdx": 26,
+  "toolCall": {
+    "args": {
+      "Arguments": {
+        "id": "T-1042"
+      },
+      "ServerName": "tickets",
+      "ToolName": "lookup_ticket"
+    },
+    "name": "call_mcp_tool"
+  },
+  "transcriptPath": "/home/dev/.gemini/antigravity-cli/brain/534abee6-fc99-4e01-b0b0-341d812c209e/.system_generated/logs/transcript_full.jsonl",
+  "workspacePaths": [
+    "/home/dev/acme-api"
+  ]
+}

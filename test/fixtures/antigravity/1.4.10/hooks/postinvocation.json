@@ -1,0 +1,12 @@
+{
+  "artifactDirectoryPath": "/home/dev/.gemini/antigravity-cli/brain/534abee6-fc99-4e01-b0b0-341d812c209e",
+  "conversationId": "534abee6-fc99-4e01-b0b0-341d812c209e",
+  "initialNumSteps": 1,
+  "invocationNum": 0,
+  "lastUserInput": "List the files in this folder.",
+  "modelName": "gemini-3.8-flash-high",
+  "transcriptPath": "/home/dev/.gemini/antigravity-cli/brain/534abee6-fc99-4e01-b0b0-341d812c209e/.system_generated/logs/transcript_full.jsonl",
+  "workspacePaths": [
+    "/home/dev/acme-api"
+  ]
+}

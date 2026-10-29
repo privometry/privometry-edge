@@ -244,6 +244,39 @@ func TestCopilotDocumentedSession(t *testing.T) {
 	}
 }
 
+// The recorded 1.4.10 session: the tool names differ from the documented
+// ones (read_file, edit_file, write_file, call_mcp_tool), and MCP calls name
+// the server and tool in their arguments.
+func TestAntigravityRecordedSession(t *testing.T) {
+	d, _ := newDaemon(t)
+	r := replay{t, d, "antigravity", "1.4.10"}
+	for _, name := range []string{"pretooluse-run-command-ls.json", "pretooluse-run-command-curl.json", "pretooluse-read-file-notes.json",
+		"pretooluse-edit-file.json", "pretooluse-write-file.json", "pretooluse-call-mcp-tool.json", "pretooluse-run-command-rm-refused.json",
+		"pretooluse-read-file-mcp-schema.json"} { // agy reads the MCP tool's schema from its own folder first
+		if v, why := reply(t, r.send("PreToolUse", name), "decision", "reason"); v != "allow" {
+			t.Errorf("%s: %s %s", name, v, why)
+		}
+	}
+	for _, name := range []string{"posttooluse-run-command-ls.json", "posttooluse-edit-file.json", "posttooluse-call-mcp-tool.json"} {
+		if resp := r.send("PostToolUse", name); resp.Stdout != "{}" || resp.ExitCode != 0 {
+			t.Errorf("%s must answer {}: %+v", name, resp)
+		}
+	}
+	if resp := r.send("SessionStart", "sessionstart.json"); resp.Stdout != "{}" {
+		t.Errorf("SessionStart: %+v", resp)
+	}
+
+	byTool := eventsByTool(t, d)
+	for tool, kind := range map[string]string{"read_file": "file_read", "edit_file": "file_write", "write_file": "file_write"} {
+		if a := byTool[tool].Event.Action; a == nil || string(a.Kind) != kind || a.PathClass != "repo" {
+			t.Errorf("%s: %+v", tool, a)
+		}
+	}
+	if e := byTool["call_mcp_tool"].Event; e.MCP == nil || e.MCP.ServerName != "tickets" || e.MCP.Tool != "lookup_ticket" {
+		t.Errorf("MCP call: %+v %+v", e.Action, e.MCP)
+	}
+}
+
 func TestAntigravityDocumentedSession(t *testing.T) {
 	d, _ := newDaemon(t)
 	r := replay{t, d, "antigravity", ""}

@@ -39,9 +39,11 @@ import (
 )
 
 // replies are written on stdout for agents that expect a JSON reply even
-// when the hook has no opinion. Antigravity's documentation shows {}.
+// when the hook has no opinion.
 var replies = map[string]map[string]string{
-	"antigravity": {"*": "{}"},
+	// agy 1.4.10 rejects a tool call whose PreToolUse reply has no decision,
+	// and Stop needs one too. ask keeps the developer's own prompt.
+	"antigravity": {"*": "{}", "PreToolUse": `{"decision":"ask"}`, "Stop": `{"decision":"stop"}`},
 	// Cursor 3.27 blocks a fail-closed hook that prints nothing. Shell and MCP
 	// calls ask, so the developer still approves or rejects them; preToolUse
 	// and file reads cannot ask.
