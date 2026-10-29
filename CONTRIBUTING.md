@@ -1,4 +1,4 @@
-# Contributing to Privometry OSS
+# Contributing to privometry-edge
 
 Privometry sits on a security boundary. Changes must preserve protection when the daemon, network, cloud service, or license service is unavailable.
 

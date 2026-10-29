@@ -1,4 +1,4 @@
-# Privometry OSS
+# privometry-edge
 
 Privometry is a local-first security layer for AI coding agents. It discovers agent installations and configuration, evaluates tool calls against policy, scans content for secrets and prompt-injection signals, and records a redacted local timeline. Versioned contracts define the planned signed synchronization boundary with the Privometry platform.
 
