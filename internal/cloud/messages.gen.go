@@ -3,8 +3,8 @@
 package cloud
 
 import (
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/events"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/events"
 )
 
 // EnrollRequest is generated from edge-api/v1/messages.schema.json#/$defs/EnrollRequest.

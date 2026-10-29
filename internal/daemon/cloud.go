@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/cloud"
-	"github.com/privometry/privometry-oss/internal/cloud/enroll"
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/guard"
-	"github.com/privometry/privometry-oss/internal/keystore"
-	"github.com/privometry/privometry-oss/internal/scanner"
-	"github.com/privometry/privometry-oss/internal/scanner/discover"
-	"github.com/privometry/privometry-oss/internal/timeline"
+	"github.com/privometry/privometry-edge/internal/cloud"
+	"github.com/privometry/privometry-edge/internal/cloud/enroll"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/guard"
+	"github.com/privometry/privometry-edge/internal/keystore"
+	"github.com/privometry/privometry-edge/internal/scanner"
+	"github.com/privometry/privometry-edge/internal/scanner/discover"
+	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
 // cloudTick is how often the daemon checks whether cloud work is due; the

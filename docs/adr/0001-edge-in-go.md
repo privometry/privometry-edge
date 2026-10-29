@@ -9,7 +9,7 @@ The edge runs on every developer laptop as a CLI, a background daemon, a hook cl
 
 ## Decision
 
-Write all edge binaries (`privometry`, `privometryd`, `privometry-hook`, `privometry-mcp-shim`) in Go, in the public `privometry-oss` repository.
+Write all edge binaries (`privometry`, `privometryd`, `privometry-hook`, `privometry-mcp-shim`) in Go, in the public `privometry-edge` repository.
 
 ## Consequences
 

@@ -260,7 +260,7 @@ paths:
       summary: Route an ask decision to Slack or Teams.
       description: |
         Sent in the background after the sensor has already answered the
-        hook with deny and a message (privometry-oss
+        hook with deny and a message (privometry-edge
         docs/spikes/remote-approvals.md): a hook cannot wait for a person. The
         sensor long-polls the approval; if it is approved, the next attempt of
         the same action in the same session is allowed once. No answer by

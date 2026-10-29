@@ -9,15 +9,15 @@ import (
 	"testing"
 	"time"
 
-	adapterdefs "github.com/privometry/privometry-oss/adapter-defs"
-	"github.com/privometry/privometry-oss/internal/adapters/registry"
-	"github.com/privometry/privometry-oss/internal/cloud/bundles"
-	"github.com/privometry/privometry-oss/internal/cloud/cloudtest"
-	"github.com/privometry/privometry-oss/internal/cloud/enroll"
-	"github.com/privometry/privometry-oss/internal/daemon"
-	"github.com/privometry/privometry-oss/internal/keystore"
-	"github.com/privometry/privometry-oss/internal/platform"
-	"github.com/privometry/privometry-oss/internal/policy"
+	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
+	"github.com/privometry/privometry-edge/internal/adapters/registry"
+	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/cloud/cloudtest"
+	"github.com/privometry/privometry-edge/internal/cloud/enroll"
+	"github.com/privometry/privometry-edge/internal/daemon"
+	"github.com/privometry/privometry-edge/internal/keystore"
+	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/policy"
 )
 
 const orgPolicy = `schema: privometry.policy/v1

@@ -21,10 +21,10 @@ import (
 	"path/filepath"
 	"time"
 
-	adapterdefs "github.com/privometry/privometry-oss/adapter-defs"
-	"github.com/privometry/privometry-oss/detectorpacks"
-	"github.com/privometry/privometry-oss/internal/definitions"
-	"github.com/privometry/privometry-oss/internal/signing"
+	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
+	"github.com/privometry/privometry-edge/detectorpacks"
+	"github.com/privometry/privometry-edge/internal/definitions"
+	"github.com/privometry/privometry-edge/internal/signing"
 )
 
 func main() {

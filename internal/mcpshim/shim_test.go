@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/ipc"
-	"github.com/privometry/privometry-oss/internal/mcpshim"
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/ipc"
+	"github.com/privometry/privometry-edge/internal/mcpshim"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 // TestMain doubles as the fake MCP server: with FAKE_MCP_SERVER set, the test

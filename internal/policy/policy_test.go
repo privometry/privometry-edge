@@ -10,13 +10,13 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/privometry/privometry-oss/internal/policy"
-	"github.com/privometry/privometry-oss/internal/policy/compiler"
-	"github.com/privometry/privometry-oss/internal/policy/engine"
-	"github.com/privometry/privometry-oss/internal/policy/intent"
-	"github.com/privometry/privometry-oss/internal/policy/merge"
-	"github.com/privometry/privometry-oss/internal/policy/rulepack"
-	"github.com/privometry/privometry-oss/rulepacks"
+	"github.com/privometry/privometry-edge/internal/policy"
+	"github.com/privometry/privometry-edge/internal/policy/compiler"
+	"github.com/privometry/privometry-edge/internal/policy/engine"
+	"github.com/privometry/privometry-edge/internal/policy/intent"
+	"github.com/privometry/privometry-edge/internal/policy/merge"
+	"github.com/privometry/privometry-edge/internal/policy/rulepack"
+	"github.com/privometry/privometry-edge/rulepacks"
 )
 
 var ctx = intent.Context{Cwd: "/home/dev/work/api", Home: "/home/dev", RepoRoot: "/home/dev/work/api"}

@@ -82,7 +82,7 @@ privometry update --check   # say whether a newer release exists
 privometry update           # download, verify, install, restart privometryd
 ```
 
-Releases are `privometry.release/v1` manifests (`specs/release/v1`) in DSSE envelopes, payload type `application/vnd.privometry.release+json`, signed by a `release` key. The manifest URL defaults to the latest GitHub release asset `release.json` (`https://github.com/privometry/privometry-oss/releases/latest/download/release.json`), which `.github/workflows/release.yml` builds and signs; `--manifest` or `PRIVOMETRY_UPDATE_URL` override it. `internal/update` installs a release only when:
+Releases are `privometry.release/v1` manifests (`specs/release/v1`) in DSSE envelopes, payload type `application/vnd.privometry.release+json`, signed by a `release` key. The manifest URL defaults to the latest GitHub release asset `release.json` (`https://github.com/privometry/privometry-edge/releases/latest/download/release.json`), which `.github/workflows/release.yml` builds and signs; `--manifest` or `PRIVOMETRY_UPDATE_URL` override it. `internal/update` installs a release only when:
 
 1. the signature verifies against the release key set embedded in the binary (`internal/trust/keys/release-keys.json`, shared with signed definition sets);
 2. the manifest validates and has not passed `expires_at`, so an old manifest cannot be replayed forever;

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/privometry/privometry-oss/internal/adapters/registry"
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/guard"
-	"github.com/privometry/privometry-oss/internal/scanner/discover"
+	"github.com/privometry/privometry-edge/internal/adapters/registry"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/guard"
+	"github.com/privometry/privometry-edge/internal/scanner/discover"
 )
 
 const mcpUsage = `Usage: privometry mcp <status|wrap|unwrap> [flags]

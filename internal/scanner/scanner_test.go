@@ -13,16 +13,16 @@ import (
 	"strings"
 	"testing"
 
-	adapterdefs "github.com/privometry/privometry-oss/adapter-defs"
-	"github.com/privometry/privometry-oss/internal/adapters/registry"
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/platform"
-	"github.com/privometry/privometry-oss/internal/policy"
-	"github.com/privometry/privometry-oss/internal/policy/compiler"
-	"github.com/privometry/privometry-oss/internal/policy/merge"
-	"github.com/privometry/privometry-oss/internal/scanner"
-	"github.com/privometry/privometry-oss/internal/scanner/discover"
-	"github.com/privometry/privometry-oss/internal/scanner/report"
+	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
+	"github.com/privometry/privometry-edge/internal/adapters/registry"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/policy"
+	"github.com/privometry/privometry-edge/internal/policy/compiler"
+	"github.com/privometry/privometry-edge/internal/policy/merge"
+	"github.com/privometry/privometry-edge/internal/scanner"
+	"github.com/privometry/privometry-edge/internal/scanner/discover"
+	"github.com/privometry/privometry-edge/internal/scanner/report"
 )
 
 // secrets are the fake credential values in the fixture; no report may contain them.

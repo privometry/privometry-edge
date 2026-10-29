@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/cloud/bundles"
-	"github.com/privometry/privometry-oss/internal/cloud/enroll"
-	"github.com/privometry/privometry-oss/internal/cloud/keyset"
-	"github.com/privometry/privometry-oss/internal/keystore"
+	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/cloud/enroll"
+	"github.com/privometry/privometry-edge/internal/cloud/keyset"
+	"github.com/privometry/privometry-edge/internal/keystore"
 )
 
 const bundleUsage = `Usage: privometry bundle <status|sync>

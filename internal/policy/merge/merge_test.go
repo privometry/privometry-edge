@@ -7,12 +7,12 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/policy/compiler"
-	"github.com/privometry/privometry-oss/internal/policy/engine"
-	"github.com/privometry/privometry-oss/internal/policy/merge"
-	"github.com/privometry/privometry-oss/internal/policy/rulepack"
-	"github.com/privometry/privometry-oss/rulepacks"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/policy/compiler"
+	"github.com/privometry/privometry-edge/internal/policy/engine"
+	"github.com/privometry/privometry-edge/internal/policy/merge"
+	"github.com/privometry/privometry-edge/internal/policy/rulepack"
+	"github.com/privometry/privometry-edge/rulepacks"
 )
 
 var now = time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)

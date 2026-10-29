@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 func fileEnv(t *testing.T) (platform.Env, string) {

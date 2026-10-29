@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/events"
-	"github.com/privometry/privometry-oss/internal/timeline"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/events"
+	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
 func open(t *testing.T) (*timeline.Store, string) {

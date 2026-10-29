@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	adapterdefs "github.com/privometry/privometry-oss/adapter-defs"
-	"github.com/privometry/privometry-oss/internal/adapters/registry"
+	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
+	"github.com/privometry/privometry-edge/internal/adapters/registry"
 )
 
 // expand turns an adapter path pattern into a concrete path under the test

@@ -8,15 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/buildinfo"
-	"github.com/privometry/privometry-oss/internal/guard"
-	"github.com/privometry/privometry-oss/internal/platform"
-	"github.com/privometry/privometry-oss/internal/policy"
-	"github.com/privometry/privometry-oss/internal/policy/merge"
-	"github.com/privometry/privometry-oss/internal/scanner"
-	"github.com/privometry/privometry-oss/internal/scanner/discover"
-	"github.com/privometry/privometry-oss/internal/timeline"
-	"github.com/privometry/privometry-oss/internal/webui"
+	"github.com/privometry/privometry-edge/internal/buildinfo"
+	"github.com/privometry/privometry-edge/internal/guard"
+	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/policy"
+	"github.com/privometry/privometry-edge/internal/policy/merge"
+	"github.com/privometry/privometry-edge/internal/scanner"
+	"github.com/privometry/privometry-edge/internal/scanner/discover"
+	"github.com/privometry/privometry-edge/internal/timeline"
+	"github.com/privometry/privometry-edge/internal/webui"
 )
 
 // The web timeline's computed sections. Each is read-only: it reports what

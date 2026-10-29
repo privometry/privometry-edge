@@ -32,9 +32,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/hookclient"
-	"github.com/privometry/privometry-oss/internal/ipc"
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/hookclient"
+	"github.com/privometry/privometry-edge/internal/ipc"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 // DefaultTimeout bounds one daemon call. A tool call waits for it, so it is

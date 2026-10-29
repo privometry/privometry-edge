@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 func TestMCPServerPointerWildcard(t *testing.T) {

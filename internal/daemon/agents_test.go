@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/privometry/privometry-oss/internal/daemon"
-	"github.com/privometry/privometry-oss/internal/ipc"
-	"github.com/privometry/privometry-oss/internal/timeline"
+	"github.com/privometry/privometry-edge/internal/daemon"
+	"github.com/privometry/privometry-edge/internal/ipc"
+	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
 // replay feeds documented payloads (test/fixtures/<agent>/documented/hooks)

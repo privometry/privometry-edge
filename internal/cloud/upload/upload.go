@@ -23,15 +23,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/cloud"
-	"github.com/privometry/privometry-oss/internal/cloud/bundles"
-	"github.com/privometry/privometry-oss/internal/cloud/enroll"
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/events"
-	"github.com/privometry/privometry-oss/internal/keystore"
-	"github.com/privometry/privometry-oss/internal/platform"
-	"github.com/privometry/privometry-oss/internal/redact"
-	"github.com/privometry/privometry-oss/internal/timeline"
+	"github.com/privometry/privometry-edge/internal/cloud"
+	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/cloud/enroll"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/events"
+	"github.com/privometry/privometry-edge/internal/keystore"
+	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/redact"
+	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
 // CursorKey is the timeline state holding the highest device_seq uploaded.

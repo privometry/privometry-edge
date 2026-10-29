@@ -4,8 +4,8 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 
-	cloudaccount "github.com/privometry/privometry-oss/internal/cloud/account"
-	"github.com/privometry/privometry-oss/internal/signing"
+	cloudaccount "github.com/privometry/privometry-edge/internal/cloud/account"
+	"github.com/privometry/privometry-edge/internal/signing"
 )
 
 // ProofPayloadType is the DSSE payload type of a CLI key's proof.

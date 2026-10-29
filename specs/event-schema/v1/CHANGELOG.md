@@ -2,7 +2,7 @@
 
 ## 1.0.0-draft.6 (2026-10-28)
 
-- `integrity.check` gains `hooks_disabled` (a setting turns the agent's hooks off, or Privometry's own entry is off), `hooks_silent` (an agent has run for minutes and its hooks never called Privometry), `sensor_stopped` (privometryd was down for more than five minutes outside a shutdown or reboot) and `sensor_uninstalled` (`privometry daemon uninstall`); privometry-oss `docs/spikes/bypass-detection.md`.
+- `integrity.check` gains `hooks_disabled` (a setting turns the agent's hooks off, or Privometry's own entry is off), `hooks_silent` (an agent has run for minutes and its hooks never called Privometry), `sensor_stopped` (privometryd was down for more than five minutes outside a shutdown or reboot) and `sensor_uninstalled` (`privometry daemon uninstall`); privometry-edge `docs/spikes/bypass-detection.md`.
 - `integrity.reason`: `setting`, `config_dir_override`, `untrusted_hook` or `unknown` for `hooks_silent`, and `killed` or `stopped` for `sensor_stopped`.
 - `integrity.down_seconds` and `integrity.actions_while_down` for `sensor_stopped`.
 

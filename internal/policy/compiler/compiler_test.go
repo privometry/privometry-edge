@@ -12,9 +12,9 @@ import (
 	"github.com/cedar-policy/cedar-go/x/exp/schema/validate"
 	"go.yaml.in/yaml/v3"
 
-	"github.com/privometry/privometry-oss/internal/policy/compiler"
-	"github.com/privometry/privometry-oss/internal/policy/engine"
-	"github.com/privometry/privometry-oss/specs"
+	"github.com/privometry/privometry-edge/internal/policy/compiler"
+	"github.com/privometry/privometry-edge/internal/policy/engine"
+	"github.com/privometry/privometry-edge/specs"
 )
 
 const specsDir = "../../../specs"

@@ -25,7 +25,7 @@ import (
 	"strings"
 	"unicode/utf16"
 
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 // Label is the launchd label; Unit is the systemd unit name; Task is the
@@ -234,7 +234,7 @@ func unit(privometryd, privometryHome string) []byte {
 	}
 	return []byte(`[Unit]
 Description=Privometry daemon (local guard for coding agents)
-Documentation=https://github.com/privometry/privometry-oss
+Documentation=https://github.com/privometry/privometry-edge
 
 [Service]
 ExecStart=` + systemdQuote(privometryd) + `

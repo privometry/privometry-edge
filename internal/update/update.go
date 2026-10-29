@@ -40,9 +40,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/signing"
-	"github.com/privometry/privometry-oss/internal/trust"
-	"github.com/privometry/privometry-oss/specs"
+	"github.com/privometry/privometry-edge/internal/signing"
+	"github.com/privometry/privometry-edge/internal/trust"
+	"github.com/privometry/privometry-edge/specs"
 )
 
 // PayloadType is the DSSE payload type of a signed release manifest.
@@ -50,7 +50,7 @@ const PayloadType = "application/vnd.privometry.release+json"
 
 // DefaultManifestURL is where privometry update looks for the latest stable
 // release. PRIVOMETRY_UPDATE_URL or --manifest override it.
-const DefaultManifestURL = "https://github.com/privometry/privometry-oss/releases/latest/download/release.json"
+const DefaultManifestURL = "https://github.com/privometry/privometry-edge/releases/latest/download/release.json"
 
 // Limits on what is downloaded.
 const (

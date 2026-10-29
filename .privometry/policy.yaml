@@ -4,8 +4,8 @@
 # merge request checks flag only new occurrences elsewhere. Keep each entry
 # narrow: a path here hides findings from every check that reads this file.
 schema: privometry.policy/v1
-name: privometry-oss
-description: Repo policy for privometry-oss; allowlists the samples the project ships.
+name: privometry-edge
+description: Repo policy for privometry-edge; allowlists the samples the project ships.
 allowlist:
   - detectors: [privometry/credentials:*]
     paths:

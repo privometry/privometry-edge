@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/privometry/privometry-oss/detectorpacks"
-	"github.com/privometry/privometry-oss/internal/content"
+	"github.com/privometry/privometry-edge/detectorpacks"
+	"github.com/privometry/privometry-edge/internal/content"
 )
 
 func TestAllowlist(t *testing.T) {

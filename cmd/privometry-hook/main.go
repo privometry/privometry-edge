@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/buildinfo"
-	"github.com/privometry/privometry-oss/internal/hookclient"
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/buildinfo"
+	"github.com/privometry/privometry-edge/internal/hookclient"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 func main() {

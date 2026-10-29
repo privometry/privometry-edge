@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/contract"
+	"github.com/privometry/privometry-edge/internal/contract"
 )
 
 // CatalogItem is something the organization's catalog can approve or block:

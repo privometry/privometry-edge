@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/privometry/privometry-oss/internal/community"
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/community"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 // TestCommunityPackFlow follows a pack from its publisher to a user: keygen,

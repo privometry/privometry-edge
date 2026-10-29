@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/contract"
+	"github.com/privometry/privometry-edge/internal/contract"
 )
 
 // Errors returned by Verify. Callers may match them with errors.Is.

@@ -18,8 +18,8 @@ Recommended:
 ## Clone and verify
 
 ```sh
-git clone https://github.com/privometry/privometry-oss.git
-cd privometry-oss
+git clone https://github.com/privometry/privometry-edge.git
+cd privometry-edge
 go version
 make test
 make check-generated

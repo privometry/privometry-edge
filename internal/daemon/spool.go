@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/privometry/privometry-oss/internal/events"
+	"github.com/privometry/privometry-edge/internal/events"
 )
 
 // SpoolEntry is one line privometry-hook appends when it decides without the

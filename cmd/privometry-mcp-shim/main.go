@@ -13,9 +13,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/privometry/privometry-oss/internal/buildinfo"
-	"github.com/privometry/privometry-oss/internal/mcpshim"
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/buildinfo"
+	"github.com/privometry/privometry-edge/internal/mcpshim"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 func main() {

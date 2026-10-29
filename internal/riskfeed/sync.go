@@ -14,13 +14,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/cloud/bundles"
-	"github.com/privometry/privometry-oss/internal/cloud/enroll"
-	"github.com/privometry/privometry-oss/internal/cloud/keyset"
-	"github.com/privometry/privometry-oss/internal/keystore"
-	"github.com/privometry/privometry-oss/internal/platform"
-	"github.com/privometry/privometry-oss/internal/signing"
-	"github.com/privometry/privometry-oss/specs"
+	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/cloud/enroll"
+	"github.com/privometry/privometry-edge/internal/cloud/keyset"
+	"github.com/privometry/privometry-edge/internal/keystore"
+	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/signing"
+	"github.com/privometry/privometry-edge/specs"
 )
 
 // The risk feed on an enrolled device (PRD CP-22; GET /edge/v1/riskfeed): the

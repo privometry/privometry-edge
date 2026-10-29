@@ -14,8 +14,8 @@ On Windows the daemon runs from a per-user Task Scheduler logon task and listens
 ## Build
 
 ```sh
-git clone https://github.com/privometry/privometry-oss.git
-cd privometry-oss
+git clone https://github.com/privometry/privometry-edge.git
+cd privometry-edge
 make test
 make build
 ```

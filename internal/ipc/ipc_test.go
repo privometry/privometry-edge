@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/ipc"
+	"github.com/privometry/privometry-edge/internal/ipc"
 )
 
 // shortDir keeps socket paths under the 104-byte limit on macOS.

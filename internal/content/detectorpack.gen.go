@@ -3,8 +3,8 @@
 package content
 
 import (
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/policy/rulepack"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/policy/rulepack"
 )
 
 // Schema identifiers for the documents in this file.

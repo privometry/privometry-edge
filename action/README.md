@@ -11,7 +11,7 @@ Findings appear as pull request annotations, in the job summary and in a SARIF r
 
 ## Usage
 
-Use it as `privometry/privometry-oss/action@<tag>`. On GitLab, run the commands at the end of this page in a merge request pipeline job.
+Use it as `privometry/privometry-edge/action@<tag>`. On GitLab, run the commands at the end of this page in a merge request pipeline job.
 
 ```yaml
 name: privometry
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: <owner>/privometry-oss/action@<ref>
+      - uses: <owner>/privometry-edge/action@<ref>
         with:
           fail-on: high
 ```

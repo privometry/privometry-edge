@@ -4,7 +4,7 @@ The repository and product namespaces were renamed together. This is intentional
 
 | Legacy | Privometry |
 | --- | --- |
-| `github.com/privo/privo-oss` | `github.com/privometry/privometry-oss` |
+| `github.com/privo/privo-oss` | `github.com/privometry/privometry-edge` |
 | `privo` | `privometry` |
 | `privod` | `privometryd` |
 | `privo-hook` | `privometry-hook` |

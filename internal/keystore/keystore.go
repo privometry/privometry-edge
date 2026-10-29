@@ -20,7 +20,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 // Service names Privometry's items in the OS keychain.

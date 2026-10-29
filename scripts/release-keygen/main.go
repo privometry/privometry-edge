@@ -23,7 +23,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/signing"
+	"github.com/privometry/privometry-edge/internal/signing"
 )
 
 var nameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)

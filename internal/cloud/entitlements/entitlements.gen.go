@@ -3,7 +3,7 @@
 package entitlements
 
 import (
-	"github.com/privometry/privometry-oss/internal/contract"
+	"github.com/privometry/privometry-edge/internal/contract"
 )
 
 // Schema identifiers for the documents in this file.

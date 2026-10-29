@@ -2,6 +2,6 @@
 
 package keystore
 
-import "github.com/privometry/privometry-oss/internal/platform"
+import "github.com/privometry/privometry-edge/internal/platform"
 
 func dpapiStore(platform.Env) Store { return nil }

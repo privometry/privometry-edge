@@ -38,15 +38,15 @@ import (
 	"strings"
 	"time"
 
-	adapterdefs "github.com/privometry/privometry-oss/adapter-defs"
-	"github.com/privometry/privometry-oss/detectorpacks"
-	"github.com/privometry/privometry-oss/internal/adapters/registry"
-	"github.com/privometry/privometry-oss/internal/content"
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/platform"
-	"github.com/privometry/privometry-oss/internal/signing"
-	"github.com/privometry/privometry-oss/internal/trust"
-	"github.com/privometry/privometry-oss/specs"
+	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
+	"github.com/privometry/privometry-edge/detectorpacks"
+	"github.com/privometry/privometry-edge/internal/adapters/registry"
+	"github.com/privometry/privometry-edge/internal/content"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/signing"
+	"github.com/privometry/privometry-edge/internal/trust"
+	"github.com/privometry/privometry-edge/specs"
 )
 
 // Kind is one of the two signed sets.
@@ -73,7 +73,7 @@ const DirName = "definitions"
 // DefaultBaseURL is where privometry definitions update downloads
 // adapters.json and detectorpacks.json: the latest release's direct assets.
 // PRIVOMETRY_DEFINITIONS_URL or --url override it.
-const DefaultBaseURL = "https://github.com/privometry/privometry-oss/releases/latest/download"
+const DefaultBaseURL = "https://github.com/privometry/privometry-edge/releases/latest/download"
 
 // maxSet bounds a downloaded or installed set.
 const maxSet = 8 << 20

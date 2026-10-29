@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/privometry/privometry-oss/specs"
+	"github.com/privometry/privometry-edge/specs"
 )
 
 // TestRiskScoreSums checks the rule JSON Schema cannot express: a score is the

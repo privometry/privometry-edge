@@ -28,8 +28,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/events"
-	"github.com/privometry/privometry-oss/internal/timeline"
+	"github.com/privometry/privometry-edge/internal/events"
+	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
 // Source is the timeline the page reads.

@@ -8,8 +8,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/privometry/privometry-oss/internal/adapters/registry"
-	"github.com/privometry/privometry-oss/internal/scanner/parsers"
+	"github.com/privometry/privometry-edge/internal/adapters/registry"
+	"github.com/privometry/privometry-edge/internal/scanner/parsers"
 )
 
 // Disabling is a config file that turns the agent's hooks off.

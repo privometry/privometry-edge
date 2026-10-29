@@ -21,13 +21,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/account"
-	cloudaccount "github.com/privometry/privometry-oss/internal/cloud/account"
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/keystore"
-	"github.com/privometry/privometry-oss/internal/platform"
-	"github.com/privometry/privometry-oss/internal/signing"
-	"github.com/privometry/privometry-oss/specs"
+	"github.com/privometry/privometry-edge/internal/account"
+	cloudaccount "github.com/privometry/privometry-edge/internal/cloud/account"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/keystore"
+	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/signing"
+	"github.com/privometry/privometry-edge/specs"
 )
 
 // fakeCloud plays the account API and the edge API's enrollment. It checks

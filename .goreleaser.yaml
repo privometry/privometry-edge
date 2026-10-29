@@ -17,9 +17,9 @@ builds:
     flags: [-trimpath]
     ldflags:
       - -s -w
-      - -X github.com/privometry/privometry-oss/internal/buildinfo.Version={{.Version}}
-      - -X github.com/privometry/privometry-oss/internal/buildinfo.Commit={{.ShortCommit}}
-      - -X github.com/privometry/privometry-oss/internal/buildinfo.Date={{.Date}}
+      - -X github.com/privometry/privometry-edge/internal/buildinfo.Version={{.Version}}
+      - -X github.com/privometry/privometry-edge/internal/buildinfo.Commit={{.ShortCommit}}
+      - -X github.com/privometry/privometry-edge/internal/buildinfo.Date={{.Date}}
     goos: [darwin, linux, windows]
     goarch: [amd64, arm64]
   - <<: *bin
@@ -36,9 +36,9 @@ builds:
     goos: [windows]
     ldflags:
       - -s -w -H=windowsgui
-      - -X github.com/privometry/privometry-oss/internal/buildinfo.Version={{.Version}}
-      - -X github.com/privometry/privometry-oss/internal/buildinfo.Commit={{.ShortCommit}}
-      - -X github.com/privometry/privometry-oss/internal/buildinfo.Date={{.Date}}
+      - -X github.com/privometry/privometry-edge/internal/buildinfo.Version={{.Version}}
+      - -X github.com/privometry/privometry-edge/internal/buildinfo.Commit={{.ShortCommit}}
+      - -X github.com/privometry/privometry-edge/internal/buildinfo.Date={{.Date}}
   - <<: *bin
     id: privometry-hook
     main: ./cmd/privometry-hook
@@ -64,7 +64,7 @@ scoops:
     repository:
       owner: privometry
       name: scoop-bucket
-    homepage: https://github.com/privometry/privometry-oss
+    homepage: https://github.com/privometry/privometry-edge
     description: Local guard and scanner for AI coding agents
     license: Apache-2.0
     post_install:

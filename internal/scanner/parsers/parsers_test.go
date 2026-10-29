@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/privometry/privometry-oss/internal/scanner/parsers"
+	"github.com/privometry/privometry-edge/internal/scanner/parsers"
 )
 
 func TestFormats(t *testing.T) {

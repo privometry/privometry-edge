@@ -26,10 +26,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/signing"
-	"github.com/privometry/privometry-oss/internal/update"
-	"github.com/privometry/privometry-oss/specs"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/signing"
+	"github.com/privometry/privometry-edge/internal/update"
+	"github.com/privometry/privometry-edge/specs"
 )
 
 // archiveRE matches goreleaser's archive names (.goreleaser.yaml name_template).
@@ -41,7 +41,7 @@ func main() {
 	log.SetFlags(0)
 	version := flag.String("version", "", "release version without the v, for example 0.5.0")
 	dist := flag.String("dist", "dist", "goreleaser output folder with checksums.txt and the archives")
-	base := flag.String("base-url", "", "download folder; default https://github.com/privometry/privometry-oss/releases/download/v<version>")
+	base := flag.String("base-url", "", "download folder; default https://github.com/privometry/privometry-edge/releases/download/v<version>")
 	channel := flag.String("channel", "stable", "stable or beta")
 	valid := flag.Duration("valid", 60*24*time.Hour, "how long devices accept the manifest")
 	released := flag.String("released-at", "", "release time (RFC 3339); default now, and kept when re-signing")
@@ -54,7 +54,7 @@ func main() {
 	}
 	*version = strings.TrimPrefix(*version, "v")
 	if *base == "" {
-		*base = "https://github.com/privometry/privometry-oss/releases/download/v" + *version
+		*base = "https://github.com/privometry/privometry-edge/releases/download/v" + *version
 	}
 	now := time.Now().UTC()
 	releasedAt := now
@@ -67,7 +67,7 @@ func main() {
 	}
 	rel := update.Release{Schema: "privometry.release/v1", Version: *version, Channel: update.ReleaseChannel(*channel),
 		ReleasedAt: contract.At(releasedAt), ExpiresAt: contract.At(now.Add(*valid)),
-		NotesURL: "https://github.com/privometry/privometry-oss/releases/tag/v" + *version}
+		NotesURL: "https://github.com/privometry/privometry-edge/releases/tag/v" + *version}
 	arts, err := artifacts(*dist, *version, strings.TrimSuffix(*base, "/"))
 	if err != nil {
 		log.Fatal(err)

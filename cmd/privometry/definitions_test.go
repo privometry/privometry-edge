@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/privometry/privometry-oss/internal/platform"
-	"github.com/privometry/privometry-oss/internal/trust"
+	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/trust"
 )
 
 func TestDefinitionsCmd(t *testing.T) {

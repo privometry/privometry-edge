@@ -9,7 +9,7 @@ import (
 	"github.com/cedar-policy/cedar-go"
 	"github.com/cedar-policy/cedar-go/types"
 
-	"github.com/privometry/privometry-oss/internal/policy/facts"
+	"github.com/privometry/privometry-edge/internal/policy/facts"
 )
 
 // Agent is the session making the request (the Cedar principal).

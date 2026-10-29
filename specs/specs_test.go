@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/privometry/privometry-oss/specs"
+	"github.com/privometry/privometry-edge/specs"
 )
 
 // suites maps a contract folder to the schema its examples are checked against.

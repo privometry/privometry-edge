@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 func TestGuardCommands(t *testing.T) {

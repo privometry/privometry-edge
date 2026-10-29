@@ -18,11 +18,11 @@ import (
 	"testing"
 	"time"
 
-	adapterdefs "github.com/privometry/privometry-oss/adapter-defs"
-	"github.com/privometry/privometry-oss/detectorpacks"
-	"github.com/privometry/privometry-oss/internal/definitions"
-	"github.com/privometry/privometry-oss/internal/signing"
-	"github.com/privometry/privometry-oss/internal/trust"
+	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
+	"github.com/privometry/privometry-edge/detectorpacks"
+	"github.com/privometry/privometry-edge/internal/definitions"
+	"github.com/privometry/privometry-edge/internal/signing"
+	"github.com/privometry/privometry-edge/internal/trust"
 )
 
 var now = time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC)

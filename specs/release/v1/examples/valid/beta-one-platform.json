@@ -8,7 +8,7 @@
     {
       "os": "macos",
       "arch": "arm64",
-      "url": "https://github.com/privometry/privometry-oss/releases/download/v0.5.0/privometry_0.5.0_darwin_arm64.tar.gz",
+      "url": "https://github.com/privometry/privometry-edge/releases/download/v0.5.0/privometry_0.5.0_darwin_arm64.tar.gz",
       "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "size": 9871234,
       "format": "tar.gz",

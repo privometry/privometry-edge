@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/signing"
-	"github.com/privometry/privometry-oss/internal/trust"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/signing"
+	"github.com/privometry/privometry-edge/internal/trust"
 )
 
 // testKey derives a key like scripts/gen-conformance: a TEST KEY with a

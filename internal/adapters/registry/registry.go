@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/platform"
-	"github.com/privometry/privometry-oss/specs"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/specs"
 )
 
 // Registry holds validated adapter definitions, sorted by agent.

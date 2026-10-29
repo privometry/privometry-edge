@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/community"
-	"github.com/privometry/privometry-oss/internal/content"
-	"github.com/privometry/privometry-oss/internal/platform"
-	"github.com/privometry/privometry-oss/internal/policy/compiler"
-	"github.com/privometry/privometry-oss/internal/policy/engine"
-	"github.com/privometry/privometry-oss/internal/policy/merge"
-	"github.com/privometry/privometry-oss/internal/policy/packtest"
-	"github.com/privometry/privometry-oss/internal/policy/rulepack"
+	"github.com/privometry/privometry-edge/internal/community"
+	"github.com/privometry/privometry-edge/internal/content"
+	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/policy/compiler"
+	"github.com/privometry/privometry-edge/internal/policy/engine"
+	"github.com/privometry/privometry-edge/internal/policy/merge"
+	"github.com/privometry/privometry-edge/internal/policy/packtest"
+	"github.com/privometry/privometry-edge/internal/policy/rulepack"
 )
 
 var now = time.Date(2026, 10, 28, 12, 0, 0, 0, time.UTC)

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/privometry/privometry-oss/internal/trust"
+	"github.com/privometry/privometry-edge/internal/trust"
 )
 
 // The key sets that ship must parse and hold only keys of their own role: a

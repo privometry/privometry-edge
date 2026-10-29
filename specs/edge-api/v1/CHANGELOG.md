@@ -9,7 +9,7 @@
 - `/enroll` is refused with `not-entitled` without the `cloud_sync` feature and with `seat-limit-reached` after a seat overage outlasts its grace period; `/events:batch` and `/inventory` are refused with `not-entitled` without `cloud_sync`, and devices stop uploading until a bundle turns it back on.
 ## 1.0.0-draft.7 (2026-10-28)
 
-- `/approvals` describes the flow that fits the hook budget: deny at once with a message, request the approval in the background, allow the next attempt once if it is approved (privometry-oss `docs/spikes/remote-approvals.md`).
+- `/approvals` describes the flow that fits the hook budget: deny at once with a message, request the approval in the background, allow the next attempt once if it is approved (privometry-edge `docs/spikes/remote-approvals.md`).
 ## 1.0.0-draft.6 (2026-10-28)
 
 - `/inventory` says when the sensor sends a snapshot and what items carry; inventory items gain `package` and `host` (event-schema/v1 draft.3).

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/daemon"
-	"github.com/privometry/privometry-oss/internal/platform"
+	"github.com/privometry/privometry-edge/internal/daemon"
+	"github.com/privometry/privometry-edge/internal/platform"
 )
 
 // supervise runs privometryd without -supervise and starts it again whenever

@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"strings"
 
-	cloudaccount "github.com/privometry/privometry-oss/internal/cloud/account"
+	cloudaccount "github.com/privometry/privometry-edge/internal/cloud/account"
 )
 
 // DefaultAPI is the account API of the India region, where organizations live

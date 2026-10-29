@@ -12,11 +12,11 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/privometry/privometry-oss/internal/contract"
-	"github.com/privometry/privometry-oss/internal/events"
-	"github.com/privometry/privometry-oss/internal/timeline"
-	"github.com/privometry/privometry-oss/internal/webui"
-	timelineweb "github.com/privometry/privometry-oss/ui/timeline-web"
+	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/events"
+	"github.com/privometry/privometry-edge/internal/timeline"
+	"github.com/privometry/privometry-edge/internal/webui"
+	timelineweb "github.com/privometry/privometry-edge/ui/timeline-web"
 )
 
 const port = 4747
