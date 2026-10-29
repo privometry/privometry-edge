@@ -10,12 +10,13 @@ import (
 	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
 	"github.com/privometry/privometry-edge/internal/daemon"
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
 func TestBypassFlags(t *testing.T) {
-	data, err := os.MkdirTemp("/tmp", "privometry-b-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-b-")
 	if err != nil {
 		t.Fatal(err)
 	}

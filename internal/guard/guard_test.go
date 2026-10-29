@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 )
 
 const existing = `{
@@ -100,7 +102,7 @@ func TestInstallIntoExistingSettings(t *testing.T) {
 			t.Errorf("%s not registered", ev)
 		}
 	}
-	if info, _ := os.Stat(path); info.Mode().Perm() != 0o644 {
+	if info, _ := os.Stat(path); runtime.GOOS != "windows" && info.Mode().Perm() != 0o644 {
 		t.Errorf("mode changed to %v", info.Mode().Perm())
 	}
 	if b, err := os.ReadFile(path + ".privometry-backup"); err != nil || string(b) != existing {
@@ -137,9 +139,7 @@ func TestInstallVariants(t *testing.T) {
 	if err != nil || c.Before != nil || c.Apply() != nil {
 		t.Fatalf("new file: %v", err)
 	}
-	if info, err := os.Stat(path); err != nil || info.Mode().Perm() != 0o600 {
-		t.Errorf("new settings file: %v %v", info, err)
-	}
+	platformtest.Private(t, path)
 
 	// Old or unknown versions get no onFailure key, which they might reject.
 	for _, v := range []string{"2.1.200", ""} {

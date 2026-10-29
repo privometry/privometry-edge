@@ -12,8 +12,9 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// setDACL replaces path's access list with sddl, a "D:..." string where
-// {user} stands for the current user.
+// setDACL makes the current user path's owner and replaces its access list
+// with sddl, a "D:..." string where {user} stands for the current user. An
+// elevated test run would otherwise leave Administrators as the owner.
 func setDACL(t *testing.T, path, sddl string) {
 	t.Helper()
 	user, err := UserSID()
@@ -29,7 +30,7 @@ func setDACL(t *testing.T, path, sddl string) {
 		t.Fatal(err)
 	}
 	if err := windows.SetNamedSecurityInfo(path, windows.SE_FILE_OBJECT,
-		windows.DACL_SECURITY_INFORMATION|windows.PROTECTED_DACL_SECURITY_INFORMATION, nil, nil, dacl, nil); err != nil {
+		windows.OWNER_SECURITY_INFORMATION|windows.DACL_SECURITY_INFORMATION|windows.PROTECTED_DACL_SECURITY_INFORMATION, user, nil, dacl, nil); err != nil {
 		t.Fatal(err)
 	}
 }

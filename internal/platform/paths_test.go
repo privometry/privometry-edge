@@ -1,6 +1,10 @@
 package platform
 
-import "testing"
+import (
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func env(goos string, vars map[string]string) Env {
 	home := "/home/dev"
@@ -90,5 +94,19 @@ func TestDisplayPath(t *testing.T) {
 		if got := DisplayPath(tc.p, tc.home, tc.repo); got != tc.want {
 			t.Errorf("DisplayPath(%q) = %q, want %q", tc.p, got, tc.want)
 		}
+	}
+}
+
+func TestUnderRoot(t *testing.T) {
+	root := filepath.Join("r", "t")
+	if got := UnderRoot(root, "/home/dev/.claude"); got != filepath.Join(root, "home", "dev", ".claude") {
+		t.Errorf("Unix path: %q", got)
+	}
+	// A drive letter becomes a folder, so the path stays inside root.
+	if got := UnderRoot(root, `C:\Users\dev\x.xml`); strings.Contains(got, ":") || !strings.HasPrefix(got, filepath.Join(root, "C")) {
+		t.Errorf("Windows path: %q", got)
+	}
+	if got := UnderRoot("", "/a/../b"); got != filepath.Join("/b") {
+		t.Errorf("empty root: %q", got)
 	}
 }

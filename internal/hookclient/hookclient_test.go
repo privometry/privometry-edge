@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/daemon"
 	"github.com/privometry/privometry-edge/internal/ipc"
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
 )
 
@@ -74,7 +76,7 @@ func TestFormatsMatchAdapters(t *testing.T) {
 }
 
 func env(t *testing.T) (platform.Env, string) {
-	dir, err := os.MkdirTemp("/tmp", "privometry-h-")
+	dir, err := os.MkdirTemp(ipctest.TempRoot, "privometry-h-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,6 +190,9 @@ func TestCredentialFallback(t *testing.T) {
 }
 
 func TestDaemonReplyAndTimeout(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("listens on a Unix socket; the ipc package tests the named pipe")
+	}
 	e, dir := env(t)
 	l, err := ipc.Listen(filepath.Join(dir, "privometryd.sock"))
 	if err != nil {

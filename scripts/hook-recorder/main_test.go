@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -37,7 +38,8 @@ func TestSetupWritesOnlyTheProject(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !strings.Contains(string(raw), filepath.Join(out, "hook-recorder")) || !strings.Contains(string(raw), " "+agent+" ") {
+			recorder, _ := json.Marshal(filepath.Join(out, "hook-recorder")) // Windows backslashes are escaped in JSON
+			if !strings.Contains(string(raw), strings.Trim(string(recorder), `"`)) || !strings.Contains(string(raw), " "+agent+" ") {
 				t.Errorf("hooks file:\n%s", raw)
 			}
 			// Nothing in the home folder but the project.

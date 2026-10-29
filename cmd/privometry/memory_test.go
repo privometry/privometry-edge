@@ -15,6 +15,7 @@ import (
 	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
 	"github.com/privometry/privometry-edge/internal/daemon"
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/policy"
 )
@@ -24,7 +25,7 @@ func TestMemoryCommands(t *testing.T) {
 		t.Skip("uses a Unix socket path under /tmp")
 	}
 	home := t.TempDir()
-	data, err := os.MkdirTemp("/tmp", "privometry-mem-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-mem-")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"net"
 	"strings"
 	"testing"
 	"time"
@@ -84,8 +85,14 @@ func TestPipeTimeoutsAndClose(t *testing.T) {
 	if time.Since(start) > 100*time.Millisecond {
 		t.Errorf("a missing pipe took %v to fail", time.Since(start))
 	}
-	// The name is free again.
-	l2, err := ipc.Listen(addr)
+	// The name is free again once the slow request's connection, still
+	// sleeping in the handler, closes its pipe instance.
+	var l2 net.Listener
+	for deadline := time.Now().Add(2 * time.Second); ; time.Sleep(20 * time.Millisecond) {
+		if l2, err = ipc.Listen(addr); err == nil || time.Now().After(deadline) {
+			break
+		}
+	}
 	if err != nil {
 		t.Fatalf("listen after close: %v", err)
 	}

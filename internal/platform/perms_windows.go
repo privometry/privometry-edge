@@ -134,7 +134,8 @@ func checkPrivate(path string, _ fs.FileInfo) error {
 
 // tighten replaces the access list of a directory the user owns, when it
 // lets others in, with one granting only the user, SYSTEM and Administrators.
-// Files created in it inherit that list.
+// Files created in it inherit that list. An elevated process creates folders
+// owned by Administrators rather than the user; those are tightened too.
 func tighten(dir string, info fs.FileInfo) error {
 	if checkPrivate(dir, info) == nil {
 		return nil
@@ -143,7 +144,7 @@ func tighten(dir string, info fs.FileInfo) error {
 	if err != nil {
 		return nil
 	}
-	if owner, _, err := security(dir); err != nil || owner == nil || !owner.Equals(user) {
+	if owner, _, err := security(dir); err != nil || !TrustedOwner(owner, user) {
 		return nil // CheckPrivate explains
 	}
 	sd, err := windows.SecurityDescriptorFromString("D:P(A;OICI;FA;;;" + user.String() + ")(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)")

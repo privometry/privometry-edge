@@ -26,6 +26,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 	"github.com/privometry/privometry-edge/internal/signing"
 	"github.com/privometry/privometry-edge/specs"
 )
@@ -379,9 +380,7 @@ func TestLoginThenConsole(t *testing.T) {
 		t.Fatalf("state %+v, %v", state, err)
 	}
 	for _, name := range []string{"cli-key", "device-key", "org-hash-key"} {
-		if fi, err := os.Stat(filepath.Join(data, "keys", name)); err != nil || fi.Mode().Perm() != 0o600 {
-			t.Errorf("keys/%s: %v %v", name, fi, err)
-		}
+		platformtest.Private(t, filepath.Join(data, "keys", name))
 	}
 	sealed, _ := os.ReadFile(filepath.Join(data, "keys", "cli-key"))
 	if _, err := account.Open(sealed, "correct horse"); err != nil {

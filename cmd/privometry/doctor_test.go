@@ -14,6 +14,7 @@ import (
 
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
+	"github.com/privometry/privometry-edge/internal/ipc/ipctest"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/timeline"
 	"github.com/privometry/privometry-edge/internal/trust"
@@ -24,7 +25,7 @@ func TestDoctorAndBundle(t *testing.T) {
 		t.Skip("macOS and Linux only")
 	}
 	home := t.TempDir()
-	data, err := os.MkdirTemp("/tmp", "privometry-doc-")
+	data, err := os.MkdirTemp(ipctest.TempRoot, "privometry-doc-")
 	if err != nil {
 		t.Fatal(err)
 	}

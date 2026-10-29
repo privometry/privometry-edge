@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/privometry/privometry-edge/internal/platform"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 )
 
 type recorder struct {
@@ -41,6 +42,7 @@ func opts(t *testing.T, goos string, vars map[string]string, r *recorder) Option
 }
 
 func TestLaunchd(t *testing.T) {
+	platformtest.UnixPaths(t)
 	r := &recorder{fail: map[string]bool{"launchctl bootout": true}}
 	o := opts(t, "darwin", map[string]string{"PRIVOMETRY_HOME": "/tmp/p&q"}, r)
 	p, err := For(o)
@@ -87,6 +89,7 @@ func TestLaunchd(t *testing.T) {
 }
 
 func TestSystemd(t *testing.T) {
+	platformtest.UnixPaths(t)
 	r := &recorder{}
 	o := opts(t, "linux", map[string]string{"XDG_CONFIG_HOME": "/home/dev/.cfg", "PRIVOMETRY_HOME": "/srv/privometry data"}, r)
 	p, err := For(o)
@@ -158,7 +161,7 @@ func TestTaskScheduler(t *testing.T) {
 	if err := Install(p, o); err != nil {
 		t.Fatal(err)
 	}
-	written, _ := os.ReadFile(filepath.Join(o.Root, p.Path))
+	written, _ := os.ReadFile(platform.UnderRoot(o.Root, p.Path))
 	if len(written) != 2+2*len([]rune(text)) || written[0] != 0xff || written[1] != 0xfe || written[2] != '<' || written[3] != 0 {
 		t.Errorf("not UTF-16LE with a BOM: % x", written[:8])
 	}
@@ -167,8 +170,8 @@ func TestTaskScheduler(t *testing.T) {
 		t.Errorf("calls: %s", got)
 	}
 	r.output = map[string]string{"powershell.exe": "Running\r\n"}
-	os.MkdirAll(filepath.Join(o.Root, `C:\Users\dev\AppData\Local\Privometry`), 0o700)
-	os.WriteFile(filepath.Join(o.Root, `C:\Users\dev\AppData\Local\Privometry\privometryd.lock`), []byte("4711"), 0o600)
+	os.MkdirAll(platform.UnderRoot(o.Root, `C:\Users\dev\AppData\Local\Privometry`), 0o700)
+	os.WriteFile(platform.UnderRoot(o.Root, `C:\Users\dev\AppData\Local\Privometry\privometryd.lock`), []byte("4711"), 0o600)
 	if s := Check(p, o); !s.Installed || !s.Current || !s.Running || s.PID != 4711 {
 		t.Errorf("status %+v", s)
 	}
@@ -222,13 +225,13 @@ func TestRunKeyWhenTheTaskIsRefused(t *testing.T) {
 	if !strings.Contains(p.Note, "Windows refused the logon task") || !strings.Contains(p.Note, "not loaded") {
 		t.Errorf("note %q", p.Note)
 	}
-	if _, err := os.Stat(filepath.Join(o.Root, p.Path)); err == nil {
+	if _, err := os.Stat(platform.UnderRoot(o.Root, p.Path)); err == nil {
 		t.Error("the refused task's file is left behind")
 	}
 
 	// Status: the Run key value and a privometryd holding the lock.
-	os.WriteFile(filepath.Join(o.Root, data+`\privometryd.lock`), []byte("4711"), 0o600)
-	os.WriteFile(filepath.Join(o.Root, data+`\privometryd-supervisor.lock`), []byte("4700"), 0o600)
+	os.WriteFile(platform.UnderRoot(o.Root, data+`\privometryd.lock`), []byte("4711"), 0o600)
+	os.WriteFile(platform.UnderRoot(o.Root, data+`\privometryd-supervisor.lock`), []byte("4700"), 0o600)
 	r.output = map[string]string{"powershell.exe": "privometryd\r\n"}
 	if s := Check(p, o); !s.Installed || !s.Current || !s.RunKey || !s.Running || s.PID != 4711 || s.Path != data+`\privometryd-run.txt` {
 		t.Errorf("status %+v", s)

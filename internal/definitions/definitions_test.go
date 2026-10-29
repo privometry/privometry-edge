@@ -21,6 +21,7 @@ import (
 	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
 	"github.com/privometry/privometry-edge/detectorpacks"
 	"github.com/privometry/privometry-edge/internal/definitions"
+	"github.com/privometry/privometry-edge/internal/platform/platformtest"
 	"github.com/privometry/privometry-edge/internal/signing"
 	"github.com/privometry/privometry-edge/internal/trust"
 )
@@ -271,10 +272,7 @@ func TestInstall(t *testing.T) {
 	if err != nil || st.SetVersion != next+1 {
 		t.Fatalf("install: %+v %v", st, err)
 	}
-	info, err := os.Stat(filepath.Join(o.Dir, "adapters.json"))
-	if err != nil || info.Mode().Perm() != 0o600 {
-		t.Fatalf("installed file: %v %v", info, err)
-	}
+	platformtest.Private(t, filepath.Join(o.Dir, "adapters.json"))
 	if _, err := definitions.Install(o, adapterSet(t, release, next+1, nil)); !errors.Is(err, definitions.ErrNotNewer) {
 		t.Errorf("reinstall: %v", err)
 	}
