@@ -2,6 +2,8 @@ package daemon
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -15,9 +17,12 @@ import (
 )
 
 const (
-	// silentAfter is how long an agent runs before its silence counts: agents
-	// fire their session-start hook when they start.
+	// silentAfter is how long an agent runs before its silence counts.
 	silentAfter = 3 * time.Minute
+	// activeGrace is how long an agent's session files must have shown use
+	// before its silence counts: agy and Codex fire their session-start hook
+	// with the first prompt, around when the transcript appears.
+	activeGrace = time.Minute
 	// callerDepth bounds the walk from privometry-hook's parent up to the
 	// agent: usually a shell, sometimes a wrapper script or two.
 	callerDepth = 8
@@ -51,6 +56,7 @@ type procState struct {
 	called map[platform.ProcessKey]time.Time             // processes above a hook call, and when it came
 	chains map[platform.ProcessKey][]platform.ProcessKey // a hook's parent and the processes above it
 	silent map[platform.ProcessKey]bool                  // agents already reported as silent
+	active map[platform.ProcessKey]time.Time             // agents whose session files changed since they started, first seen when
 }
 
 // noteCaller records the processes above a hook call, starting at
@@ -87,10 +93,10 @@ func (d *Daemon) noteCaller(ppid int) {
 	}
 }
 
-// CheckSilent looks for agents that have run for three minutes without their
-// hooks calling Privometry (EDGE-24): the backstop for whatever turned the
-// hooks off, named or not. Each silent agent process is reported once, with a
-// reason when one is known. Agents whose Privometry hook is not installed are
+// CheckSilent looks for agents that have run for three minutes, and been in
+// use for one, without their hooks calling Privometry (EDGE-24): the backstop
+// for whatever turned the hooks off, named or not. Each silent agent process
+// is reported once, with a reason when one is known. Agents whose Privometry hook is not installed are
 // left alone: nothing expects them to call. It returns how many events it
 // recorded.
 func (d *Daemon) CheckSilent() (int, error) {
@@ -118,7 +124,11 @@ func (d *Daemon) CheckSilent() (int, error) {
 		if called || reported {
 			continue
 		}
-		reason, why, expected := d.silentReason(a, p)
+		env, vars := d.procEnv(a, p)
+		if !d.inUse(a, p, env, now) {
+			continue
+		}
+		reason, why, expected := d.silentReason(a, p, env, vars)
 		if !expected {
 			continue
 		}
@@ -157,6 +167,75 @@ func (d *Daemon) forgetGone(live map[platform.ProcessKey]bool) {
 			delete(d.procs.silent, k)
 		}
 	}
+	for k := range d.procs.active {
+		if !live[k] {
+			delete(d.procs.active, k)
+		}
+	}
+}
+
+// procEnv is the daemon's environment with the agent's env_overrides as the
+// process has them; only those variables are read from it.
+func (d *Daemon) procEnv(a registry.Adapter, p platform.Process) (platform.Env, map[string]string) {
+	if len(a.EnvOverrides) == 0 {
+		return d.cfg.Env, nil
+	}
+	var names []string
+	for _, o := range a.EnvOverrides {
+		names = append(names, o.Var)
+	}
+	vars, err := d.cfg.Procs.Env(p.PID, names)
+	if err != nil || len(vars) == 0 {
+		return d.cfg.Env, nil
+	}
+	return envWith(d.cfg.Env, vars), vars
+}
+
+// inUse reports whether an agent process has been in use for activeGrace: one
+// of its session files (transcripts) changed after it started. An idle agent
+// writes none, and agents that fire their session-start hook only at the
+// first prompt make no hook call until then. The files are the agent's, not
+// the process's, so another session of the same agent counts too. Without
+// session_paths in the definition, every running agent counts as in use.
+func (d *Daemon) inUse(a registry.Adapter, p platform.Process, env platform.Env, now time.Time) bool {
+	if len(a.Detect.SessionPaths) == 0 {
+		return true
+	}
+	k := p.Key()
+	d.mu.Lock()
+	since, seen := d.procs.active[k]
+	d.mu.Unlock()
+	if !seen {
+		if !changedSince(a, env, p.Start) {
+			return false
+		}
+		since = now
+		d.mu.Lock()
+		if d.procs.active == nil {
+			d.procs.active = map[platform.ProcessKey]time.Time{}
+		}
+		d.procs.active[k] = now
+		d.mu.Unlock()
+	}
+	return now.Sub(since) >= activeGrace
+}
+
+// changedSince reports whether any of the agent's session files was modified
+// after t.
+func changedSince(a registry.Adapter, env platform.Env, t time.Time) bool {
+	patterns, err := a.Paths(a.Detect.SessionPaths, env, "")
+	if err != nil {
+		return false
+	}
+	for _, pattern := range patterns {
+		matches, _ := filepath.Glob(pattern)
+		for _, m := range matches {
+			if info, err := os.Stat(m); err == nil && info.ModTime().After(t) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // silentCandidate reports whether a process is an agent CLI that should be
@@ -205,25 +284,17 @@ func hasArgs(args []string, seqs []string) bool {
 // untrusted_hook; anything else is unknown. Only the override variables are
 // read from the process's environment, and only paths go into the detail,
 // redacted.
-func (d *Daemon) silentReason(a registry.Adapter, p platform.Process) (events.IntegrityReason, string, bool) {
-	env := d.cfg.Env
-	if len(a.EnvOverrides) > 0 {
-		var names []string
-		for _, o := range a.EnvOverrides {
-			names = append(names, o.Var)
-		}
-		if vars, err := d.cfg.Procs.Env(p.PID, names); err == nil && len(vars) > 0 {
-			env = envWith(env, vars)
-			if st := guard.Check(a, guard.Options{Env: env}); st.State == "missing" {
-				var set []string
-				for _, name := range names {
-					if v, ok := vars[name]; ok {
-						set = append(set, fmt.Sprintf("%s (%s)", name, redact.Redact(v, redact.Context{Home: d.cfg.Env.Home})))
-					}
+func (d *Daemon) silentReason(a registry.Adapter, p platform.Process, env platform.Env, vars map[string]string) (events.IntegrityReason, string, bool) {
+	if len(vars) > 0 {
+		if st := guard.Check(a, guard.Options{Env: env}); st.State == "missing" {
+			var set []string
+			for _, o := range a.EnvOverrides {
+				if v, ok := vars[o.Var]; ok {
+					set = append(set, fmt.Sprintf("%s (%s)", o.Var, redact.Redact(v, redact.Context{Home: d.cfg.Env.Home})))
 				}
-				return events.IntegrityReasonConfigDirOverride,
-					fmt.Sprintf("it uses the config folder from %s, which has no Privometry hook.", strings.Join(set, ", ")), true
 			}
+			return events.IntegrityReasonConfigDirOverride,
+				fmt.Sprintf("it uses the config folder from %s, which has no Privometry hook.", strings.Join(set, ", ")), true
 		}
 	}
 	project, _ := d.cfg.Procs.Cwd(p.PID)

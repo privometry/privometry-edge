@@ -19,6 +19,8 @@ detect:
   version_cmd: [agy, --version]
   # Turns hooks off entirely: Privometry sees nothing the agent does.
   bypass_flags: [--dangerously-skip-permissions]
+  # SessionStart fires only at the first prompt (1.4.10); so does the conversation.
+  session_paths: { any: ["~/.gemini/antigravity-cli/conversations/*.db"] }
 config_tiers:
   - tier: user
     format: json

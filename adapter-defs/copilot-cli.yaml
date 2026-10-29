@@ -14,6 +14,8 @@ detect:
   version_cmd: [copilot, --version]
   bypass_flags: [--allow-all-tools, --yolo]
   process_patterns: ["@github/copilot/"]
+  # The session folder appears at launch; events.jsonl only once the session is used.
+  session_paths: { any: ["~/.copilot/session-state/*/events.jsonl"] }
 env_overrides:
   - var: COPILOT_HOME
     replaces: "~/.copilot"

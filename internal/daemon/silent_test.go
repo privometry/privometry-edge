@@ -149,7 +149,23 @@ func TestSilentAgents(t *testing.T) {
 		t.Fatal(resp.Error)
 	}
 	clock.Advance(2 * time.Minute)
-	silent(4, "after three minutes")
+	silent(0, "idle: no session file changed since the agents started")
+
+	// Sessions start: transcripts appear, in the config folder each process uses.
+	transcript := func(path string) {
+		t.Helper()
+		os.MkdirAll(filepath.Dir(path), 0o755)
+		if err := os.WriteFile(path, []byte("{}\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		os.Chtimes(path, clock.Now(), clock.Now())
+	}
+	transcript(filepath.Join(home, ".claude/projects/-home-dev/s1.jsonl"))
+	transcript(filepath.Join(home, "alt/projects/-home-dev/s2.jsonl"))
+	transcript(filepath.Join(home, ".codex/sessions/2026/10/28/rollout-2026-10-28T10-04-00-s3.jsonl"))
+	silent(0, "in use, but the first hook call may still be on its way")
+	clock.Advance(time.Minute)
+	silent(4, "in use for a minute")
 	silent(0, "reported once")
 
 	rows, _ := d.Store().Events(timeline.Query{Type: "integrity", Limit: 20})
@@ -164,7 +180,7 @@ func TestSilentAgents(t *testing.T) {
 	for key, want := range map[string]string{
 		"claude_code config_dir_override": "CLAUDE_CONFIG_DIR (~/<redacted_path>), which has no Privometry hook",
 		"claude_code setting":             "a setting in ~/<redacted_path> turns its hooks off",
-		"claude_code unknown":             "has run for 4 minutes",
+		"claude_code unknown":             "has run for 5 minutes",
 		"codex_cli untrusted_hook":        "approved",
 	} {
 		if !strings.Contains(got[key], want) {
@@ -183,6 +199,10 @@ func TestSilentAgents(t *testing.T) {
 	p := claude(130)
 	p.Start = clock.Now().Add(-4 * time.Minute)
 	pt.add(p, home, nil)
+	silent(0, "same PID, new process: the transcripts are older than it")
+	transcript(filepath.Join(home, ".claude/projects/-home-dev/s4.jsonl"))
+	silent(0, "same PID, new process, in use from now")
+	clock.Advance(time.Minute)
 	silent(1, "same PID, new process")
 }
 

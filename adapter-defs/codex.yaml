@@ -24,6 +24,8 @@ detect:
   process_patterns: ["@openai/codex/"]
   # The desktop app's engine (app-server) and the MCP server run all day without sessions.
   no_session_args: [mcp-server, app-server]
+  # SessionStart and the rollout file both wait for the first prompt (0.165.0).
+  session_paths: { any: ["~/.codex/sessions/*/*/*/rollout-*.jsonl"] }
 env_overrides:
   - var: CODEX_HOME
     replaces: "~/.codex"

@@ -100,6 +100,10 @@
             "pattern": "^[A-Za-z0-9_-]+( [A-Za-z0-9_-]+)*$"
           },
           "description": "Arguments of long-running commands that start no agent session, such as \"mcp serve\" for claude mcp serve. Matched as consecutive arguments after the program. A process running one is never reported as a silent agent (hooks_silent)."
+        },
+        "session_paths": {
+          "$ref": "#/$defs/os_paths",
+          "description": "Files the agent writes once a session is in use, such as its transcripts; globs allowed, env_overrides applied. Agents that fire their session-start hook only at the first prompt make no hook call while idle, so a running agent counts as silent (hooks_silent) only once one of these files has changed since it started. Without them, an agent counts as silent after running for a few minutes."
         }
       },
       "anyOf": [

@@ -31,9 +31,9 @@ type ProcessKey struct {
 // asked: another process's working folder or environment on Windows.
 var ErrNoProcessInfo = errors.New("platform: not available on this OS")
 
-// Processes lists the processes running now. Linux reads /proc, macOS asks
-// ps, Windows asks CIM; on macOS and Windows a command line is split on
-// spaces outside double quotes.
+// Processes lists the processes running now. Linux reads /proc, macOS
+// sysctl, Windows asks CIM; on Windows a command line is split on spaces
+// outside double quotes.
 func Processes() ([]Process, error) { return processes() }
 
 // ProcessInfo reads one process's parent and start time, without its

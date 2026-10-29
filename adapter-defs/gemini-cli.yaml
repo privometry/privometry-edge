@@ -12,6 +12,8 @@ detect:
   version_cmd: [gemini, --version]
   bypass_flags: [--yolo, -y, --approval-mode yolo]
   process_patterns: ["@google/gemini-cli/"]
+  # From the Gemini CLI documentation; not confirmed on a recorded session.
+  session_paths: { any: ["~/.gemini/tmp/*/chats/*.json"] }
 config_tiers:
   - tier: user
     format: json

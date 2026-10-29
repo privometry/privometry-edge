@@ -34,9 +34,9 @@ Two layers. Specific checks name the reason (a setting, a folder, a flag). A gen
 
 ### 2. Silent agents (the backstop)
 
-- **Process model.** `platform.ProcessArgs` becomes `platform.Processes`: PID, parent PID, start time and arguments, plus the working folder on macOS and Linux. Linux reads `/proc`; macOS `ps -axww -o pid=,ppid=,lstart=,args=` and `lsof` for working folders; Windows `Win32_Process` (`ProcessId`, `ParentProcessId`, `CreationDate`, `CommandLine`).
+- **Process model.** `platform.ProcessArgs` becomes `platform.Processes`: PID, parent PID, start time and arguments, plus the working folder on macOS and Linux. Linux reads `/proc`; macOS `sysctl kern.proc.all` with `KERN_PROCARGS2` for arguments (first `ps`, replaced as too slow) and `lsof` for working folders; Windows `Win32_Process` (`ProcessId`, `ParentProcessId`, `CreationDate`, `CommandLine`).
 - **Who called.** `privometry-hook` adds its parent PID to the IPC request (free to read). The daemon walks up from it to the agent process (the hook usually runs under a shell the agent started) with per-process reads, cached by PID and start time: `/proc/<pid>/stat` on Linux, `sysctl kern.proc.pid` on macOS, a Toolhelp snapshot on Windows only when a PID is not cached. The hook client stays as small and fast as it is.
-- **The check**, every minute: an agent CLI process (matched as for bypass flags) that has run for 3 minutes, whose definition has a `session_start` event, and from which no hook call has come, gets one `hooks_silent` event. Its reason is filled from sections 1 and 3 when one applies (`setting`, `config_dir_override`, `untrusted_hook`), else `unknown`.
+- **The check**, every minute: an agent CLI process (matched as for bypass flags) that has run for 3 minutes, whose definition has a `session_start` event, whose session files (`detect.session_paths`, its transcripts) have changed since it started, at least a minute ago, and from which no hook call has come, gets one `hooks_silent` event. The session files keep idle sessions out: agy and Codex fire their session-start hook only at the first prompt. Its reason is filled from sections 1 and 3 when one applies (`setting`, `config_dir_override`, `untrusted_hook`), else `unknown`.
 - **False positives.** Long-running commands that start no session (`claude mcp serve`, `codex mcp-server`) are listed per agent in `detect.no_session_args`. Desktop apps (Antigravity.app, the Cursor IDE) are left out: they run all day without sessions. Cursor has no session-start event, so its CLI is left out until a reliable signal is found. With reason `unknown` the finding is medium and says so; with a known reason it is high.
 
 ### 3. Config-folder overrides
@@ -69,6 +69,7 @@ Two layers. Specific checks name the reason (a setting, a folder, a flag). A gen
 | Contract | Change |
 |---|---|
 | `adapter/v1` draft.7 | `hooks.disable_settings`, `detect.process_patterns`, `detect.no_session_args` |
+| `adapter/v1` draft.8 | `detect.session_paths`, so idle sessions of agents with a lazy session-start hook are not silent |
 | `event-schema/v1` draft.6 | integrity checks `hooks_disabled`, `hooks_silent`, `sensor_stopped`, `sensor_uninstalled`; `integrity.reason` (`setting`, `config_dir_override`, `untrusted_hook`, `unknown`); `integrity.down_seconds`, `integrity.actions_while_down` |
 | `edge-api/v1` draft.9 | heartbeat hook status `disabled` |
 | `org-api/v1` draft.10 | organization setting for the stale threshold (phase 6, optional) |
@@ -91,11 +92,16 @@ Tests, as for the existing checks: injected process lists, parent chains and env
 
 ## Open questions (to confirm on real agents)
 
-- Does each agent fire its session-start hook when it starts, or only at the first prompt? The silent check's 3 minutes assumes at start; an agent that fires lazily needs its first-call window measured instead.
-- Which settings turn hooks off in Gemini CLI, Copilot CLI and Cursor?
-- Does Claude Code's `disableAllHooks` in user settings also turn off hooks from managed settings? (It decides how much the managed install protects.)
-- Can `KERN_PROCARGS2` read the environment of notarized agent binaries under the hardened runtime, for the same user?
-- How much does the process listing cost each minute on a busy machine (target: under 50 ms)?
+- [x] Does each agent fire its session-start hook when it starts, or only at the first prompt? Checked on macOS, 2026-10-29, by starting each agent idle in a trusted project with the recorder registered and waiting 20 seconds without a prompt:
+  - **agy 1.4.10: at the first prompt.** Signed in, at its ready prompt, no `SessionStart`; in the recorded session it came in the same second as the first `PreInvocation`.
+  - **Codex 0.165.0: at the first prompt.** At its ready prompt, project and `session_start` hook trusted, no `SessionStart`, although the app server starts its thread at launch.
+  - Copilot CLI: not settled; it stopped at its folder-trust dialog. Cursor 3.27.22 sent `sessionStart` with the first prompt.
+  - **Claude Code 2.1.302: at launch** (`source: startup`), checked in a trusted folder with the hook passed through `--settings`.
+  - **Consequence, fixed:** the silent check reported an agy or Codex session left open for 3 minutes without a prompt as `hooks_silent`. No agent wrote a transcript while idle; all did as soon as they were used (Copilot creates its session folder at launch, but `events.jsonl` only once used). `adapter/v1` draft.8 adds `detect.session_paths`, and the check now waits until one of those files has changed since the process started, plus a minute for the first hook call. The files belong to the agent, not the process: a second session of the same agent makes an idle one count as in use.
+- [ ] Which settings turn hooks off in Gemini CLI, Copilot CLI and Cursor?
+- [ ] Does Claude Code's `disableAllHooks` in user settings also turn off hooks from managed settings? (It decides how much the managed install protects.)
+- [x] Can `KERN_PROCARGS2` read the environment of notarized agent binaries under the hardened runtime, for the same user? Yes, on macOS for `claude` 2.1.302, `codex` 0.165.0, `agy` 1.4.10 and `copilot` 1.0.105, all signed with the hardened runtime (`flags=0x10000(runtime)`). Codex refuses to start when `CODEX_HOME` names a folder that does not exist, so an override always names a real one.
+- [x] How much does the process listing cost each minute on a busy machine (target: under 50 ms)? With `ps`, 31 to 49 ms for about 750 processes on an M4 Pro, most of it `ps` reading every command line. The macOS listing now reads the process table with `sysctl kern.proc.all` and each command line with `KERN_PROCARGS2`, as `ps` does: 5 to 7 ms, with exact arguments instead of a split command line.
 
 ## What this cannot catch
 
