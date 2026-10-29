@@ -50,6 +50,10 @@ func (c Context) resolve(p string) (abs string, ok bool) {
 	if i := strings.IndexAny(p, "*?["); i >= 0 {
 		p = path.Dir(p[:i+1])
 	}
+	if len(p) >= 2 && isDrive(p[:2]+"/") {
+		// Clean the part after the drive, so D:/ keeps its slash and D:/.. stops at the root.
+		return p[:2] + path.Clean("/"+p[2:]), true
+	}
 	return path.Clean(p), true
 }
 
