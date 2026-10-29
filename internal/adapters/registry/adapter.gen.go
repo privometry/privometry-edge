@@ -99,6 +99,14 @@ type AdapterDetect struct {
 	// program. A process running one is never reported as a silent agent
 	// (hooks_silent).
 	NoSessionArgs []string `json:"no_session_args,omitempty"`
+
+	// Files the agent writes once a session is in use, such as its transcripts;
+	// globs allowed, env_overrides applied. Agents that fire their session-start
+	// hook only at the first prompt make no hook call while idle, so a running
+	// agent counts as silent (hooks_silent) only once one of these files has
+	// changed since it started. Without them, an agent counts as silent after
+	// running for a few minutes.
+	SessionPaths map[string][]string `json:"session_paths,omitempty"`
 }
 
 // AdapterEnvOverride is generated from adapter/v1/adapter.schema.json#/properties/env_overrides/items.

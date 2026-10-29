@@ -14,6 +14,8 @@ detect:
   # The npm package and the native installer, whatever the program is called.
   process_patterns: ["@anthropic-ai/claude-code/", "claude/versions/"]
   no_session_args: ["mcp serve"]
+  # Transcripts appear with the first prompt; SessionStart fires at launch.
+  session_paths: { any: ["~/.claude/projects/*/*.jsonl"] }
 env_overrides:
   - var: CLAUDE_CONFIG_DIR
     replaces: "~/.claude"

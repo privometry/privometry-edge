@@ -1,5 +1,9 @@
 # adapter/v1
 
+## 1.0.0-draft.8 (2026-10-29)
+
+- `detect.session_paths`: files the agent writes once a session is in use (its transcripts). agy and Codex fire their session-start hook only at the first prompt, so an idle session makes no hook call; a running agent now counts as silent only once one of these files has changed since it started. The shipped definitions list Claude Code `~/.claude/projects/*/*.jsonl`, Codex `~/.codex/sessions/*/*/*/rollout-*.jsonl`, Gemini CLI `~/.gemini/tmp/*/chats/*.json`, Copilot CLI `~/.copilot/session-state/*/events.jsonl` and Antigravity `~/.gemini/antigravity-cli/conversations/*.db`.
+
 ## 1.0.0-draft.7 (2026-10-28)
 
 - `hooks.disable_settings`: JSON pointers and values that turn all of an agent's hooks off, read in every JSON and TOML config tier that holds settings or hooks. The shipped definitions list Claude Code `/disableAllHooks: true` and Codex `/features/hooks: false` and `/features/codex_hooks: false`; Gemini CLI, Copilot CLI and Cursor stay empty until confirmed on real agents.
