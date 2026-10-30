@@ -5,6 +5,7 @@
 - [CLI Reference](CLI-Reference.md)
 - [Agent Integration](Agent-Integration.md)
 - [Policy Integration](Policy-Integration.md)
+- [Built-in Rules](Built-in-Rules.md)
 - [Contracts and Code Generation](Contracts-and-Code-Generation.md)
 - [Platform Integration](Platform-Integration.md)
 - [Testing and Release](Testing-and-Release.md)
