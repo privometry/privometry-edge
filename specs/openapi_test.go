@@ -26,19 +26,23 @@ func TestEdgeAPI(t *testing.T) {
 
 // TestAccountAPI checks the account API the same way. Registration and
 // sign-in POSTs are public and take no Idempotency-Key, since each code,
-// challenge and link works once; POSTs made with a session take one. The
-// global tier's operations name their own server.
+// challenge and link works once, and neither do the bootstrap POSTs, made
+// once with the deployment's bootstrap token; POSTs made with a session take
+// one. The global tier's operations name their own server.
 func TestAccountAPI(t *testing.T) {
 	doc := checkAPI(t, "account-api/v1", []string{
 		"DELETE /me/credentials/{credential_id}", "DELETE /orgs/{org_id}/api-keys/{api_key_id}", "DELETE /orgs/{org_id}/devices/{device_id}",
-		"DELETE /orgs/{org_id}/enrollment-tokens/{enrollment_token_id}", "GET /directory/{slug}", "GET /me",
+		"DELETE /orgs/{org_id}/enrollment-tokens/{enrollment_token_id}", "GET /bootstrap", "GET /directory/{slug}", "GET /me",
 		"GET /me/credentials", "GET /orgs/{org_id}/api-keys", "GET /orgs/{org_id}/devices", "GET /orgs/{org_id}/enrollment-tokens",
-		"GET /orgs/{org_id}/members", "GET /regions", "POST /orgs/{org_id}/api-keys", "POST /orgs/{org_id}/enrollment-tokens",
+		"GET /orgs/{org_id}/members", "GET /regions", "POST /bootstrap/challenges", "POST /bootstrap/{bootstrap_id}:complete",
+		"POST /orgs/{org_id}/api-keys", "POST /orgs/{org_id}/enrollment-tokens",
 		"POST /orgs/{org_id}/invitations", "POST /orgs/{org_id}/members/{user_id}:reset",
 		"POST /registrations", "POST /registrations/{registration_id}:complete",
 		"POST /registrations/{registration_id}:resend", "POST /registrations/{registration_id}:verify",
 		"POST /sign-in", "POST /sign-in/challenges", "POST /sign-in/links:redeem", "POST /sign-out",
-	}, func(method string, op map[string]any) bool { return method == "post" && !public(op) })
+	}, func(method string, op map[string]any) bool {
+		return method == "post" && !public(op) && !securedBy(op, "bootstrapToken")
+	})
 	for _, p := range []string{"/regions", "/directory/{slug}"} {
 		servers, _ := lookup(doc, "#/paths/"+strings.ReplaceAll(p, "/", "~1")+"/servers").([]any)
 		if len(servers) != 1 || !strings.HasPrefix(servers[0].(map[string]any)["url"].(string), "https://api.") {
@@ -158,6 +162,17 @@ func public(op map[string]any) bool {
 	}
 	m, _ := sec[0].(map[string]any)
 	return len(m) == 0
+}
+
+// securedBy reports whether op's only security requirement is scheme.
+func securedBy(op map[string]any, scheme string) bool {
+	sec, ok := op["security"].([]any)
+	if !ok || len(sec) != 1 {
+		return false
+	}
+	m, _ := sec[0].(map[string]any)
+	_, has := m[scheme]
+	return len(m) == 1 && has
 }
 
 func hasParam(op map[string]any, ref string) bool {

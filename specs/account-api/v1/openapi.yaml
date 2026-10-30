@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Privometry account API
-  version: 1.0.0-draft.4
+  version: 1.0.0-draft.5
   summary: Registration with a key and a PIN, console sign-in, credentials and invitations.
   description: |
     Used by the Privometry CLI (`privometry login`, `privometry console`) and
@@ -52,6 +52,9 @@ info:
     - WebAuthn: the RP ID is the console's registrable domain, the origin must
       be the console's, user verification and discoverable credentials are
       required, and no attestation is requested.
+    - On-prem installations may configure a one-time bootstrap token. It
+      replaces email verification only for the first organization and owner,
+      is invalid after completion, and is never used in SaaS.
     - Sessions: the cookie __Host-privometry_session is HttpOnly, Secure and
       SameSite=Strict. CORS allows only the console origin, and every request
       that changes state with a session must send an Origin header matching it.
@@ -71,7 +74,8 @@ info:
       https://privometry.dev/problems/: invalid-request, invalid-code,
       registration-expired, registration-complete, slug-taken,
       already-member, key-registered, add-device-disabled, proof-rejected,
-      passkey-rejected, link-invalid, not-signed-in, api-key-invalid,
+      passkey-rejected, bootstrap-token-invalid, bootstrap-unavailable,
+      link-invalid, not-signed-in, api-key-invalid,
       not-found, last-credential, not-allowed, rate-limited, server-error. A
       wrong code's problem also carries code_attempts_left.
     - Sign-in and registration POSTs do not take Idempotency-Key: each
@@ -93,6 +97,7 @@ security:
 
 tags:
   - name: directory
+  - name: bootstrap
   - name: registration
   - name: sign-in
   - name: credentials
@@ -101,6 +106,85 @@ tags:
   - name: devices
 
 paths:
+  /bootstrap:
+    get:
+      operationId: getBootstrapStatus
+      tags: [bootstrap]
+      summary: Report whether one-time on-prem setup is disabled, required or complete.
+      security:
+        - {}
+      responses:
+        '200':
+          description: Bootstrap state; carries no organization or person data.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/BootstrapStatus'
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /bootstrap/challenges:
+    post:
+      operationId: startBootstrap
+      tags: [bootstrap]
+      summary: Use the installation token to get the first owner's passkey challenge.
+      security:
+        - bootstrapToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/BootstrapStart'
+      responses:
+        '201':
+          description: A single-use WebAuthn challenge, valid 5 minutes.
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/BootstrapChallenge'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
+  /bootstrap/{bootstrap_id}:complete:
+    post:
+      operationId: completeBootstrap
+      tags: [bootstrap]
+      summary: Atomically create the organization, owner, first passkey and session.
+      security:
+        - bootstrapToken: []
+      parameters:
+        - name: bootstrap_id
+          in: path
+          required: true
+          schema:
+            $ref: 'messages.schema.json#/$defs/registration_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'messages.schema.json#/$defs/RegistrationComplete'
+      responses:
+        '201':
+          description: The installation is configured and the owner is signed in.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetSession'
+          content:
+            application/json:
+              schema:
+                $ref: 'messages.schema.json#/$defs/RegistrationResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '5XX': { $ref: '#/components/responses/ServerError' }
+
   /regions:
     servers:
       - url: https://api.privometry.dev/account/v1
@@ -686,6 +770,10 @@ components:
       type: http
       scheme: bearer
       description: An organization API key (pak_...), for operations that list it.
+    bootstrapToken:
+      type: http
+      scheme: bearer
+      description: The deployment's one-time on-prem bootstrap token; never an organization API key.
 
   parameters:
     IdempotencyKey:
