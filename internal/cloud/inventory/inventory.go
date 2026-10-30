@@ -53,7 +53,7 @@ func Snapshot(res *scanner.Result, deviceSeq int64) cloud.InventorySnapshot {
 		add(events.InventoryItem{ItemID: "agent:" + string(p), Kind: events.InventoryItemKindAgent, AgentProduct: p, Name: string(p), Version: a.Version})
 		for _, m := range a.MCPServers {
 			it := events.InventoryItem{ItemID: "mcp:" + string(p) + ":" + string(m.Tier) + ":" + m.Name, Kind: events.InventoryItemKindMCPServer,
-				AgentProduct: p, Name: m.Name, Tier: m.Tier, PathClass: pathClass(m.Tier), Package: PackageName(m.Package), Host: hostOf(m.URL)}
+				AgentProduct: p, Name: m.Name, Tier: m.Tier, PathClass: pathClass(m.Tier), Package: scanner.PackageName(m.Package), Host: hostOf(m.URL)}
 			switch m.Transport {
 			case "stdio":
 				it.MCPTransport = events.InventoryItemMCPTransportStdio
@@ -93,22 +93,6 @@ func Snapshot(res *scanner.Result, deviceSeq int64) cloud.InventorySnapshot {
 		add(it)
 	}
 	return snap
-}
-
-// PackageName drops a version from a package reference: @scope/pkg@1.2.3 is
-// @scope/pkg, mcp-server-fetch==0.6 is mcp-server-fetch.
-func PackageName(p string) string {
-	p = strings.TrimSpace(p)
-	if i := strings.Index(p, "=="); i > 0 {
-		p = p[:i]
-	}
-	if i := strings.LastIndex(p, "@"); i > 0 {
-		p = p[:i]
-	}
-	if len(p) > 256 {
-		p = p[:256]
-	}
-	return p
 }
 
 func hostOf(raw string) string {

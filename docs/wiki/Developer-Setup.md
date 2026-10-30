@@ -48,6 +48,7 @@ Some tests open Unix and TCP loopback sockets or exercise launchd/systemd plans.
 ## Package boundaries
 
 - Code in `internal/` is private to this module.
+- `pkg/edge` is the only public Go package. A connected build uses it to register a connector and its CLI commands, then runs the edge's own `privometry` and `privometryd`. Keep it small: add to it only what a connector needs.
 - `adapter-defs`, `rulepacks`, `detectorpacks`, and `ui/timeline-web` embed release data.
 - `specs/` is the public compatibility boundary and must remain language-neutral.
 - CLI packages should coordinate components; business rules belong under `internal/`.

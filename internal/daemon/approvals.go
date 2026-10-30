@@ -8,16 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-edge/internal/cloud"
-	"github.com/privometry/privometry-edge/internal/cloud/approvals"
 	"github.com/privometry/privometry-edge/internal/cloud/bundles"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
+	"github.com/privometry/privometry-edge/internal/extension"
 	"github.com/privometry/privometry-edge/internal/policy"
 	"github.com/privometry/privometry-edge/internal/policy/intent"
 )
 
-// Remote approvals (PRD CP-21; docs/spikes/remote-approvals.md): a hook
+// Remote approvals (PRD CP-21; docs/spikes/remote-approvals.md), when the
+// connector is an extension.Approver and the bundle turns them on: a hook
 // cannot wait for a person, so an ask that goes remote is denied at once with
 // a message, the approval is requested and awaited in the background, and the
 // next attempt of the same action in the same session is allowed once if it
@@ -43,15 +43,15 @@ type approvalStep struct {
 
 type approvalRequest struct {
 	key     string
-	create  cloud.ApprovalCreate
+	create  extension.ApprovalRequest
 	timeout time.Duration
 }
 
 // routeApproval decides whether this ask goes remote and what to answer now;
 // nil means answer as usual.
 func (d *Daemon) routeApproval(c call, sess *sessionInfo, a intent.Action, dec policy.Decision, native string) *approvalStep {
-	if dec.Verdict != "ask" || len(dec.RuleIDs) == 0 {
-		return nil // only rule asks have something to approve
+	if dec.Verdict != "ask" || len(dec.RuleIDs) == 0 || d.approver == nil {
+		return nil // only rule asks have something to approve, and only a connector can route them
 	}
 	cfg := d.approvalsConfig()
 	if cfg == nil || !cfg.Enabled {
@@ -85,7 +85,7 @@ func (d *Daemon) routeApproval(c call, sess *sessionInfo, a intent.Action, dec p
 		}
 		return &approvalStep{native: "deny", message: "Privometry: an approval was requested in your organization's chat. Retry this step once it is approved.",
 			request: &approvalRequest{key: key, timeout: time.Duration(cfg.TimeoutSeconds) * time.Second,
-				create: cloud.ApprovalCreate{SessionID: sess.ID, AgentProduct: c.product, Message: msg, TimeoutSeconds: cfg.TimeoutSeconds}}}
+				create: extension.ApprovalRequest{SessionID: sess.ID, AgentProduct: c.product, Message: msg, TimeoutSeconds: cfg.TimeoutSeconds}}}
 	case st.status == "approved":
 		delete(d.approvals, key) // one use
 		return &approvalStep{native: "allow", message: "Privometry: approved by " + st.responder, response: events.DecisionUserResponseApproved}
@@ -102,8 +102,8 @@ func (d *Daemon) routeApproval(c call, sess *sessionInfo, a intent.Action, dec p
 // startApproval requests the approval for an answered hook and follows it.
 func (d *Daemon) startApproval(r *approvalRequest, ev *events.Event) {
 	r.create.EventID = ev.EventID
-	r.create.Action = cloud.ApprovalCreateAction{Kind: ev.Action.Kind, ToolName: ev.Action.ToolName, Target: ev.Action.Target, RuleIDs: ev.Decision.RuleIDs,
-		Risk: ev.Action.Risk}
+	r.create.Kind, r.create.ToolName, r.create.Target = ev.Action.Kind, ev.Action.ToolName, ev.Action.Target
+	r.create.RuleIDs, r.create.Risk = ev.Decision.RuleIDs, ev.Action.Risk
 	if ev.Repo != nil {
 		r.create.RepoRemote = ev.Repo.Remote
 	}
@@ -120,19 +120,15 @@ func (d *Daemon) startApproval(r *approvalRequest, ev *events.Event) {
 			}
 			d.mu.Unlock()
 		}
-		client, err := approvals.New(d.cfg.CloudHTTP, d.cfg.Env)
-		var a *cloud.Approval
-		if err == nil {
-			a, err = client.Create(ctx, r.create)
-		}
+		a, err := d.approver.RequestApproval(ctx, r.create)
 		if err != nil {
 			d.cfg.Logger.Warn("approval request failed; asks are answered as without approvals for a minute", "err", err)
 			set(func(st *approval) { st.status, st.until = "failed", d.cfg.Now().Add(time.Minute) })
 			return
 		}
-		set(func(st *approval) { st.id, st.status = a.ApprovalID, "pending" })
-		for a.Status == cloud.ApprovalStatusPending && ctx.Err() == nil {
-			next, err := client.Wait(ctx, a.ApprovalID, 30*time.Second)
+		set(func(st *approval) { st.id, st.status = a.ID, "pending" })
+		for a.Status == extension.ApprovalPending && ctx.Err() == nil {
+			next, err := d.approver.WaitApproval(ctx, a.ID, 30*time.Second)
 			if err != nil {
 				select {
 				case <-ctx.Done():
@@ -147,8 +143,8 @@ func (d *Daemon) startApproval(r *approvalRequest, ev *events.Event) {
 			status = "timeout" // gave up waiting: no answer means deny
 		}
 		responder := "an approver"
-		if a.Responder != nil && a.Responder.DisplayName != "" {
-			responder = a.Responder.DisplayName
+		if a.Responder != "" {
+			responder = a.Responder
 		}
 		set(func(st *approval) { st.status, st.responder, st.until = status, responder, d.cfg.Now().Add(remembered) })
 	}()

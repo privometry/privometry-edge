@@ -22,6 +22,7 @@ import (
 	"github.com/privometry/privometry-edge/internal/cloud/inventory"
 	"github.com/privometry/privometry-edge/internal/cloud/upload"
 	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/extension"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/riskfeed"
@@ -42,12 +43,13 @@ const (
 	firstUploadBackoff = 15 * time.Second
 )
 
-// Local is what the daemon tells the cloud about this machine.
+// Local is what the daemon tells the cloud about this machine (a subset of
+// extension.Host).
 type Local interface {
 	Timeline() *timeline.Store
 	SensorVersion() string
 	AdapterSetVersion() int64
-	Hooks() []cloud.HeartbeatHook
+	Hooks() []extension.HookStatus
 	// Rescan runs the scans a rescan command asks for, in the background.
 	Rescan()
 	// Scan runs a machine scan for the inventory snapshot.
@@ -212,7 +214,7 @@ func (s *Syncer) upload(ctx context.Context, base *http.Client, keys keystore.St
 
 func (s *Syncer) heartbeat(ctx context.Context, base *http.Client, keys keystore.Store, now time.Time) bool {
 	store := s.Local.Timeline()
-	r := heartbeat.Report{SensorVersion: s.Local.SensorVersion(), AdapterSetVersion: s.Local.AdapterSetVersion(), Hooks: s.Local.Hooks(), Acked: s.acked}
+	r := heartbeat.Report{SensorVersion: s.Local.SensorVersion(), AdapterSetVersion: s.Local.AdapterSetVersion(), Hooks: heartbeatHooks(s.Local.Hooks()), Acked: s.acked}
 	r.DeviceSeq, _ = store.LastSeq()
 	cursor, _ := upload.Cursor(store)
 	if b, err := store.BacklogAfter(cursor); err == nil {
@@ -253,6 +255,15 @@ func (s *Syncer) heartbeat(ctx context.Context, base *http.Client, keys keystore
 		}
 	}
 	return changed
+}
+
+// heartbeatHooks is the edge's hook report in the heartbeat's terms.
+func heartbeatHooks(hooks []extension.HookStatus) []cloud.HeartbeatHook {
+	var out []cloud.HeartbeatHook
+	for _, h := range hooks {
+		out = append(out, cloud.HeartbeatHook{AgentProduct: h.Agent, Tier: h.Tier, Status: cloud.HeartbeatHookStatus(h.State)})
+	}
+	return out
 }
 
 // inventory scans the machine and sends the snapshot (PRD CP-07).

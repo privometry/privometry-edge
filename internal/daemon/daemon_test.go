@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -62,6 +63,23 @@ func newDaemonAt(t *testing.T, home string) (*daemon.Daemon, string) {
 	}
 	t.Cleanup(func() { d.Close() })
 	return d, data
+}
+
+type testClock struct {
+	mu  sync.Mutex
+	now time.Time
+}
+
+func (c *testClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.now
+}
+
+func (c *testClock) Advance(d time.Duration) {
+	c.mu.Lock()
+	c.now = c.now.Add(d)
+	c.mu.Unlock()
 }
 
 func fixture(t *testing.T, name string, edit func(map[string]any)) json.RawMessage {

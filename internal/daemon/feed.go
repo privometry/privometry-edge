@@ -7,11 +7,11 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/privometry/privometry-edge/internal/cloud/inventory"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/policy"
 	"github.com/privometry/privometry-edge/internal/policy/intent"
 	"github.com/privometry/privometry-edge/internal/riskfeed"
+	"github.com/privometry/privometry-edge/internal/scanner"
 )
 
 // The risk feed on MCP calls (PRD CP-22; riskfeed/v1 draft.2): the
@@ -40,7 +40,7 @@ func (d *Daemon) feedEntry(product contract.AgentProduct, a intent.Action) *risk
 	if !ok {
 		return nil // the feed knows packages; a server we never scanned has none
 	}
-	if e := held.ByPackage(inventory.PackageName(m.Package)); e != nil {
+	if e := held.ByPackage(scanner.PackageName(m.Package)); e != nil {
 		return e
 	}
 	return held.ByPackage(m.URL)

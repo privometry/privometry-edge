@@ -196,10 +196,12 @@ func (d *Daemon) lifecycle(q Lifecycle) error {
 	default:
 		return fmt.Errorf("unknown lifecycle event %q", q.Event)
 	}
-	d.cloud.UploadSoon()
-	ctx, cancel := context.WithTimeout(d.stop, uploadWait)
-	defer cancel()
-	d.CloudSync(ctx)
+	if d.conn != nil {
+		d.conn.UploadSoon()
+		ctx, cancel := context.WithTimeout(d.stop, uploadWait)
+		defer cancel()
+		d.Sync(ctx)
+	}
 	return nil
 }
 

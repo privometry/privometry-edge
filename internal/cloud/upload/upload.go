@@ -155,16 +155,16 @@ func Prepare(ev events.Event, id *enroll.Identity, hashKey []byte, privacy *bund
 		// Only a fingerprint under this organization's hash key can match the
 		// same secret on other devices (PRD SCAN-15); one made before
 		// enrollment, under the device's own salt, stays here.
-		if key, _ := ev.Ext[FingerprintKeyExt].(string); cf.Fingerprint != "" && (key == "" || key != id.HashKeyID) {
+		if key, _ := ev.Ext[events.FingerprintKeyExt].(string); cf.Fingerprint != "" && (key == "" || key != id.HashKeyID) {
 			c := *cf
 			c.Fingerprint = ""
 			ev.ContentFinding = &c
 		}
 	}
-	if _, ok := ev.Ext[FingerprintKeyExt]; ok {
+	if _, ok := ev.Ext[events.FingerprintKeyExt]; ok {
 		ext := map[string]any{}
 		for k, v := range ev.Ext {
-			if k != FingerprintKeyExt {
+			if k != events.FingerprintKeyExt {
 				ext[k] = v
 			}
 		}
@@ -172,10 +172,6 @@ func Prepare(ev events.Event, id *enroll.Identity, hashKey []byte, privacy *bund
 	}
 	return ev
 }
-
-// FingerprintKeyExt is the local-only ext field naming the key of a content
-// finding's fingerprint: the organization hash key's ID when enrolled.
-const FingerprintKeyExt = "x_privometry_fingerprint_key"
 
 // applyPrivacy applies the organization's upload levels to the fields this
 // sensor stores, and omits the target of events in excluded repos.
