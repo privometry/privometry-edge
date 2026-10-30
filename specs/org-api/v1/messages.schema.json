@@ -1162,7 +1162,7 @@
         "config"
       ],
       "additionalProperties": false,
-      "description": "Connects a tool. jira, linear and slack take an API token or bot token in secret (slack also its signing_secret); teams takes a Workflows webhook URL in secret. A Jira base_url and a Teams URL must be https on public addresses, as webhook URLs must, and are checked again before each call. Secrets are kept encrypted and never returned. github takes the installation of the Privometry GitHub App.",
+      "description": "Connects a tool. jira, linear and slack take an API token or bot token in secret (slack also its signing_secret); teams takes a Workflows webhook URL in secret. A Jira base_url and a Teams URL must be https on public addresses, as webhook URLs must, and are checked again before each call. Secrets are kept encrypted and never returned. github takes the installation of the Privometry GitHub App and, in authorization_code, the code GitHub returns when the person connecting authorizes the app; the installation connects only when GitHub lists it among theirs.",
       "properties": {
         "type": {
           "enum": [
@@ -1191,6 +1191,12 @@
           "minLength": 1,
           "maxLength": 256,
           "description": "Slack only: the Slack app's signing secret, which signs its interactivity requests. Kept encrypted, never returned."
+        },
+        "authorization_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "GitHub only: the OAuth code GitHub adds to its redirect after the person connecting authorizes the Privometry GitHub App. Exchanged once to check that the installation is one they can see, then discarded; never stored or returned."
         }
       },
       "allOf": [
@@ -1241,6 +1247,9 @@
             }
           },
           "then": {
+            "required": [
+              "authorization_code"
+            ],
             "not": {
               "required": [
                 "secret"
@@ -1250,6 +1259,13 @@
               "config": {
                 "$ref": "#/$defs/GitHubConfig"
               }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "authorization_code"
+              ]
             }
           }
         },
