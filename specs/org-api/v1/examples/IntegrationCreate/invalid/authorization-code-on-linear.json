@@ -1,0 +1,9 @@
+{
+  "type": "linear",
+  "name": "Platform team",
+  "secret": "lin_api_key_value",
+  "authorization_code": "7f3c9a1e2b4d6f8a0c1e",
+  "config": {
+    "team_id": "a1b2c3d4"
+  }
+}

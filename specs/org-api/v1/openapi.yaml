@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Privometry organization API
-  version: 1.0.0-draft.9
+  version: 1.0.0-draft.10
   summary: What an organization manages from the console or with an API key.
   description: |
     Served by the organization's home region. The console calls it with the
@@ -762,7 +762,13 @@ paths:
         resolves the finding (two-way, through the webhook this returns).
         GitHub: the app's installation checks pull requests that change agent
         configuration, MCP servers, instruction files or .privometry/policy.yaml,
-        and scans the installation's repositories.
+        and scans the installation's repositories. The person connecting it
+        authorizes the app on GitHub first, and authorization_code carries the
+        code GitHub returns: the installation connects only when GitHub lists
+        it among the installations they can see (403
+        installation-not-authorized otherwise; 400 authorization-code-refused
+        when GitHub refuses the code, which works once and expires after ten
+        minutes). An installation ID alone connects nothing.
       parameters:
         - $ref: '#/components/parameters/OrgID'
         - $ref: '#/components/parameters/IdempotencyKey'

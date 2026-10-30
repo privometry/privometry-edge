@@ -1,6 +1,14 @@
-# privometry-edge
+# Privometry Edge
 
-Privometry is a local-first security layer for AI coding agents. It discovers agent installations and configuration, evaluates tool calls against policy, scans content for secrets and prompt-injection signals, and records a redacted local timeline. Versioned contracts define the planned signed synchronization boundary with the Privometry platform.
+**Local-first security guardrails for AI coding agents.**
+Privometry Edge helps developers discover agent configurations, evaluate
+supported tool events against policies, scan content for secrets and
+prompt-injection signals, and investigate a redacted local activity timeline.
+
+- [Privometry website](https://www.privometry.com/)
+- [Developer documentation](https://github.com/privometry/privometry-edge/wiki)
+- [Agent integrations and current behavior](https://github.com/privometry/privometry-edge/wiki/Agent-Integration)
+- [Security and privacy](https://github.com/privometry/privometry-edge/wiki/Security-and-Privacy)
 
 Local protection does not depend on a cloud connection or a valid commercial license.
 
@@ -9,10 +17,10 @@ Local protection does not depend on a cloud connection or a valid commercial lic
 - `privometry`: operator CLI for scanning, guard installation, policy testing, timelines, diagnostics, and updates.
 - `privometryd`: per-user daemon that evaluates hook events and stores the local timeline.
 - `privometry-hook`: latency-sensitive hook client invoked by supported coding agents.
-- `privometry-mcp-shim`: reserved entry point for the planned local stdio MCP policy boundary; it is currently a placeholder.
+- `privometry-mcp-shim`: local stdio MCP wrapper that checks each tool call with the daemon before the server sees it and scans tool descriptions; `privometry mcp wrap` installs it into user-level MCP configs. See [MCP shim](docs/mcp-shim.md).
 - Versioned JSON Schema, OpenAPI, Cedar, policy, rule-pack, detector-pack, and signed-artifact contracts under `specs/`.
 
-Supported adapter definitions currently ship for Claude Code, Codex, Cursor, Gemini CLI, Copilot CLI and Antigravity. The data-driven adapter format allows additional agents to be added without changing the core policy engine.
+Supported adapter definitions currently ship for Claude Code, Codex, Cursor, Gemini CLI, Copilot CLI and Antigravity. Hook coverage and fail-open/fail-closed behavior differ per agent; see [Agent integration](docs/wiki/Agent-Integration.md), and the website's [Claude Code security](https://www.privometry.com/agents/claude-code/) and [MCP security](https://www.privometry.com/product/mcp-security/) overviews. The data-driven adapter format allows additional agents to be added without changing the core policy engine.
 
 ## Build from source
 

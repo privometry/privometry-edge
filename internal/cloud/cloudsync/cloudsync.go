@@ -68,6 +68,7 @@ type Syncer struct {
 	nextUpload    time.Time
 	uploadBackoff time.Duration
 	refused       bool
+	refusedCert   string // the certificate the cloud refused; a new enrollment replaces it
 	nextBeat      time.Time
 	nextInventory time.Time
 	nextFeed      time.Time
@@ -104,6 +105,10 @@ func (s *Syncer) Tick(ctx context.Context, now time.Time) bool {
 	if id == nil {
 		return false
 	}
+	if s.refused && id.Certificate != s.refusedCert {
+		s.refused = false // enrolled again since the refusal
+		s.nextUpload = time.Time{}
+	}
 	keys, err := keystore.Open(s.Env, id.Keystore)
 	if err != nil {
 		s.log().Warn("keystore unavailable", "err", err)
@@ -138,7 +143,7 @@ func (s *Syncer) Tick(ctx context.Context, now time.Time) bool {
 		if !now.Before(s.nextInventory) {
 			s.inventory(ctx, base, keys, now)
 		}
-		s.upload(ctx, base, keys, now)
+		s.upload(ctx, base, keys, id.Certificate, now)
 		if !now.Before(s.nextBeat) {
 			changed = s.heartbeat(ctx, base, keys, now) || changed
 		}
@@ -163,7 +168,7 @@ func (s *Syncer) syncBundle(ctx context.Context, base *http.Client, keys keystor
 	return res.Changed
 }
 
-func (s *Syncer) upload(ctx context.Context, base *http.Client, keys keystore.Store, now time.Time) {
+func (s *Syncer) upload(ctx context.Context, base *http.Client, keys keystore.Store, cert string, now time.Time) {
 	if s.refused || now.Before(s.nextUpload) {
 		return
 	}
@@ -180,6 +185,7 @@ func (s *Syncer) upload(ctx context.Context, base *http.Client, keys keystore.St
 	case errors.Is(err, upload.ErrRefused):
 		s.log().Warn("uploads stopped until this device enrolls or renews again", "err", err)
 		s.refused = true
+		s.refusedCert = cert
 	case err != nil:
 		if s.uploadBackoff == 0 {
 			s.uploadBackoff = firstUploadBackoff

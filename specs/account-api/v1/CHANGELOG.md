@@ -1,5 +1,10 @@
 # account-api/v1
 
+## 1.0.0-draft.5 (2026-10-28)
+
+- One-time installation bootstrap for self-hosted (on-prem) control planes: `GET /bootstrap` reports `disabled`, `required` or `complete` and nothing else; `POST /bootstrap/challenges` takes the organization and the first owner (`BootstrapStart`) and returns a WebAuthn creation challenge (`BootstrapChallenge`); `POST /bootstrap/{bootstrap_id}:complete` takes the browser-created passkey (`RegistrationComplete`) and creates the organization, the owner, the `owner` membership, the passkey and a console session in one transaction. Both POSTs are authorized with the deployment's bootstrap token (security scheme `bootstrapToken`), which replaces email verification for this one organization only, works once, and is never used in SaaS. Like registration, they take no Idempotency-Key.
+- Problem types `bootstrap-token-invalid` (401) and `bootstrap-unavailable` (409: bootstrap is disabled or already done). While bootstrap is enabled, `create_organization` registrations are refused.
+
 ## 1.0.0-draft.4 (2026-10-27)
 
 - Enrollment tokens (PRD CP-04) for devices no person registers, such as an MDM rollout: `POST`, `GET /orgs/{org_id}/enrollment-tokens` and `DELETE /orgs/{org_id}/enrollment-tokens/{enrollment_token_id}`, for owners, admins and organization-wide admin API keys. A token has a number of uses (1 to 10,000), expires within 1 to 720 hours, and may put its devices in a workspace. The `pet_` secret is returned once; only its SHA-256 is stored.

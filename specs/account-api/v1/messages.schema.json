@@ -341,6 +341,48 @@
       }
     },
 
+    "BootstrapStatus": {
+      "type": "object",
+      "required": ["state"],
+      "description": "Whether this deployment's one-time on-prem setup is disabled, still required, or permanently complete.",
+      "properties": {
+        "state": { "enum": ["disabled", "required", "complete"] }
+      }
+    },
+    "BootstrapStart": {
+      "type": "object",
+      "required": ["organization", "owner"],
+      "description": "The single organization and first owner of an on-prem installation. The bootstrap token authorizes this instead of an email code.",
+      "properties": {
+        "organization": {
+          "type": "object",
+          "required": ["name", "slug"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+            "slug": { "$ref": "#/$defs/org_slug" }
+          }
+        },
+        "owner": {
+          "type": "object",
+          "required": ["email", "display_name"],
+          "properties": {
+            "email": { "$ref": "#/$defs/email" },
+            "display_name": { "$ref": "#/$defs/display_name" }
+          }
+        }
+      }
+    },
+    "BootstrapChallenge": {
+      "type": "object",
+      "required": ["bootstrap_id", "expires_at", "webauthn"],
+      "description": "A short-lived WebAuthn challenge for the installation owner's first passkey.",
+      "properties": {
+        "bootstrap_id": { "$ref": "#/$defs/registration_id" },
+        "expires_at": { "$ref": "../../common/v1/common.schema.json#/$defs/timestamp" },
+        "webauthn": { "$ref": "#/$defs/webauthn_creation_options" }
+      }
+    },
+
     "RegistrationStart": {
       "type": "object",
       "required": ["email", "purpose", "client"],

@@ -1,5 +1,10 @@
 # org-api/v1
 
+## 1.0.0-draft.10 (2026-10-30)
+
+- Integrations: connecting the GitHub App needs `authorization_code`, the OAuth code GitHub returns once the person connecting authorizes the app (the app requests it during installation). The installation connects only when GitHub lists it among the installations that person can see, so an installation ID, which is a small public number, no longer connects another organization's repositories. The code is used once and never stored or returned; other tools refuse it.
+- Problem types: `installation-not-authorized` (403), `authorization-code-refused` (400).
+
 ## 1.0.0-draft.9 (2026-10-28)
 
 - Webhook secret rotation: `POST /orgs/{org_id}/webhooks/{webhook_id}:rotate-secret` returns a new `whsec_` secret once. The previous secret keeps signing deliveries for `previous_secret_hours` (default 24, at most 168, 0 for none), so `webhook-signature` then carries two signatures, the new secret's first; `Webhook.previous_secret_expires_at` says until when.
