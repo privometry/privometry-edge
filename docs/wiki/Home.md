@@ -12,6 +12,7 @@ This wiki is the integration and maintenance guide for privometry-edge. It cover
 | Automate or operate the CLI | [CLI Reference](CLI-Reference.md) |
 | Add or update an AI coding agent | [Agent Integration](Agent-Integration.md) |
 | Author policies and rule packs | [Policy Integration](Policy-Integration.md) |
+| See what the built-in rules block or ask about | [Built-in Rules](Built-in-Rules.md) |
 | Change schemas or generated types | [Contracts and Code Generation](Contracts-and-Code-Generation.md) |
 | Connect the edge to the Java platform | [Platform Integration](Platform-Integration.md) |
 | Build, test, and publish releases | [Testing and Release](Testing-and-Release.md) |

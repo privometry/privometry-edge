@@ -66,7 +66,7 @@ Shipped packs include:
 - `privometry/mcp-allowlist`
 - `privometry/agent-instructions`
 
-Pack IDs and rule IDs are public compatibility identifiers. Avoid renaming them after release.
+Every shipped rule is listed in [Built-in Rules](Built-in-Rules.md). Pack IDs and rule IDs are public compatibility identifiers. Avoid renaming them after release.
 
 ## Content allowlists
 
