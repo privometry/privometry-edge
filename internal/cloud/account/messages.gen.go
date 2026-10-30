@@ -395,6 +395,68 @@ type OrgLocation struct {
 	EdgeBaseURL    string `json:"edge_base_url"`
 }
 
+// BootstrapStatus is generated from account-api/v1/messages.schema.json#/$defs/BootstrapStatus.
+//
+// Whether this deployment's one-time on-prem setup is disabled, still required,
+// or permanently complete.
+type BootstrapStatus struct {
+	State BootstrapStatusState `json:"state"`
+}
+
+// BootstrapStatusState is generated from account-api/v1/messages.schema.json#/$defs/BootstrapStatus/properties/state.
+type BootstrapStatusState string
+
+// Values of BootstrapStatusState.
+const (
+	BootstrapStatusStateDisabled BootstrapStatusState = "disabled"
+	BootstrapStatusStateRequired BootstrapStatusState = "required"
+	BootstrapStatusStateComplete BootstrapStatusState = "complete"
+)
+
+// BootstrapStart is generated from account-api/v1/messages.schema.json#/$defs/BootstrapStart.
+//
+// The single organization and first owner of an on-prem installation. The
+// bootstrap token authorizes this instead of an email code.
+type BootstrapStart struct {
+	Organization BootstrapStartOrganization `json:"organization"`
+	Owner        BootstrapStartOwner        `json:"owner"`
+}
+
+// BootstrapStartOrganization is generated from account-api/v1/messages.schema.json#/$defs/BootstrapStart/properties/organization.
+type BootstrapStartOrganization struct {
+	Name string `json:"name"`
+
+	// 3 to 40 lowercase letters, digits and inner hyphens. Slugs appear in sign-in
+	// URLs and are public through GET /directory/{slug}.
+	Slug string `json:"slug"`
+}
+
+// BootstrapStartOwner is generated from account-api/v1/messages.schema.json#/$defs/BootstrapStart/properties/owner.
+type BootstrapStartOwner struct {
+	// Checked loosely by pattern, not format: email, which validators implement
+	// differently (the Java one rejects top-level domains missing from its list).
+	// The emailed code is what proves the address.
+	Email       string `json:"email"`
+	DisplayName string `json:"display_name"`
+}
+
+// BootstrapChallenge is generated from account-api/v1/messages.schema.json#/$defs/BootstrapChallenge.
+//
+// A short-lived WebAuthn challenge for the installation owner's first passkey.
+type BootstrapChallenge struct {
+	BootstrapID string `json:"bootstrap_id"`
+
+	// RFC 3339 in UTC with exactly three fractional digits, for example
+	// 2026-10-23T09:14:02.481Z.
+	ExpiresAt contract.Time `json:"expires_at"`
+
+	// PublicKeyCredentialCreationOptionsJSON (WebAuthn Level 3) for
+	// navigator.credentials.create. The server always requires user verification
+	// (the PIN or biometrics) and a discoverable credential, and asks for no
+	// attestation.
+	Webauthn WebauthnCreationOptions `json:"webauthn"`
+}
+
 // RegistrationStart is generated from account-api/v1/messages.schema.json#/$defs/RegistrationStart.
 //
 // Starts a registration and emails a six-digit code.

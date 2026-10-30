@@ -92,6 +92,9 @@ var accountMessages = map[string]func() any{
 	"EnrollmentTokenCreated": func() any { return new(account.EnrollmentTokenCreated) },
 	"EnrollmentTokenList":    func() any { return new(account.EnrollmentTokenList) },
 	"DeviceList":             func() any { return new(account.DeviceList) },
+	"BootstrapStatus":        func() any { return new(account.BootstrapStatus) },
+	"BootstrapStart":         func() any { return new(account.BootstrapStart) },
+	"BootstrapChallenge":     func() any { return new(account.BootstrapChallenge) },
 }
 
 // orgMessages maps each organization API example folder to its generated type.
