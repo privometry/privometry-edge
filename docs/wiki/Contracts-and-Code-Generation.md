@@ -13,10 +13,9 @@ The `specs/` tree is the language-neutral compatibility boundary between the Go 
 | `rulepack/v1` | Rule-pack metadata, rules, and test cases |
 | `detectorpack/v1` | Content detector packs and detector definitions |
 | `riskfeed/v1` | MCP and skill reputation feed |
-| `entitlements/v1` | Signed entitlements and offline license files |
 | `release/v1` | Signed self-update manifests |
-| `edge-api/v1` | OpenAPI and message schemas for edge/platform communication |
-| `account-api/v1` | OpenAPI and message schemas for registration (a CLI sign-in key or a passkey, PIN on the device) and console sign-in |
+
+The control-plane contracts (edge, account and organization APIs, and entitlements) are private and live in privometry-connect.
 
 ## Source-of-truth rules
 

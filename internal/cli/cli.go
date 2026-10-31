@@ -1,6 +1,7 @@
 // Package cli is the privometry command line: scan, guard, daemon, timeline,
 // policy, doctor, and the commands a connector adds (pkg/edge). cmd/privometry
-// runs it, and so does a connected build.
+// runs it, and so does a connected build; without one, login and the other
+// connected commands explain how to get it.
 package cli
 
 import (
@@ -53,6 +54,9 @@ func usageText() string {
 	for _, c := range extension.Commands() {
 		fmt.Fprintf(&added, "  %-12s %s\n", c.Name, c.Summary)
 	}
+	if isConnectedOnly("login") {
+		fmt.Fprintf(&added, "  %-12s %s\n", "login", "Connect this machine to an organization (needs the connected build)")
+	}
 	return fmt.Sprintf(usage, added.String())
 }
 
@@ -101,6 +105,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 		if c.Name == args[0] {
 			return c.Run(args[1:], stdout, stderr)
 		}
+	}
+	if isConnectedOnly(args[0]) {
+		return connectedStub(args[0], stderr)
 	}
 	fmt.Fprintf(stderr, "privometry: unknown command %q\n\n%s", args[0], usageText())
 	return 2

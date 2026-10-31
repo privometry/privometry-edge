@@ -1,5 +1,0 @@
-{
-  "provider": "paddle",
-  "checkout_url": "http://pay.example/x",
-  "reference": "txn_01"
-}

@@ -1,9 +1,0 @@
-{
-  "type": "linear",
-  "name": "Platform team",
-  "secret": "lin_api_key_value",
-  "config": {
-    "team_id": "a1b2c3d4",
-    "min_severity": "medium"
-  }
-}

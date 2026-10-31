@@ -233,17 +233,6 @@
       "reason": "detector pack set signed by the release key"
     },
     {
-      "name": "entitlements-valid",
-      "check": "artifact",
-      "envelope": "envelopes/entitlements-valid.json",
-      "keyset": "keyset-v2.json",
-      "role": "license",
-      "payload_type": "application/vnd.privometry.entitlements+json",
-      "verify_at": "2026-10-23T12:00:00.000Z",
-      "expect": "valid",
-      "reason": "signed by the license key"
-    },
-    {
       "name": "keyset-rollback",
       "check": "keyset_update",
       "envelope": "envelopes/keyset-rollback.json",
@@ -287,17 +276,6 @@
       "verify_at": "2026-10-23T12:00:00.000Z",
       "expect": "invalid",
       "reason": "root-b is not trusted until v2 is applied"
-    },
-    {
-      "name": "license-valid",
-      "check": "artifact",
-      "envelope": "envelopes/license-valid.json",
-      "keyset": "keyset-v2.json",
-      "role": "license",
-      "payload_type": "application/vnd.privometry.license+json",
-      "verify_at": "2026-10-23T12:00:00.000Z",
-      "expect": "valid",
-      "reason": "license file signed by the license key"
     },
     {
       "name": "release-signed-by-policy-key",

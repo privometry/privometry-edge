@@ -7,7 +7,7 @@
 - [Policy Integration](Policy-Integration.md)
 - [Built-in Rules](Built-in-Rules.md)
 - [Contracts and Code Generation](Contracts-and-Code-Generation.md)
-- [Platform Integration](Platform-Integration.md)
+- [Connecting to Privometry](Connecting-to-Privometry.md)
 - [Testing and Release](Testing-and-Release.md)
 - [Operations and Troubleshooting](Operations-and-Troubleshooting.md)
 - [Security and Privacy](Security-and-Privacy.md)

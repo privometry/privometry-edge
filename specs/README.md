@@ -10,13 +10,12 @@ Language-neutral contracts shared by the Go edge (this repo) and the Java platfo
 | `policy/v1` | `privometry.policy/v1`, `privometry.bundle/v1`, `privometry.cedarschema` | Draft |
 | `rulepack/v1` | `privometry.rulepack/v1`, `privometry.rules/v1`, `privometry.ruletest/v1` | Draft |
 | `riskfeed/v1` | `privometry.riskfeed/v1` | Draft |
-| `entitlements/v1` | `privometry.entitlements/v1`, `privometry.license/v1`, feature registry | Draft |
 | `release/v1` | `privometry.release/v1` (signed self-update manifest) | Draft |
 | `detectorpack/v1` | `privometry.detectorpack/v1`, `privometry.detectors/v1` (content detectors), `privometry.detectorpack_set/v1` (signed set) | Draft |
 | `communitypack/v1` | `privometry.communitypack/v1` (a rule or detector pack signed by its publisher) | Draft |
-| `edge-api/v1` | `/edge/v1` (OpenAPI 3.1) and message schemas | Draft |
-| `account-api/v1` | `/account/v1` (OpenAPI 3.1) and message schemas: registration with a CLI key or passkey, console sign-in, invitations, members, API keys | Draft |
 | `conformance/` | policy verdicts, signatures, redaction | Draft |
+
+The control-plane contracts (`edge-api/v1`, `account-api/v1`, `org-api/v1` and `entitlements/v1`) are private and live in privometry-connect, which builds the connected sensor. Their schemas `$ref` the ones here; `specs.NewSet` compiles both together. A bundle carries the organization's entitlements as an opaque DSSE envelope signed by the license key, so the edge needs only `common/v1` to check its shape.
 
 Go code imports this folder as `github.com/privometry/privometry-edge/specs`: the schemas and `privometry.cedarschema` are embedded, and `specs.Validate` checks a JSON or YAML file against one.
 
@@ -30,14 +29,11 @@ Go code imports this folder as `github.com/privometry/privometry-edge/specs`: th
 | `event-schema/v1` | `internal/events` | `event.gen.go` |
 | `adapter/v1` (definition, set) | `internal/adapters/registry` | `adapter.gen.go` |
 | `policy/v1/bundle.schema.json` | `internal/bundle` | `bundle.gen.go` |
-| `entitlements/v1` (entitlements, license, feature registry) | `internal/cloud/entitlements` | `entitlements.gen.go` |
 | `riskfeed/v1` | `internal/riskfeed` | `riskfeed.gen.go` |
 | `rulepack/v1` (manifest, tests) | `internal/policy/rulepack` | `rulepack.gen.go` |
 | `release/v1` | `internal/update` | `release.gen.go` |
 | `detectorpack/v1` (manifest, detectors, set) | `internal/content` | `detectorpack.gen.go` |
 | `communitypack/v1` | `internal/community` | `communitypack.gen.go` |
-| `edge-api/v1/messages.schema.json` | `internal/cloud` | `messages.gen.go` |
-| `account-api/v1/messages.schema.json` | `internal/cloud/account` | `messages.gen.go` |
 
 Policy files and rule files are the exception: `internal/policy/compiler` keeps hand-written types, because conditions accept a string or a list, and a test fails if those types and `policy.schema.json` drift apart.
 

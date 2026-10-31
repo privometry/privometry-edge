@@ -58,7 +58,7 @@ The developer wiki starts at [`docs/wiki/Home.md`](docs/wiki/Home.md). Useful en
 - [Agent integration](docs/wiki/Agent-Integration.md)
 - [Policy integration](docs/wiki/Policy-Integration.md)
 - [Contracts and code generation](docs/wiki/Contracts-and-Code-Generation.md)
-- [Platform and event integration](docs/wiki/Platform-Integration.md)
+- [Connecting to Privometry](docs/wiki/Connecting-to-Privometry.md)
 - [Operations and troubleshooting](docs/wiki/Operations-and-Troubleshooting.md)
 
 ## Contributing and security

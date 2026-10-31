@@ -1,8 +1,0 @@
-{
-  "purpose": "register",
-  "audience": "https://in.api.privometry.dev/account/v1",
-  "challenge": "nj8-SSL2QlG-lz0zhGvqSxXTID3Ul86wV-ngxXfNKgo",
-  "registration_id": "reg_01JBA7Q3X5Z8C1E4G6J9M2P5R8",
-  "public_key_sha256": "sha256:8a92a111a417d840c5282952e0dd89d84505896cd1e1ceb05c3a60276cc35800",
-  "issued_at": "2026-10-27T10:16:04.118Z"
-}

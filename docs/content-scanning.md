@@ -169,7 +169,7 @@ privometry memory restore ~/.claude/CLAUDE.md --version 12
 
 ## Credentials across devices (SCAN-15)
 
-On an enrolled device the content engine keys credential fingerprints with the organization's hash key from enrollment, picked up within 10 seconds of `privometry login` or `enroll` without a restart. The same secret then has the same fingerprint on every device of the organization. Path hashes stay on the device's own salt. Fingerprints made before enrollment, under the device's salt, are marked as such and dropped at upload. The platform groups uploaded fingerprints into credentials with the devices and people that found them and a rotation status (org-api/v1 `credentials`; privometry-platform's Findings page).
+On an enrolled device the content engine keys credential fingerprints with the organization's hash key from enrollment, picked up within 10 seconds of the connected build's `privometry login` or `enroll` without a restart. The same secret then has the same fingerprint on every device of the organization. Path hashes stay on the device's own salt. Fingerprints made before enrollment, under the device's salt, are marked as such and dropped at upload. The platform groups uploaded fingerprints into credentials with the devices and people that found them and a rotation status (org-api/v1 `credentials`; privometry-platform's Findings page).
 
 ## privometry scan
 

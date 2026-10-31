@@ -129,7 +129,10 @@ func main() {
 	write("specs/communitypack/v1/examples/valid/example-helm-guard.json", rulesPack)
 	write("specs/communitypack/v1/examples/valid/example-service-tokens.json", detectorsPack)
 
-	entitlements := read("specs/entitlements/v1/examples/entitlements/valid/team-active.json")
+	// A bundle carries the organization's entitlements, signed with the license
+	// key. Their schema is private (privometry-connect); the edge only carries
+	// the envelope, so this payload is a fixed sample.
+	entitlements := read("scripts/gen-conformance/testdata/entitlements.json")
 	entEnv := signing.Sign(typeEntitlements, entitlements, license.id, license.priv)
 	bundle := buildBundle(entEnv)
 	write("specs/policy/v1/examples/bundle/valid/acme.json", bundle)
@@ -153,9 +156,6 @@ func main() {
 
 	good := signing.Sign(typeBundle, bundle, policy.id, policy.priv)
 	artifact("bundle-valid", "policy", typeBundle, "valid", "signed by the regional policy key", good, "")
-	artifact("entitlements-valid", "license", typeEntitlements, "valid", "signed by the license key", entEnv, "")
-	artifact("license-valid", "license", typeLicense, "valid", "license file signed by the license key",
-		signing.Sign(typeLicense, read("specs/entitlements/v1/examples/license/valid/self-hosted.json"), license.id, license.priv), "")
 	artifact("riskfeed-valid", "feed", typeRiskfeed, "valid", "signed by the feed key",
 		signing.Sign(typeRiskfeed, read("specs/riskfeed/v1/examples/valid/snapshot-community.json"), feed.id, feed.priv), "")
 	artifact("adapters-valid", "release", typeAdapters, "valid", "signed by the release key",
