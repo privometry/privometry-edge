@@ -1,0 +1,30 @@
+# The names pkg/edge's subpackages re-export for connected builds
+# (privometry-connect). Each line: an internal package, the facade package
+# under pkg/edge, and the names it exposes; Name:Other exposes Name as Other.
+# Add a name here when a connector needs it, then run
+# go run ./scripts/gen-facade (CI runs it with -check).
+
+internal/contract  contract  ActionKind ActionKindShellExec AgentProduct Arch ArchAmd64 ArchArm64 ArchOther At CatalogStatus ConfigTier ConfigTierManaged ConfigTierProject ConfigTierUser Envelope NewID OS PathClass PathClassHome PathClassRepo PathClassSystem PrivacyLevel PrivacyLevelHashed PrivacyLevelOmitted PrivacyLevelRedacted Risk RuleCategory Time Verdict
+internal/platform  platform  CurrentEnv Env
+internal/keystore  keystore  ErrNotFound KindDPAPI KindFile KindMacOS KindSecretService Open Store
+internal/bundle    bundle    Bundle BundlePrivacy BundleRuleModeMonitor CreatedAt ErrExpired ErrNoKeySet ErrNotEnrolled ErrOtherOrg File MaxSize Raw Store Trusted Verify
+internal/signing   signing   KeyID KeySet PAE PayloadTypeKeySet Sign Verify Envelope
+internal/keyset    keyset    File Load Pin Trusted
+internal/events    events    Action ContentFinding Device Event EventTypeContentFinding FingerprintKeyExt InventoryItem InventoryItemKindAgent InventoryItemKindHook InventoryItemKindMCPServer InventoryItemKindPlugin InventoryItemKindPostureIssue InventoryItemKindSkill InventoryItemMCPTransportHTTP InventoryItemMCPTransportStdio InventoryItemPosture Repo User
+internal/timeline  timeline  OpenReadOnly Query Row Store
+internal/scanner   scanner   PackageName Result
+internal/scanner/discover  scanner/discover  Agent Hook MCPServer Plugin Skill
+internal/scanner/posture   scanner/posture   Finding
+internal/riskfeed  riskfeed  Applies Apply Document ErrRollback Held Load Save Verify
+internal/termio    termio    HostName OpenBrowser Prompter TTY
+internal/redact    redact    Hash
+internal/buildinfo buildinfo Version
+
+# Test support: a daemon with a connector, driven like the hook client.
+internal/daemon               edgetest  Config DBFile Daemon New
+internal/ipc                  edgetest  HookRequest Request Response Version:IPCVersion
+internal/ipc/ipctest          edgetest  TempRoot
+internal/platform/platformtest edgetest Private UnixPaths
+internal/policy               edgetest  BuiltinPacks
+internal/adapters/registry    edgetest  Load:LoadAdapters Registry
+internal/policy/rulepack      edgetest  Pack:RulePack

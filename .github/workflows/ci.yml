@@ -36,6 +36,8 @@ jobs:
         if: runner.os == 'Windows'
       - name: Generated Go types are up to date
         run: go run ./scripts/gen-types -check
+      - name: Generated pkg/edge facade is up to date
+        run: go run ./scripts/gen-facade -check
       - name: Generated conformance vectors are up to date
         run: go run ./scripts/gen-conformance && git diff --exit-code -- specs
 

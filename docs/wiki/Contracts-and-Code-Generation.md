@@ -47,6 +47,17 @@ make check-generated
 
 Never hand-edit generated types. Add generator support when a new schema construct is required.
 
+## The `pkg/edge` facade
+
+Go doesn't let another module import `internal/` packages, so `pkg/edge` is the only public API for a connected build. Its subpackages, such as `pkg/edge/contract` and `pkg/edge/signing`, re-export the names the connector uses. `scripts/gen-facade` writes them from `pkg/edge/facade.txt`, one line per internal package:
+
+```text
+internal/signing signing Envelope Sign Verify
+internal/ipc edgetest Request Version:IPCVersion
+```
+
+A `Name:Other` entry exports `Name` as `Other`. Add a name to the list and run `make generate`, rather than editing a `facade.gen.go` file. The generator fails when an exposed signature uses a type the facade doesn't export. Everything in `pkg/edge` is public API, so add only what the connector needs.
+
 ## Signed conformance vectors
 
 `scripts/gen-conformance` deterministically creates DSSE envelopes and verification cases under `specs/conformance/signatures/`. Vectors cover valid signatures, wrong roles, unknown keys, expired/not-yet-valid keys, tampered payloads, payload-type confusion, rotations, and rollback attempts.
