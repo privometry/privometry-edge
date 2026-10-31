@@ -10,9 +10,11 @@ import (
 	"time"
 
 	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/cloud/cloudtest"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
-	"github.com/privometry/privometry-edge/internal/cloud/keyset"
+	"github.com/privometry/privometry-edge/internal/keyset"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
 )
@@ -96,7 +98,7 @@ func TestSyncRefusesBadBundles(t *testing.T) {
 	if _, err := bundles.Sync(ctx, edge.Client(), env, keys, now); err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(env.Getenv("PRIVOMETRY_HOME"), bundles.File)
+	path := filepath.Join(env.Getenv("PRIVOMETRY_HOME"), bundle.File)
 	for _, tc := range []struct {
 		name string
 		raw  []byte
@@ -135,12 +137,12 @@ func TestSyncNeedsEnrollmentAndAKeySet(t *testing.T) {
 		return ""
 	}}
 	keys, _ := keystore.Open(env, "file")
-	if _, err := bundles.Sync(context.Background(), nil, env, keys, time.Now()); !errors.Is(err, bundles.ErrNotEnrolled) {
+	if _, err := bundles.Sync(context.Background(), nil, env, keys, time.Now()); !errors.Is(err, bundle.ErrNotEnrolled) {
 		t.Fatalf("not enrolled: %v", err)
 	}
 	edge, env, keys := enrolled(t)
 	os.Remove(filepath.Join(env.Getenv("PRIVOMETRY_HOME"), keyset.File))
-	if _, err := bundles.Sync(context.Background(), edge.Client(), env, keys, time.Now()); !errors.Is(err, bundles.ErrNoKeySet) {
+	if _, err := bundles.Sync(context.Background(), edge.Client(), env, keys, time.Now()); !errors.Is(err, bundle.ErrNoKeySet) {
 		t.Fatalf("no key set: %v", err)
 	}
 }

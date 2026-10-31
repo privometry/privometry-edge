@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
@@ -39,13 +39,13 @@ func TestPrepareForTheCloud(t *testing.T) {
 		t.Error("the stored event is not changed")
 	}
 
-	privacy := &bundles.BundlePrivacy{UploadLevels: map[string]contract.PrivacyLevel{"action.target": contract.PrivacyLevelHashed,
+	privacy := &bundle.BundlePrivacy{UploadLevels: map[string]contract.PrivacyLevel{"action.target": contract.PrivacyLevelHashed,
 		"repo.remote": contract.PrivacyLevelOmitted}}
 	p := Prepare(sample(), id, key, privacy)
 	if p.Action.Target != redact.Hash(key, "git push origin main") || p.Repo.Remote != "" || p.Redaction["repo.remote"] != contract.PrivacyLevelOmitted {
 		t.Fatalf("upload levels: %+v %+v %v", p.Action, p.Repo, p.Redaction)
 	}
-	excluded := Prepare(sample(), id, key, &bundles.BundlePrivacy{Exclusions: []string{"github.com/acme/*"}})
+	excluded := Prepare(sample(), id, key, &bundle.BundlePrivacy{Exclusions: []string{"github.com/acme/*"}})
 	if excluded.Action.Target != "" || excluded.Redaction["action.target"] != contract.PrivacyLevelOmitted {
 		t.Fatalf("excluded repo: %+v", excluded.Action)
 	}

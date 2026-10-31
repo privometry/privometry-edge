@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/cloud"
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
@@ -130,7 +130,7 @@ func Send(ctx context.Context, base *http.Client, env platform.Env, keys keystor
 		return nil, err
 	}
 	if id == nil {
-		return nil, bundles.ErrNotEnrolled
+		return nil, bundle.ErrNotEnrolled
 	}
 	body, err := json.Marshal(snap)
 	if err != nil {

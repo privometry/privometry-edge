@@ -33,8 +33,8 @@ import (
 
 	"github.com/privometry/privometry-edge/internal/buildinfo"
 	"github.com/privometry/privometry-edge/internal/cloud"
-	"github.com/privometry/privometry-edge/internal/cloud/keyset"
 	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/keyset"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
 )

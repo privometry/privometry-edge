@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/privometry/privometry-edge/internal/account"
 	cloudaccount "github.com/privometry/privometry-edge/internal/cloud/account"
+	"github.com/privometry/privometry-edge/internal/cloud/accountclient"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
@@ -173,7 +173,7 @@ func (f *fakeCloud) registration(w http.ResponseWriter, r *http.Request) {
 			problem(w, 403, "proof-rejected", "bad key")
 			return
 		}
-		thumb := account.Thumbprint(spki)
+		thumb := accountclient.Thumbprint(spki)
 		p := f.verifyProof(c.Proof, pub, thumb)
 		if p == nil || p.Purpose != "register" || p.Challenge != reg.challenge || p.RegistrationID != id || p.PublicKeySHA256 != thumb ||
 			p.Audience != f.api() || reg.done {
@@ -195,7 +195,7 @@ func (f *fakeCloud) registration(w http.ResponseWriter, r *http.Request) {
 }
 
 func (f *fakeCloud) verifyProof(proof *cloudaccount.Proof, pub ed25519.PublicKey, keyID string) *cloudaccount.AccountProof {
-	if proof == nil || proof.PayloadType != account.ProofPayloadType || len(proof.Signatures) != 1 || proof.Signatures[0].KeyID != keyID {
+	if proof == nil || proof.PayloadType != accountclient.ProofPayloadType || len(proof.Signatures) != 1 || proof.Signatures[0].KeyID != keyID {
 		return nil
 	}
 	payload, _ := base64.StdEncoding.DecodeString(proof.Payload)
@@ -380,7 +380,7 @@ func TestLoginThenConsole(t *testing.T) {
 		t.Errorf("unused answers: %v %v", answers.lines, answers.secrets)
 	}
 
-	state, err := account.LoadState(env(data))
+	state, err := accountclient.LoadState(env(data))
 	if err != nil || state.OrgSlug != "acme" || !strings.HasPrefix(state.CredentialID, "crd_") || state.Keystore != keystore.KindFile ||
 		state.APIBaseURL != f.api() {
 		t.Fatalf("state %+v, %v", state, err)
@@ -389,7 +389,7 @@ func TestLoginThenConsole(t *testing.T) {
 		platformtest.Private(t, filepath.Join(data, "keys", name))
 	}
 	sealed, _ := os.ReadFile(filepath.Join(data, "keys", "cli-key"))
-	if _, err := account.Open(sealed, "correct horse"); err != nil {
+	if _, err := accountclient.Open(sealed, "correct horse"); err != nil {
 		t.Errorf("the stored key does not open with the PIN: %v", err)
 	}
 	device, _ := os.ReadFile(filepath.Join(data, "device.json"))
@@ -435,7 +435,7 @@ func TestLoginWithAnInvitationWhenEnrollmentFails(t *testing.T) {
 	if f.registrations[firstKey(f.registrations)].start.InvitationToken != "pit_"+strings.Repeat("a", 43) {
 		t.Error("the token is taken from the invitation link")
 	}
-	if _, err := account.LoadState(env(data)); err != nil {
+	if _, err := accountclient.LoadState(env(data)); err != nil {
 		t.Errorf("the account is kept when enrollment fails: %v", err)
 	}
 }

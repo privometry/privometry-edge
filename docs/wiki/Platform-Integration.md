@@ -37,7 +37,7 @@ Use the OpenAPI operation IDs and message schemas as the source of truth. Do not
 
 1. The operator obtains a short-lived enrollment token from the control plane, or `privometry login` gets one bound to the person it registers (see below).
 2. The edge generates a device key and certificate-signing request locally.
-3. `/enroll` returns device identity, certificate material, endpoints, redaction/hash configuration, and the region's key set signed by a root key (`key_set`). A build with root keys verifies it; a build without pins it after checking it is signed by a root key it lists (`internal/cloud/keyset`).
+3. `/enroll` returns device identity, certificate material, endpoints, redaction/hash configuration, and the region's key set signed by a root key (`key_set`). A build with root keys verifies it; a build without pins it after checking it is signed by a root key it lists (`internal/keyset`).
 4. Private device keys remain on the endpoint with restrictive permissions.
 5. `/certs:renew` rotates certificates before expiry using authenticated device identity.
 
@@ -65,7 +65,7 @@ The edge requests the current bundle and activates it only after:
 
 The platform answers 304 when the device already holds the newest bundle (`?current=<bundle_id>`). The edge retains the last verified bundle while offline, and keeps enforcing it after it expires.
 
-What the edge does with a bundle (`internal/cloud/bundles`, `internal/policy.Sources`): the bundle's `sources` are the organization layer, loaded like policy files and merged with the built-in packs and the user and repo policies by `internal/policy/merge`. The bundle's own `cedar_policies` are what the platform compiled and validated for the organization layer alone, byte for byte what the Go compiler makes (`specs/conformance/policy-compile`). The organization's policies are managed through `specs/org-api/v1`; every change signs new bundles, one for the organization and one per workspace with policies of its own.
+What the edge does with a bundle (fetched by `internal/cloud/bundles`, verified and held by `internal/bundle`, merged by `internal/policy.Sources`): the bundle's `sources` are the organization layer, loaded like policy files and merged with the built-in packs and the user and repo policies by `internal/policy/merge`. The bundle's own `cedar_policies` are what the platform compiled and validated for the organization layer alone, byte for byte what the Go compiler makes (`specs/conformance/policy-compile`). The organization's policies are managed through `specs/org-api/v1`; every change signs new bundles, one for the organization and one per workspace with policies of its own.
 
 ## Events and upload
 

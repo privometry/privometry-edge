@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
 	"github.com/privometry/privometry-edge/internal/ipc"
@@ -565,7 +565,7 @@ func (d *Daemon) trustedMCP(c call, sess *sessionInfo) bool {
 		vouched := false
 		for _, id := range dec.RuleIDs {
 			r := rules[id]
-			if r.Verdict == contract.VerdictAllow && (r.Layer == bundles.BundleRuleLayerUser || r.Layer == bundles.BundleRuleLayerOrg) {
+			if r.Verdict == contract.VerdictAllow && (r.Layer == bundle.BundleRuleLayerUser || r.Layer == bundle.BundleRuleLayerOrg) {
 				vouched = true
 			}
 		}

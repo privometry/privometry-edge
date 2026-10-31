@@ -1,33 +1,24 @@
-// Package riskfeed syncs and holds the risk feed on an enrolled device, and
-// computes the tool manifest hashes the feed is keyed by.
+// Package riskfeed verifies and holds the risk feed, and computes the tool
+// manifest hashes the feed is keyed by. A connector fetches feed documents.
 package riskfeed
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
-	"github.com/privometry/privometry-edge/internal/cloud/enroll"
-	"github.com/privometry/privometry-edge/internal/cloud/keyset"
-	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/signing"
 	"github.com/privometry/privometry-edge/specs"
 )
 
-// The risk feed on an enrolled device (PRD CP-22; GET /edge/v1/riskfeed): the
-// curated feed when the organization has curated_feed, else the community
-// feed, verified with the feed key of the region's key set, kept as one merged
-// document. Snapshots replace it; deltas apply on top of the sequence they
-// name; anything older than what the device holds is refused.
+// The risk feed (PRD CP-22) is verified with the feed key of the region's key
+// set and kept as one merged document. Snapshots replace it; deltas apply on
+// top of the sequence they name; anything older than what the device holds is
+// refused.
 
 // File is the merged feed in the data directory.
 const File = "riskfeed.json"
@@ -77,78 +68,10 @@ func (h *Held) ByPackage(pkg string) *Entry {
 	return nil
 }
 
-// Sync fetches what is new and keeps it. It reports whether the feed changed.
-func Sync(ctx context.Context, base *http.Client, env platform.Env, keys keystore.Store, now time.Time) (bool, error) {
-	id, err := enroll.Load(env)
-	if err != nil || id == nil {
-		return false, err
-	}
-	ks, err := keyset.Load(env)
-	if err != nil || ks == nil {
-		return false, fmt.Errorf("risk feed: no key set to verify it with")
-	}
-	feed := "community"
-	if held, err := bundles.Load(env, now); err == nil && held != nil && held.Entitlements.Features["curated_feed"] {
-		feed = "curated"
-	}
-	cur, err := Load(env)
-	if err != nil || (cur != nil && cur.Feed != feed) {
-		cur = nil // unreadable, or another feed: start from a snapshot
-	}
-	client, err := enroll.MutualTLS(base, id, keys, 60*time.Second)
-	if err != nil {
-		return false, err
-	}
-	doc, err := fetch(ctx, client, strings.TrimSuffix(id.APIBaseURL, "/"), feed, cur, ks.Keys, now)
-	if err != nil || doc == nil {
-		return false, err
-	}
-	if doc.Kind == DocumentKindDelta && (cur == nil || doc.BaseSequence == nil || *doc.BaseSequence != cur.Sequence) {
-		// A delta that does not apply to what we hold: get the snapshot instead.
-		if doc, err = fetch(ctx, client, strings.TrimSuffix(id.APIBaseURL, "/"), feed, nil, ks.Keys, now); err != nil || doc == nil {
-			return false, err
-		}
-	}
-	next := &Held{Feed: feed, Sequence: doc.Sequence, ExpiresAt: doc.ExpiresAt.Time, Entries: map[string]Entry{}}
-	if doc.Kind == DocumentKindDelta {
-		for k, v := range cur.Entries {
-			next.Entries[k] = v
-		}
-		for _, r := range doc.Removed {
-			delete(next.Entries, r)
-		}
-	}
-	for _, e := range doc.Entries {
-		next.Entries[e.ComponentID] = e
-	}
-	return true, save(env, next)
-}
-
-func fetch(ctx context.Context, client *http.Client, base, feed string, cur *Held, ks *signing.KeySet, now time.Time) (*Document, error) {
-	endpoint := base + "/riskfeed?feed=" + feed
-	if cur != nil {
-		endpoint += fmt.Sprintf("&since=%d", cur.Sequence)
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("risk feed: %w", err)
-	}
-	defer resp.Body.Close()
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, 50<<20))
-	if err != nil {
-		return nil, err
-	}
-	switch resp.StatusCode {
-	case http.StatusNotModified:
-		return nil, nil
-	case http.StatusOK:
-	default:
-		return nil, fmt.Errorf("risk feed: %s answered %d", endpoint, resp.StatusCode)
-	}
+// Verify checks a feed document against the key set: signed by a feed key, a
+// valid privometry.riskfeed/v1 document of the feed asked for, and newer than
+// what the device holds (cur).
+func Verify(raw []byte, ks *signing.KeySet, feed string, cur *Held, now time.Time) (*Document, error) {
 	payload, err := signing.Verify(raw, ks, "feed", PayloadType, now)
 	if err != nil {
 		return nil, fmt.Errorf("risk feed: %w", err)
@@ -169,7 +92,31 @@ func fetch(ctx context.Context, client *http.Client, base, feed string, cur *Hel
 	return &doc, nil
 }
 
-func save(env platform.Env, h *Held) error {
+// Applies reports whether doc can be applied to cur: a snapshot always can, a
+// delta only on top of the sequence it names.
+func Applies(cur *Held, doc *Document) bool {
+	return doc.Kind != DocumentKindDelta || (cur != nil && doc.BaseSequence != nil && *doc.BaseSequence == cur.Sequence)
+}
+
+// Apply is cur with doc applied; doc must apply (Applies).
+func Apply(cur *Held, feed string, doc *Document) *Held {
+	next := &Held{Feed: feed, Sequence: doc.Sequence, ExpiresAt: doc.ExpiresAt.Time, Entries: map[string]Entry{}}
+	if doc.Kind == DocumentKindDelta {
+		for k, v := range cur.Entries {
+			next.Entries[k] = v
+		}
+		for _, r := range doc.Removed {
+			delete(next.Entries, r)
+		}
+	}
+	for _, e := range doc.Entries {
+		next.Entries[e.ComponentID] = e
+	}
+	return next
+}
+
+// Save keeps h as the feed this device holds.
+func Save(env platform.Env, h *Held) error {
 	path, err := feedPath(env)
 	if err != nil {
 		return err

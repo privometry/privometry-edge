@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/cloud/bundles"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
-	"github.com/privometry/privometry-edge/internal/cloud/keyset"
+	"github.com/privometry/privometry-edge/internal/keyset"
 	"github.com/privometry/privometry-edge/internal/keystore"
 )
 
@@ -80,7 +81,7 @@ func bundleCmd(args []string, stdout, stderr io.Writer) int {
 	}
 	monitor := 0
 	for _, r := range b.Rules {
-		if r.Mode == bundles.BundleRuleModeMonitor {
+		if r.Mode == bundle.BundleRuleModeMonitor {
 			monitor++
 		}
 	}

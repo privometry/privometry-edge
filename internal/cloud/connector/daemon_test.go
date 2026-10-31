@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+
 	adapterdefs "github.com/privometry/privometry-edge/adapter-defs"
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
 	"github.com/privometry/privometry-edge/internal/cloud"
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
 	"github.com/privometry/privometry-edge/internal/cloud/cloudtest"
 	"github.com/privometry/privometry-edge/internal/cloud/connector"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"

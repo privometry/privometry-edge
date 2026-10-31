@@ -15,9 +15,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/privometry/privometry-edge/internal/cloud"
 	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+
+	"github.com/privometry/privometry-edge/internal/bundle"
+	"github.com/privometry/privometry-edge/internal/cloud"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
+	"github.com/privometry/privometry-edge/internal/cloud/feedsync"
 	"github.com/privometry/privometry-edge/internal/cloud/heartbeat"
 	"github.com/privometry/privometry-edge/internal/cloud/inventory"
 	"github.com/privometry/privometry-edge/internal/cloud/upload"
@@ -25,7 +28,6 @@ import (
 	"github.com/privometry/privometry-edge/internal/extension"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
-	"github.com/privometry/privometry-edge/internal/riskfeed"
 	"github.com/privometry/privometry-edge/internal/scanner"
 	"github.com/privometry/privometry-edge/internal/timeline"
 )
@@ -135,7 +137,7 @@ func (s *Syncer) Tick(ctx context.Context, now time.Time) bool {
 	}
 	if !now.Before(s.nextFeed) {
 		s.nextFeed = now.Add(FeedEvery)
-		if updated, err := riskfeed.Sync(ctx, base, s.Env, keys, now); err != nil {
+		if updated, err := feedsync.Sync(ctx, base, s.Env, keys, now); err != nil {
 			s.log().Warn("risk feed sync failed; keeping the feed this device holds", "err", err)
 		} else if updated {
 			s.log().Info("risk feed updated")
@@ -174,7 +176,7 @@ func (s *Syncer) upload(ctx context.Context, base *http.Client, keys keystore.St
 	if s.refused || now.Before(s.nextUpload) {
 		return
 	}
-	var privacy *bundles.BundlePrivacy
+	var privacy *bundle.BundlePrivacy
 	if held, err := bundles.Load(s.Env, now); err == nil && held != nil {
 		if !held.Entitlements.Features["cloud_sync"] {
 			s.nextUpload = now.Add(UploadEvery)

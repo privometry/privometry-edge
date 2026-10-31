@@ -1,7 +1,7 @@
-// Package account is the CLI side of the account API (specs/account-api/v1):
+// Package accountclient is the CLI side of the account API (specs/account-api/v1):
 // the person's sign-in key, the proofs it signs, the API client, and the
 // account this machine is signed up with.
-package account
+package accountclient
 
 import (
 	"crypto/aes"
