@@ -53,7 +53,7 @@ var outputs = []output{
 		{"adapter/v1/adapter.schema.json", "Adapter"},
 		{"adapter/v1/adapter-set.schema.json", "AdapterSet"},
 	}},
-	{"bundles", "internal/cloud/bundles", "bundle.gen.go", []source{{"policy/v1/bundle.schema.json", "Bundle"}}},
+	{"bundle", "internal/bundle", "bundle.gen.go", []source{{"policy/v1/bundle.schema.json", "Bundle"}}},
 	{"entitlements", "internal/cloud/entitlements", "entitlements.gen.go", []source{
 		{"entitlements/v1/entitlements.schema.json", "Entitlements"},
 		{"entitlements/v1/license.schema.json", "License"},

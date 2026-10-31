@@ -21,7 +21,7 @@ import (
 
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
 	"github.com/privometry/privometry-edge/internal/buildinfo"
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
 	"github.com/privometry/privometry-edge/internal/extension"
@@ -466,7 +466,7 @@ func (d *Daemon) allowlistFor(repoRoot string) *content.Allowlist {
 
 func stampOf(home, repoRoot, dataDir string) string {
 	var s string
-	for _, p := range []string{filepath.Join(home, policy.UserPolicyPath), filepath.Join(repoRoot, policy.RepoPolicyPath), filepath.Join(dataDir, bundles.File)} {
+	for _, p := range []string{filepath.Join(home, policy.UserPolicyPath), filepath.Join(repoRoot, policy.RepoPolicyPath), filepath.Join(dataDir, bundle.File)} {
 		if info, err := os.Stat(p); err == nil {
 			s += fmt.Sprintf("%s:%d:%d;", p, info.ModTime().UnixNano(), info.Size())
 		}

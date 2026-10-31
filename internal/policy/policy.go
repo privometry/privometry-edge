@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/policy/engine"
 	"github.com/privometry/privometry-edge/internal/policy/intent"
 	"github.com/privometry/privometry-edge/internal/policy/merge"
@@ -164,7 +164,7 @@ func (p *Policy) explain(d *Decision) {
 	d.Message, d.Category = rule.Message, string(rule.Category)
 }
 
-func (p *Policy) rule(id string) bundles.BundleRule { return p.merged.Rules[id] }
+func (p *Policy) rule(id string) bundle.BundleRule { return p.merged.Rules[id] }
 
 // categoryOf picks the fail-mode category for an unmatched request.
 func categoryOf(f engine.Facts) string {

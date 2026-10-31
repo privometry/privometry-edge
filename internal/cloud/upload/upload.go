@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/cloud"
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
@@ -65,13 +65,13 @@ type Result struct {
 
 // Run uploads the events after the cursor, up to maxBatches batches. A
 // rejected event is dropped and never retried, as the contract says.
-func Run(ctx context.Context, base *http.Client, store *timeline.Store, env platform.Env, keys keystore.Store, privacy *bundles.BundlePrivacy) (*Result, error) {
+func Run(ctx context.Context, base *http.Client, store *timeline.Store, env platform.Env, keys keystore.Store, privacy *bundle.BundlePrivacy) (*Result, error) {
 	id, err := enroll.Load(env)
 	if err != nil {
 		return nil, err
 	}
 	if id == nil {
-		return nil, bundles.ErrNotEnrolled
+		return nil, bundle.ErrNotEnrolled
 	}
 	hashKey, _, err := enroll.HashKey(keys)
 	if err != nil {
@@ -135,7 +135,7 @@ func Cursor(store *timeline.Store) (int64, error) {
 }
 
 // Prepare turns a stored event into the one the cloud receives.
-func Prepare(ev events.Event, id *enroll.Identity, hashKey []byte, privacy *bundles.BundlePrivacy) events.Event {
+func Prepare(ev events.Event, id *enroll.Identity, hashKey []byte, privacy *bundle.BundlePrivacy) events.Event {
 	ev.OrgID = id.OrgID
 	ev.Device.DeviceID = id.DeviceID
 	ev.User.UserID = id.UserID
@@ -175,7 +175,7 @@ func Prepare(ev events.Event, id *enroll.Identity, hashKey []byte, privacy *bund
 
 // applyPrivacy applies the organization's upload levels to the fields this
 // sensor stores, and omits the target of events in excluded repos.
-func applyPrivacy(ev *events.Event, hashKey []byte, p *bundles.BundlePrivacy) {
+func applyPrivacy(ev *events.Event, hashKey []byte, p *bundle.BundlePrivacy) {
 	if ev.Action != nil {
 		a := *ev.Action
 		ev.Action = &a

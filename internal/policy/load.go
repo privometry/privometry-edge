@@ -10,7 +10,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/content"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/policy/compiler"
@@ -42,9 +42,9 @@ func LoadFile(path, layer string) (merge.Source, error) {
 // BundleSources returns the organization layer of a verified bundle: the
 // policy files it carries, each loaded as a policy file would be. A source
 // that fails to load is reported in errs and skipped.
-func BundleSources(b *bundles.Bundle) (sources []merge.Source, errs []error) {
+func BundleSources(b *bundle.Bundle) (sources []merge.Source, errs []error) {
 	for _, s := range b.Sources {
-		if s.Layer != bundles.BundleSourceLayerOrg {
+		if s.Layer != bundle.BundleSourceLayerOrg {
 			errs = append(errs, fmt.Errorf("bundle %d: source %s has layer %s; only organization policies come from bundles", b.Version, s.Name, s.Layer))
 			continue
 		}
@@ -69,7 +69,7 @@ func BundleSources(b *bundles.Bundle) (sources []merge.Source, errs []error) {
 // to load are reported in errs and skipped.
 func Sources(env platform.Env, repoRoot string, now time.Time) (sources []merge.Source, errs []error) {
 	sources, errs = LocalSources(env.Home, repoRoot)
-	held, err := bundles.Load(env, now)
+	held, err := bundle.Load(env, now)
 	switch {
 	case err != nil:
 		errs = append(errs, fmt.Errorf("organization bundle ignored: %w", err))
@@ -117,7 +117,7 @@ func LocalSources(home, repoRoot string) (sources []merge.Source, errs []error) 
 // Allowlist collects the content allowlist entries of the given policies
 // (PRD SCAN-09), whatever their layer. Repo and user entries apply to the
 // files and actions their policy covers; an organization's arrive with
-// policy bundles.
+// policy bundle.
 func Allowlist(sources []merge.Source) *content.Allowlist {
 	var entries []content.AllowEntry
 	for _, s := range sources {

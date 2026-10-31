@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/policy/intent"
 	"github.com/privometry/privometry-edge/internal/scanner"
@@ -18,7 +18,7 @@ import (
 // found, so a call can be matched by package, URL or command as well as name.
 type catalogState struct {
 	stamp   string
-	catalog *bundles.BundleCatalog
+	catalog *bundle.BundleCatalog
 	servers map[string]discover.MCPServer // by agent and server name
 }
 
@@ -32,7 +32,7 @@ func (d *Daemon) mcpCatalogStatus(product contract.AgentProduct, a intent.Action
 	if cat == nil {
 		return ""
 	}
-	it := bundles.CatalogItem{Kind: "mcp_server", Name: a.MCPServer}
+	it := bundle.CatalogItem{Kind: "mcp_server", Name: a.MCPServer}
 	d.mu.Lock()
 	if m, ok := d.catalogState.servers[string(product)+"\x00"+a.MCPServer]; ok {
 		it.Transport, it.Package, it.URL, it.Command = m.Transport, scanner.PackageName(m.Package), m.URL, m.Command
@@ -46,9 +46,9 @@ func (d *Daemon) mcpCatalogStatus(product contract.AgentProduct, a intent.Action
 }
 
 // catalog returns the held bundle's catalog, or nil.
-func (d *Daemon) catalog() *bundles.BundleCatalog {
+func (d *Daemon) catalog() *bundle.BundleCatalog {
 	stamp := ""
-	if info, err := os.Stat(filepath.Join(d.dataDir, bundles.File)); err == nil {
+	if info, err := os.Stat(filepath.Join(d.dataDir, bundle.File)); err == nil {
 		stamp = fmt.Sprintf("%d:%d", info.ModTime().UnixNano(), info.Size())
 	}
 	d.mu.Lock()
@@ -58,9 +58,9 @@ func (d *Daemon) catalog() *bundles.BundleCatalog {
 		return cat
 	}
 	d.mu.Unlock()
-	var cat *bundles.BundleCatalog
+	var cat *bundle.BundleCatalog
 	if stamp != "" {
-		if held, err := bundles.Load(d.cfg.Env, d.cfg.Now()); err == nil && held != nil {
+		if held, err := bundle.Load(d.cfg.Env, d.cfg.Now()); err == nil && held != nil {
 			cat = &held.Bundle.Catalog
 		}
 	}

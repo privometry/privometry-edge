@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/cloud"
 	"github.com/privometry/privometry-edge/internal/cloud/account"
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
 	"github.com/privometry/privometry-edge/internal/cloud/entitlements"
 	"github.com/privometry/privometry-edge/internal/cloud/orgapi"
 	"github.com/privometry/privometry-edge/internal/content"
@@ -39,7 +39,7 @@ var targets = []target{
 	{"specs/event-schema/v1/examples/valid/*", "event-schema/v1/event.schema.json", func() any { return new(events.Event) }},
 	{"specs/adapter/v1/examples/valid/*", "adapter/v1/adapter.schema.json", func() any { return new(registry.Adapter) }},
 	{"specs/adapter/v1/examples/adapter-set/valid/*", "adapter/v1/adapter-set.schema.json", func() any { return new(registry.AdapterSet) }},
-	{"specs/policy/v1/examples/bundle/valid/*", "policy/v1/bundle.schema.json", func() any { return new(bundles.Bundle) }},
+	{"specs/policy/v1/examples/bundle/valid/*", "policy/v1/bundle.schema.json", func() any { return new(bundle.Bundle) }},
 	{"specs/entitlements/v1/examples/entitlements/valid/*", "entitlements/v1/entitlements.schema.json", func() any { return new(entitlements.Entitlements) }},
 	{"specs/entitlements/v1/examples/license/valid/*", "entitlements/v1/license.schema.json", func() any { return new(entitlements.License) }},
 	{"specs/entitlements/v1/feature-registry.json", "entitlements/v1/feature-registry.schema.json", func() any { return new(entitlements.FeatureRegistry) }},

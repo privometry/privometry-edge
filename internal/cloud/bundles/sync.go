@@ -1,88 +1,45 @@
-// Package bundles verifies, stores and syncs the signed policy bundles an
-// enrolled device enforces, and evaluates their approved catalog.
+// Package bundles fetches the organization's signed policy bundle for an
+// enrolled device (GET /edge/v1/bundle) and checks the entitlements it
+// carries. The edge verifies and enforces the bundle itself (package bundle);
+// entitlements are for the connector only.
 package bundles
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
 	"github.com/privometry/privometry-edge/internal/cloud/entitlements"
-	"github.com/privometry/privometry-edge/internal/cloud/keyset"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/signing"
 	"github.com/privometry/privometry-edge/specs"
 )
 
-// Signed bundles (PRD EDGE-27): GET /edge/v1/bundle, verified with the policy
-// key of the region's key set before anything uses it. A device refuses a
-// bundle for another organization, an older version than it holds, and one
-// that has already expired; it keeps enforcing the bundle it holds, expired
-// or not, until a good one arrives.
-
-// File is the bundle this device enforces, as the signed envelope it received.
-const File = "bundle.json"
-
-// Payload types of the documents a bundle carries.
-const (
-	PayloadType             = "application/vnd.privometry.bundle+json"
-	EntitlementsPayloadType = "application/vnd.privometry.entitlements+json"
-)
-
-// MaxSize is the largest bundle the edge accepts (bundle.schema.json).
-const MaxSize = 5 << 20
-
-var (
-	// ErrOtherOrg means the bundle names an organization other than this device's.
-	ErrOtherOrg = errors.New("bundle is for another organization")
-	// ErrRollback means the bundle is older than the one this device holds.
-	ErrRollback = errors.New("bundle is older than the one this device holds")
-	// ErrExpired means the bundle's expiry has passed.
-	ErrExpired = errors.New("bundle has expired")
-	// ErrNoKeySet means the device has no key set to verify bundles with.
-	ErrNoKeySet = errors.New("this device has no key set to verify bundles; enroll it again")
-	// ErrNotEnrolled means the device is not enrolled in an organization.
-	ErrNotEnrolled = errors.New("this device is not enrolled")
-)
+// EntitlementsPayloadType is the DSSE payload type of the entitlements a bundle carries.
+const EntitlementsPayloadType = "application/vnd.privometry.entitlements+json"
 
 // Held is a verified bundle with its verified entitlements.
 type Held struct {
-	Bundle       *Bundle
+	Bundle       *bundle.Bundle
 	Entitlements *entitlements.Entitlements
 	Expired      bool
 }
 
-// Verify checks a bundle envelope against the key set: signed by a policy
-// key, a valid privometry.bundle/v1 document for orgID, not older than held,
-// carrying entitlements signed by a license key for the same organization.
-func Verify(raw []byte, ks *signing.KeySet, orgID string, held *Bundle, at time.Time) (*Held, error) {
-	payload, err := signing.Verify(raw, ks, "policy", PayloadType, at)
+// Verify checks a bundle envelope as the edge does (bundle.Verify), then the
+// entitlements it carries: signed by a license key, for the same organization.
+func Verify(raw []byte, ks *signing.KeySet, orgID string, held *bundle.Bundle, at time.Time) (*Held, error) {
+	b, err := bundle.Verify(raw, ks, orgID, held, at)
 	if err != nil {
-		return nil, fmt.Errorf("bundle: %w", err)
-	}
-	if err := specs.Validate("policy/v1/bundle.schema.json", "bundle", payload); err != nil {
-		return nil, fmt.Errorf("bundle: %w", err)
-	}
-	var b Bundle
-	if err := json.Unmarshal(payload, &b); err != nil {
-		return nil, fmt.Errorf("bundle: %w", err)
-	}
-	if b.OrgID != orgID {
-		return nil, fmt.Errorf("%w: %s, not %s", ErrOtherOrg, b.OrgID, orgID)
-	}
-	if held != nil && b.Version < held.Version {
-		return nil, fmt.Errorf("%w: version %d after %d", ErrRollback, b.Version, held.Version)
+		return nil, err
 	}
 	envelope, err := json.Marshal(b.Entitlements)
 	if err != nil {
@@ -100,34 +57,27 @@ func Verify(raw []byte, ks *signing.KeySet, orgID string, held *Bundle, at time.
 		return nil, fmt.Errorf("bundle entitlements: %w", err)
 	}
 	if ent.OrgID != orgID {
-		return nil, fmt.Errorf("bundle entitlements: %w", ErrOtherOrg)
+		return nil, fmt.Errorf("bundle entitlements: %w", bundle.ErrOtherOrg)
 	}
-	return &Held{Bundle: &b, Entitlements: &ent}, nil
+	return &Held{Bundle: b, Entitlements: &ent}, nil
 }
 
-// Load returns the bundle this device holds, verified again; nil when it holds none.
+// Load returns the bundle this device holds with its entitlements, verified
+// again; nil when it holds none.
 func Load(env platform.Env, now time.Time) (*Held, error) {
-	path, err := bundlePath(env)
+	raw, err := bundle.Raw(env)
+	if raw == nil || err != nil {
+		return nil, err
+	}
+	org, ks, err := bundle.Trusted(env)
 	if err != nil {
 		return nil, err
 	}
-	raw, err := os.ReadFile(path)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil, nil
-	}
+	created, err := bundle.CreatedAt(raw)
 	if err != nil {
 		return nil, err
 	}
-	id, ks, err := trusted(env)
-	if err != nil {
-		return nil, err
-	}
-	// The policy key was valid when the bundle was signed; check it as of then.
-	created, err := createdAt(raw)
-	if err != nil {
-		return nil, err
-	}
-	h, err := Verify(raw, ks.Keys, id.OrgID, nil, created)
+	h, err := Verify(raw, ks.Keys, org, nil, created)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +94,14 @@ type Result struct {
 // Sync fetches the newest bundle as this device and keeps it when it
 // verifies. base is the client whose server roots to use (tests set their own).
 func Sync(ctx context.Context, base *http.Client, env platform.Env, keys keystore.Store, now time.Time) (*Result, error) {
-	id, ks, err := trusted(env)
+	id, err := enroll.Load(env)
+	if err != nil {
+		return nil, err
+	}
+	if id == nil {
+		return nil, bundle.ErrNotEnrolled
+	}
+	org, ks, err := bundle.Trusted(env)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +126,7 @@ func Sync(ctx context.Context, base *http.Client, env platform.Env, keys keystor
 		return nil, fmt.Errorf("bundle: %w", err)
 	}
 	defer resp.Body.Close()
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, MaxSize+1))
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, bundle.MaxSize+1))
 	if err != nil {
 		return nil, fmt.Errorf("bundle: %w", err)
 	}
@@ -180,75 +137,22 @@ func Sync(ctx context.Context, base *http.Client, env platform.Env, keys keystor
 		var p struct{ Title, Detail string }
 		_ = json.Unmarshal(raw, &p)
 		return nil, fmt.Errorf("bundle: %s answered %d %s", endpoint, resp.StatusCode, strings.TrimSpace(p.Title+" "+p.Detail))
-	case len(raw) > MaxSize:
+	case len(raw) > bundle.MaxSize:
 		return nil, errors.New("bundle: larger than 5 MB")
 	}
-	var current *Bundle
+	var current *bundle.Bundle
 	if held != nil {
 		current = held.Bundle
 	}
-	h, err := Verify(raw, ks.Keys, id.OrgID, current, now)
+	h, err := Verify(raw, ks.Keys, org, current, now)
 	if err != nil {
 		return nil, err
 	}
 	if !now.Before(h.Bundle.ExpiresAt.Time) {
-		return nil, fmt.Errorf("%w: at %s", ErrExpired, h.Bundle.ExpiresAt.Format(time.RFC3339))
+		return nil, fmt.Errorf("%w: at %s", bundle.ErrExpired, h.Bundle.ExpiresAt.Format(time.RFC3339))
 	}
-	path, err := bundlePath(env)
-	if err != nil {
-		return nil, err
-	}
-	if err := os.WriteFile(path+".tmp", raw, 0o600); err != nil {
-		return nil, err
-	}
-	if err := os.Rename(path+".tmp", path); err != nil {
+	if err := bundle.Store(env, raw); err != nil {
 		return nil, err
 	}
 	return &Result{Held: h, Changed: true}, nil
-}
-
-func trusted(env platform.Env) (*enroll.Identity, *keyset.Trusted, error) {
-	id, err := enroll.Load(env)
-	if err != nil {
-		return nil, nil, err
-	}
-	if id == nil {
-		return nil, nil, ErrNotEnrolled
-	}
-	ks, err := keyset.Load(env)
-	if err != nil {
-		return nil, nil, err
-	}
-	if ks == nil {
-		return nil, nil, ErrNoKeySet
-	}
-	return id, ks, nil
-}
-
-func createdAt(raw []byte) (time.Time, error) {
-	var e struct {
-		Payload string `json:"payload"`
-	}
-	if err := json.Unmarshal(raw, &e); err != nil {
-		return time.Time{}, fmt.Errorf("bundle: %w", err)
-	}
-	payload, err := base64.StdEncoding.DecodeString(e.Payload)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("bundle: %w", err)
-	}
-	var b struct {
-		CreatedAt time.Time `json:"created_at"`
-	}
-	if err := json.Unmarshal(payload, &b); err != nil {
-		return time.Time{}, fmt.Errorf("bundle: %w", err)
-	}
-	return b.CreatedAt, nil
-}
-
-func bundlePath(env platform.Env) (string, error) {
-	dir, err := env.DataDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, File), nil
 }
