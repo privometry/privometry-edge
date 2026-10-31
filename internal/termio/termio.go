@@ -23,6 +23,7 @@ type Prompter interface {
 // for an answer.
 type TTY struct{}
 
+// Line asks for one line of input.
 func (TTY) Line(prompt string) (string, error) {
 	t, err := openTerminal()
 	if err != nil {
@@ -33,6 +34,7 @@ func (TTY) Line(prompt string) (string, error) {
 	return readLine(t.in)
 }
 
+// Secret asks for one line of input without echoing it.
 func (TTY) Secret(prompt string) (string, error) {
 	t, err := openTerminal()
 	if err != nil {

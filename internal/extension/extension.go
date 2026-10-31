@@ -44,6 +44,7 @@ type Host interface {
 // HookState is how Privometry's hook stands in one agent.
 type HookState string
 
+// The states of a hook.
 const (
 	HookInstalled   HookState = "installed"
 	HookModified    HookState = "modified" // partial, or pointing at another hook client
@@ -74,8 +75,8 @@ type Connector interface {
 // state; the approver only requests it and reports its outcome.
 type Approver interface {
 	RequestApproval(ctx context.Context, r ApprovalRequest) (Approval, error)
-	// WaitApproval returns the approval once it changes, or after at most max.
-	WaitApproval(ctx context.Context, id string, max time.Duration) (Approval, error)
+	// WaitApproval returns the approval once it changes, or after at most wait.
+	WaitApproval(ctx context.Context, id string, wait time.Duration) (Approval, error)
 }
 
 // ApprovalRequest is one ask to approve. Target is always redacted.
@@ -96,6 +97,7 @@ type ApprovalRequest struct {
 // ApprovalStatus is where an approval stands.
 type ApprovalStatus string
 
+// The statuses of an approval.
 const (
 	ApprovalPending  ApprovalStatus = "pending"
 	ApprovalApproved ApprovalStatus = "approved"

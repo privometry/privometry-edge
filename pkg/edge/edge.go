@@ -24,21 +24,33 @@ import (
 	"github.com/privometry/privometry-edge/internal/timeline"
 )
 
-// The connector contract.
+// The connector contract (internal/extension).
 type (
-	Host            = extension.Host
-	Connector       = extension.Connector
-	NewConnector    = extension.NewConnector
-	Options         = extension.Options
-	Approver        = extension.Approver
+	// Host is the daemon as a connector sees it.
+	Host = extension.Host
+	// Connector links the device to a control plane.
+	Connector = extension.Connector
+	// NewConnector makes a build's connector for one daemon.
+	NewConnector = extension.NewConnector
+	// Options are what the daemon gives a connector.
+	Options = extension.Options
+	// Approver routes asks to people outside the agent.
+	Approver = extension.Approver
+	// ApprovalRequest is one ask to approve.
 	ApprovalRequest = extension.ApprovalRequest
-	Approval        = extension.Approval
-	ApprovalStatus  = extension.ApprovalStatus
-	HookStatus      = extension.HookStatus
-	HookState       = extension.HookState
-	Command         = extension.Command
+	// Approval is a requested approval.
+	Approval = extension.Approval
+	// ApprovalStatus is where an approval stands.
+	ApprovalStatus = extension.ApprovalStatus
+	// HookStatus is one agent's hook.
+	HookStatus = extension.HookStatus
+	// HookState is how Privometry's hook stands in one agent.
+	HookState = extension.HookState
+	// Command is a CLI command a connector adds to privometry.
+	Command = extension.Command
 )
 
+// Hook states and approval statuses.
 const (
 	HookInstalled   = extension.HookInstalled
 	HookModified    = extension.HookModified
@@ -54,13 +66,20 @@ const (
 
 // Types the contract refers to.
 type (
-	Env          = platform.Env
-	Timeline     = timeline.Store
-	ScanResult   = scanner.Result
+	// Env is the platform: OS, home and data directories.
+	Env = platform.Env
+	// Timeline is the local event store.
+	Timeline = timeline.Store
+	// ScanResult is a machine scan.
+	ScanResult = scanner.Result
+	// AgentProduct names a coding agent.
 	AgentProduct = contract.AgentProduct
-	ConfigTier   = contract.ConfigTier
-	ActionKind   = contract.ActionKind
-	Risk         = contract.Risk
+	// ConfigTier is a config tier: user, project or managed.
+	ConfigTier = contract.ConfigTier
+	// ActionKind is the kind of an agent action.
+	ActionKind = contract.ActionKind
+	// Risk is a risk level.
+	Risk = contract.Risk
 )
 
 // SetConnector registers the build's connector; call it before RunDaemon or

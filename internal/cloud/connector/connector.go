@@ -76,12 +76,12 @@ func (c *Connector) RequestApproval(ctx context.Context, r extension.ApprovalReq
 }
 
 // WaitApproval long-polls the cloud for the approval's outcome.
-func (c *Connector) WaitApproval(ctx context.Context, id string, max time.Duration) (extension.Approval, error) {
+func (c *Connector) WaitApproval(ctx context.Context, id string, wait time.Duration) (extension.Approval, error) {
 	client, err := approvals.New(c.http, c.env)
 	if err != nil {
 		return extension.Approval{}, err
 	}
-	a, err := client.Wait(ctx, id, max)
+	a, err := client.Wait(ctx, id, wait)
 	if err != nil {
 		return extension.Approval{}, err
 	}

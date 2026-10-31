@@ -1,3 +1,5 @@
+// Package events is privometry.event/v1, the event every edge component
+// records, generated from specs/event-schema/v1.
 package events
 
 // FingerprintKeyExt is the local-only ext field naming the key of a content
