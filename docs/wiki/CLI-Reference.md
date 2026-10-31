@@ -96,9 +96,12 @@ Checks or installs a signed release:
 ```sh
 privometry update --check
 privometry update [--manifest URL]
+privometry update --connected
 ```
 
 `PRIVOMETRY_UPDATE_URL` supplies an alternate manifest. Development builds and builds without release trust keys refuse self-update.
+
+`--connected` installs the latest connected build over this one, from `https://downloads.privometry.dev/connect/stable/release.json`, whatever its version. Its manifest and downloads are checked like any other release, against the release keys built into this binary. The connected build then updates from its own channel.
 
 ## `privometry definitions`
 
@@ -157,7 +160,7 @@ Only user-level MCP configs are edited (Claude Code `~/.claude.json`, Cursor `~/
 
 ## Connected-build commands
 
-`login`, `enroll`, `console`, `device` and `bundle` belong to the connected build, which signs a machine up with an organization. In this build they explain how to get it and exit 2. See [Connecting to Privometry](Connecting-to-Privometry.md).
+`login`, `enroll`, `console`, `device` and `bundle` belong to the connected build, which signs a machine up with an organization. In this build they explain how to get it and exit 2. `privometry login` in a terminal also offers to install the connected build (`privometry update --connected`) and then runs its `login` with the same arguments. See [Connecting to Privometry](Connecting-to-Privometry.md).
 
 ## `privometry version`
 

@@ -86,6 +86,11 @@ type (
 // RunCLI. A build has at most one.
 func SetConnector(f NewConnector) { extension.SetConnector(f) }
 
+// SetReleaseChannel sets the signed release manifest privometry update
+// installs from; call it before RunCLI. Without it a connected build would
+// update to the open-source release.
+func SetReleaseChannel(manifestURL string) { extension.SetReleaseChannel(manifestURL) }
+
 // AddCommand adds a command to privometry; call it before RunCLI.
 func AddCommand(c Command) { extension.AddCommand(c) }
 

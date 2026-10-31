@@ -15,6 +15,7 @@ import (
 
 	"github.com/privometry/privometry-edge/internal/buildinfo"
 	"github.com/privometry/privometry-edge/internal/daemon/service"
+	"github.com/privometry/privometry-edge/internal/extension"
 	"github.com/privometry/privometry-edge/internal/update"
 )
 
@@ -25,8 +26,9 @@ and privometry-hook, then restart the daemon. Only releases signed with Privomet
 release key, newer than this version, and matching their published digest
 are installed.
 
-  privometry update --check    only say whether a newer release exists
-  privometry update            download, verify and install it
+  privometry update --check      only say whether a newer release exists
+  privometry update              download, verify and install it
+  privometry update --connected  install the connected build over this one
 
 Flags:
 `
@@ -36,7 +38,8 @@ func updateCmd(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	fs.Usage = func() { fmt.Fprint(stderr, updateUsage); fs.PrintDefaults() }
 	check := fs.Bool("check", false, "only check for a newer release")
-	manifest := fs.String("manifest", "", "release manifest URL (default: $PRIVOMETRY_UPDATE_URL, else the stable channel)")
+	manifest := fs.String("manifest", "", "release manifest URL (default: $PRIVOMETRY_UPDATE_URL, else this build's stable channel)")
+	connected := fs.Bool("connected", false, "install the latest connected build, whatever its version")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -47,9 +50,16 @@ func updateCmd(args []string, stdout, stderr io.Writer) int {
 	if *manifest == "" {
 		*manifest = env.Getenv("PRIVOMETRY_UPDATE_URL")
 	}
+	switch {
+	case *manifest != "":
+	case *connected:
+		*manifest = update.ConnectedManifestURL
+	default:
+		*manifest = extension.ReleaseChannel() // "" is the open-source channel
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	opts := update.Options{ManifestURL: *manifest, Current: buildinfo.Version, GOOS: runtime.GOOS, GOARCH: runtime.GOARCH}
+	opts := update.Options{ManifestURL: *manifest, Current: buildinfo.Version, GOOS: runtime.GOOS, GOARCH: runtime.GOARCH, Switch: *connected}
 
 	rel, art, err := update.Check(ctx, opts)
 	switch {
