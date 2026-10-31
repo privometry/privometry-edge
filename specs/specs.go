@@ -30,48 +30,76 @@ var schemaFS embed.FS
 //go:embed policy/v1/privometry.cedarschema
 var CedarSchema []byte
 
-var (
-	compileOnce sync.Once
-	compiler    *jsonschema.Compiler
-	compileErr  error
-)
+// FS holds the embedded schemas at their paths, such as
+// "policy/v1/policy.schema.json".
+var FS fs.FS = schemaFS
 
-// Schema returns the compiled schema at path, for example "policy/v1/policy.schema.json".
-func Schema(path string) (*jsonschema.Schema, error) {
-	compileOnce.Do(func() { compiler, compileErr = newCompiler() })
-	if compileErr != nil {
-		return nil, compileErr
-	}
-	return compiler.Compile(IDBase + path)
+// Set is a set of schemas compiled together, so $refs between them resolve
+// without network access. A connected build adds its own schemas to FS.
+type Set struct {
+	fsys     []fs.FS
+	once     sync.Once
+	compiler *jsonschema.Compiler
+	err      error
 }
 
-// newCompiler registers every embedded schema under its $id, so relative $refs
+// NewSet compiles the schemas in each fsys on first use. A schema in a later
+// fsys replaces one at the same path in an earlier one.
+func NewSet(fsys ...fs.FS) *Set { return &Set{fsys: fsys} }
+
+var embedded = NewSet(schemaFS)
+
+// Schema returns the compiled schema at path, for example "policy/v1/policy.schema.json".
+func Schema(path string) (*jsonschema.Schema, error) { return embedded.Schema(path) }
+
+// Schema returns the compiled schema at path.
+func (s *Set) Schema(path string) (*jsonschema.Schema, error) {
+	s.once.Do(func() { s.compiler, s.err = newCompiler(s.fsys) })
+	if s.err != nil {
+		return nil, s.err
+	}
+	return s.compiler.Compile(IDBase + path)
+}
+
+// newCompiler registers every schema under its $id, so relative $refs
 // between contracts resolve without network access, and checks that each $id
 // matches its file path.
-func newCompiler() (*jsonschema.Compiler, error) {
+func newCompiler(fsys []fs.FS) (*jsonschema.Compiler, error) {
+	docs := map[string]any{}
+	for _, f := range fsys {
+		err := fs.WalkDir(f, ".", func(p string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() || !strings.HasSuffix(p, ".schema.json") {
+				return err
+			}
+			raw, err := fs.ReadFile(f, p)
+			if err != nil {
+				return err
+			}
+			doc, err := jsonschema.UnmarshalJSON(bytes.NewReader(raw))
+			if err != nil {
+				return fmt.Errorf("%s: %w", p, err)
+			}
+			id, _ := doc.(map[string]any)["$id"].(string)
+			if want := IDBase + p; id != want {
+				return fmt.Errorf("%s: $id is %q, want %q", p, id, want)
+			}
+			docs[id] = doc
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
 	c := jsonschema.NewCompiler()
 	c.DefaultDraft(jsonschema.Draft2020)
 	c.AssertFormat()
 	c.AssertContent()
-	err := fs.WalkDir(schemaFS, ".", func(p string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
+	for id, doc := range docs {
+		if err := c.AddResource(id, doc); err != nil {
+			return nil, err
 		}
-		raw, err := schemaFS.ReadFile(p)
-		if err != nil {
-			return err
-		}
-		doc, err := jsonschema.UnmarshalJSON(bytes.NewReader(raw))
-		if err != nil {
-			return fmt.Errorf("%s: %w", p, err)
-		}
-		id, _ := doc.(map[string]any)["$id"].(string)
-		if want := IDBase + p; id != want {
-			return fmt.Errorf("%s: $id is %q, want %q", p, id, want)
-		}
-		return c.AddResource(id, doc)
-	})
-	return c, err
+	}
+	return c, nil
 }
 
 // Decode turns a JSON or YAML document (chosen by the file name's extension)
@@ -98,7 +126,12 @@ func Decode(name string, raw []byte) (any, error) {
 
 // Validate decodes raw and checks it against the schema at schemaPath.
 func Validate(schemaPath, name string, raw []byte) error {
-	sch, err := Schema(schemaPath)
+	return embedded.Validate(schemaPath, name, raw)
+}
+
+// Validate decodes raw and checks it against the schema at schemaPath.
+func (s *Set) Validate(schemaPath, name string, raw []byte) error {
+	sch, err := s.Schema(schemaPath)
 	if err != nil {
 		return err
 	}
@@ -116,7 +149,13 @@ func Validate(schemaPath, name string, raw []byte) error {
 // into v (a pointer to a generated type) rejecting fields v does not know.
 // YAML is converted to JSON first, so generated types need only json tags.
 func DecodeInto(schemaPath, name string, raw []byte, v any) error {
-	sch, err := Schema(schemaPath)
+	return embedded.DecodeInto(schemaPath, name, raw, v)
+}
+
+// DecodeInto validates raw against the schema at schemaPath and decodes it
+// into v, rejecting fields v does not know.
+func (s *Set) DecodeInto(schemaPath, name string, raw []byte, v any) error {
+	sch, err := s.Schema(schemaPath)
 	if err != nil {
 		return err
 	}
