@@ -39,8 +39,8 @@ Some tests open Unix and TCP loopback sockets or exercise launchd/systemd plans.
 | `make lint` | Run `go vet` and `golangci-lint` when installed |
 | `make fmt` | Format Go source with simplification |
 | `make tidy` | Update module requirements |
-| `make generate` | Regenerate Go contract types and signed vectors |
-| `make check-generated` | Fail when generated Go types are stale |
+| `make generate` | Regenerate Go contract types, signed vectors and the `pkg/edge` facade |
+| `make check-generated` | Fail when generated Go types or the facade are stale |
 | `make definitions` | Build the adapter and detector pack sets in `dist/`; `KEY=... NAME=...` signs them |
 | `make hook-recorder` | Build the development-only hook payload recorder |
 | `make clean` | Remove `bin/` and `dist/` |

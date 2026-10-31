@@ -35,13 +35,16 @@ fmt:
 tidy:
 	$(GO) mod tidy
 
-# Regenerate Go types and signed conformance vectors from specs/.
+# Regenerate Go types and signed conformance vectors from specs/, and the
+# pkg/edge facade from pkg/edge/facade.txt.
 generate:
 	$(GO) run ./scripts/gen-types
 	$(GO) run ./scripts/gen-conformance
+	$(GO) run ./scripts/gen-facade
 
 check-generated:
 	$(GO) run ./scripts/gen-types -check
+	$(GO) run ./scripts/gen-facade -check
 
 # Deterministic CycloneDX SBOM and dependency-license policy report.
 release-metadata:
