@@ -17,11 +17,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-edge/internal/cloud"
 	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+
+	"github.com/privometry/privometry-edge/internal/bundle"
+	"github.com/privometry/privometry-edge/internal/cloud"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
-	"github.com/privometry/privometry-edge/internal/cloud/keyset"
 	"github.com/privometry/privometry-edge/internal/contract"
+	"github.com/privometry/privometry-edge/internal/keyset"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/riskfeed"
@@ -44,7 +46,7 @@ func Send(ctx context.Context, base *http.Client, env platform.Env, keys keystor
 		return nil, err
 	}
 	if id == nil {
-		return nil, bundles.ErrNotEnrolled
+		return nil, bundle.ErrNotEnrolled
 	}
 	hb := cloud.Heartbeat{SentAt: contract.At(now), SensorVersion: r.SensorVersion, DeviceSeq: r.DeviceSeq, AdapterSetVersion: r.AdapterSetVersion,
 		UploadQueue: r.Queue, Hooks: r.Hooks, AckedCommands: r.Acked}

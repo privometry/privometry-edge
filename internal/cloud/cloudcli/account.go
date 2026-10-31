@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-edge/internal/account"
 	"github.com/privometry/privometry-edge/internal/buildinfo"
 	cloudaccount "github.com/privometry/privometry-edge/internal/cloud/account"
+	"github.com/privometry/privometry-edge/internal/cloud/accountclient"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/keystore"
@@ -69,7 +69,7 @@ func loginCmd(args []string, stdout, stderr io.Writer) int {
 	slug := fs.String("slug", "", "slug of the new organization (3 to 40 lowercase letters, digits and hyphens)")
 	name := fs.String("name", "", "your name, for a new account (asked when missing)")
 	label := fs.String("label", "", "name of this machine's key (default: the host name)")
-	api := fs.String("api", envOr("PRIVOMETRY_ACCOUNT_API", account.DefaultAPI), "account API of your organization's region")
+	api := fs.String("api", envOr("PRIVOMETRY_ACCOUNT_API", accountclient.DefaultAPI), "account API of your organization's region")
 	store := fs.String("keystore", "auto", "where to keep keys: auto, keychain or file")
 	noEnroll := fs.Bool("no-enroll", false, "sign up only; do not enroll this device")
 	replace := fs.Bool("replace", false, "replace the account this machine is signed up with")
@@ -90,7 +90,7 @@ func loginCmd(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		return fail(stderr, err)
 	}
-	if existing, err := account.LoadState(env); err == nil && !*replace {
+	if existing, err := accountclient.LoadState(env); err == nil && !*replace {
 		return fail(stderr, fmt.Errorf("this machine is already signed up as %s in %s; use --replace to sign up again", existing.Email, existing.OrgName))
 	}
 	keys, err := keystore.Open(env, *store)
@@ -104,7 +104,7 @@ func loginCmd(args []string, stdout, stderr io.Writer) int {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer cancel()
-	client := &account.Client{BaseURL: strings.TrimSuffix(*api, "/"), HTTP: accountHTTP(), UserAgent: "privometry/" + buildinfo.Version}
+	client := &accountclient.Client{BaseURL: strings.TrimSuffix(*api, "/"), HTTP: accountHTTP(), UserAgent: "privometry/" + buildinfo.Version}
 
 	device := enroll.Device(env)
 	start := cloudaccount.RegistrationStart{Email: *email,
@@ -143,27 +143,27 @@ func loginCmd(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		return fail(stderr, err)
 	}
-	priv, err := account.NewCLIKey()
+	priv, err := accountclient.NewCLIKey()
 	if err != nil {
 		return fail(stderr, err)
 	}
-	sealed, err := account.Seal(priv, pin)
+	sealed, err := accountclient.Seal(priv, pin)
 	if err != nil {
 		return fail(stderr, err)
 	}
-	spki, err := account.SPKI(priv.Public().(ed25519.PublicKey))
+	spki, err := accountclient.SPKI(priv.Public().(ed25519.PublicKey))
 	if err != nil {
 		return fail(stderr, err)
 	}
-	thumbprint := account.Thumbprint(spki)
-	proof, err := account.SignProof(priv, thumbprint, cloudaccount.AccountProof{Purpose: cloudaccount.AccountProofPurposeRegister,
+	thumbprint := accountclient.Thumbprint(spki)
+	proof, err := accountclient.SignProof(priv, thumbprint, cloudaccount.AccountProof{Purpose: cloudaccount.AccountProofPurposeRegister,
 		Audience: challenge.Audience, Challenge: challenge.Challenge, RegistrationID: challenge.RegistrationID,
 		PublicKeySHA256: thumbprint, IssuedAt: contract.At(accountNow())})
 	if err != nil {
 		return fail(stderr, err)
 	}
 	// The sealed key is stored before the account API hears of it, so a registered key is never lost.
-	if err := keys.Put(account.KeyName, sealed); err != nil {
+	if err := keys.Put(accountclient.KeyName, sealed); err != nil {
 		return fail(stderr, err)
 	}
 	if displayName == "" {
@@ -179,10 +179,10 @@ func loginCmd(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		return fail(stderr, explainAccount(err))
 	}
-	state := &account.State{APIBaseURL: client.BaseURL, Region: result.Region, OrgID: result.OrgID, OrgName: challenge.Organization.Name,
+	state := &accountclient.State{APIBaseURL: client.BaseURL, Region: result.Region, OrgID: result.OrgID, OrgName: challenge.Organization.Name,
 		OrgSlug: challenge.Organization.Slug, UserID: result.UserID, Email: *email, Role: string(result.Role),
 		CredentialID: result.CredentialID, Keystore: keys.Kind(), RegisteredAt: accountNow().UTC()}
-	if err := account.SaveState(env, state); err != nil {
+	if err := accountclient.SaveState(env, state); err != nil {
 		return fail(stderr, err)
 	}
 	fmt.Fprintf(stdout, "Signed up as %s in %s. Your sign-in key (%s) is in %s, encrypted with your PIN.\n",
@@ -203,7 +203,7 @@ func loginCmd(args []string, stdout, stderr io.Writer) int {
 
 // verifyCode asks for the emailed code until it verifies. An empty answer asks
 // for a new code.
-func verifyCode(ctx context.Context, client *account.Client, registrationID string, stdout io.Writer) (*cloudaccount.RegistrationChallenge, error) {
+func verifyCode(ctx context.Context, client *accountclient.Client, registrationID string, stdout io.Writer) (*cloudaccount.RegistrationChallenge, error) {
 	for {
 		code, err := prompter.Line("Code (press Enter for a new one): ")
 		if err != nil {
@@ -212,7 +212,7 @@ func verifyCode(ctx context.Context, client *account.Client, registrationID stri
 		code = strings.TrimSpace(code)
 		if code == "" {
 			if _, err := client.ResendCode(ctx, registrationID); err != nil {
-				var p *account.Problem
+				var p *accountclient.Problem
 				if errors.As(err, &p) && p.Kind() == "rate-limited" {
 					fmt.Fprintf(stdout, "No new code yet; try again in %s seconds.\n", p.RetryAfter)
 					continue
@@ -223,7 +223,7 @@ func verifyCode(ctx context.Context, client *account.Client, registrationID stri
 			continue
 		}
 		challenge, err := client.VerifyCode(ctx, registrationID, code)
-		var p *account.Problem
+		var p *accountclient.Problem
 		if errors.As(err, &p) && p.Kind() == "invalid-code" {
 			left := ""
 			if p.CodeAttemptsLeft != nil {
@@ -240,13 +240,13 @@ func verifyCode(ctx context.Context, client *account.Client, registrationID stri
 }
 
 func choosePIN(stdout io.Writer) (string, error) {
-	fmt.Fprintf(stdout, "Choose a PIN for your sign-in key (at least %d characters; a passphrase is stronger).\n", account.PINMinLength)
+	fmt.Fprintf(stdout, "Choose a PIN for your sign-in key (at least %d characters; a passphrase is stronger).\n", accountclient.PINMinLength)
 	for range 3 {
 		pin, err := prompter.Secret("PIN: ")
 		if err != nil {
 			return "", err
 		}
-		if err := account.CheckPIN(pin); err != nil {
+		if err := accountclient.CheckPIN(pin); err != nil {
 			fmt.Fprintln(stdout, strings.ToUpper(err.Error()[:1])+err.Error()[1:]+".")
 			continue
 		}
@@ -275,7 +275,7 @@ func consoleCmd(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		return fail(stderr, err)
 	}
-	state, err := account.LoadState(env)
+	state, err := accountclient.LoadState(env)
 	if err != nil {
 		return fail(stderr, err)
 	}
@@ -283,7 +283,7 @@ func consoleCmd(args []string, stdout, stderr io.Writer) int {
 	if err != nil {
 		return fail(stderr, err)
 	}
-	sealed, err := keys.Get(account.KeyName)
+	sealed, err := keys.Get(accountclient.KeyName)
 	if errors.Is(err, keystore.ErrNotFound) {
 		return fail(stderr, errors.New("this machine's sign-in key is missing; run privometry login --replace"))
 	}
@@ -296,12 +296,12 @@ func consoleCmd(args []string, stdout, stderr io.Writer) int {
 		if err != nil {
 			return fail(stderr, err)
 		}
-		key, err := account.Open(sealed, pin)
+		key, err := accountclient.Open(sealed, pin)
 		if err == nil {
 			priv = key
 			break
 		}
-		if !errors.Is(err, account.ErrWrongPIN) || attempt == 3 {
+		if !errors.Is(err, accountclient.ErrWrongPIN) || attempt == 3 {
 			return fail(stderr, err)
 		}
 		fmt.Fprintln(stdout, "Wrong PIN.")
@@ -309,7 +309,7 @@ func consoleCmd(args []string, stdout, stderr io.Writer) int {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	client := &account.Client{BaseURL: state.APIBaseURL, HTTP: accountHTTP(), UserAgent: "privometry/" + buildinfo.Version}
+	client := &accountclient.Client{BaseURL: state.APIBaseURL, HTTP: accountHTTP(), UserAgent: "privometry/" + buildinfo.Version}
 	challenge, err := client.SignInChallenge(ctx, state.CredentialID)
 	if err != nil {
 		return fail(stderr, explainAccount(err))
@@ -317,7 +317,7 @@ func consoleCmd(args []string, stdout, stderr io.Writer) int {
 	if strings.TrimSuffix(challenge.Audience, "/") != strings.TrimSuffix(state.APIBaseURL, "/") {
 		return fail(stderr, fmt.Errorf("the account API answered for %s, not %s", challenge.Audience, state.APIBaseURL))
 	}
-	proof, err := account.SignProof(priv, state.CredentialID, cloudaccount.AccountProof{Purpose: cloudaccount.AccountProofPurposeSignIn,
+	proof, err := accountclient.SignProof(priv, state.CredentialID, cloudaccount.AccountProof{Purpose: cloudaccount.AccountProofPurposeSignIn,
 		Audience: challenge.Audience, Challenge: challenge.Challenge, ChallengeID: challenge.ChallengeID,
 		CredentialID: state.CredentialID, IssuedAt: contract.At(accountNow())})
 	if err != nil {
@@ -345,7 +345,7 @@ func consoleCmd(args []string, stdout, stderr io.Writer) int {
 
 // explainAccount turns account API problems into what the person can do about them.
 func explainAccount(err error) error {
-	var p *account.Problem
+	var p *accountclient.Problem
 	if !errors.As(err, &p) {
 		return err
 	}

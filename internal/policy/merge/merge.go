@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/policy/compiler"
 	"github.com/privometry/privometry-edge/internal/policy/rulepack"
@@ -67,10 +67,10 @@ type Diagnostic struct {
 type Result struct {
 	Enforce     string
 	Monitor     string
-	Rules       map[string]bundles.BundleRule // by qualified ID
-	Unmatched   string                        // auto, allow or ask
-	FailModes   map[string]contract.FailMode  // by rule category
-	Packs       []string                      // id@version of every pack in use
+	Rules       map[string]bundle.BundleRule // by qualified ID
+	Unmatched   string                       // auto, allow or ask
+	FailModes   map[string]contract.FailMode // by rule category
+	Packs       []string                     // id@version of every pack in use
 	Diagnostics []Diagnostic
 }
 
@@ -80,7 +80,7 @@ var unmatchedStrength = map[string]int{"allow": 1, "auto": 2, "ask": 3}
 
 type entry struct {
 	compiler.Entry
-	meta       bundles.BundleRule
+	meta       bundle.BundleRule
 	exceptions []*compiler.Conditions
 	disabled   bool
 }
@@ -115,7 +115,7 @@ func Merge(in Input) (*Result, error) {
 	m.applyOverrides(sources)
 	m.applyExceptions(sources)
 
-	res := &Result{Rules: map[string]bundles.BundleRule{}, Unmatched: "auto", FailModes: map[string]contract.FailMode{}}
+	res := &Result{Rules: map[string]bundle.BundleRule{}, Unmatched: "auto", FailModes: map[string]contract.FailMode{}}
 	for k, v := range contract.DefaultFailModes() {
 		res.FailModes[k] = v
 	}
@@ -219,8 +219,8 @@ func (m *merger) add(id, layer, source string, r compiler.Rule, mode string, fai
 	}
 	m.entries[id] = &entry{
 		Entry: compiler.Entry{ID: id, Layer: layer, Mode: mode, Rule: r},
-		meta: bundles.BundleRule{ID: id, Layer: bundles.BundleRuleLayer(layer), Verdict: contract.Verdict(r.Verdict),
-			Category: contract.RuleCategory(r.Category), Mode: bundles.BundleRuleMode(mode), FailMode: failMode,
+		meta: bundle.BundleRule{ID: id, Layer: bundle.BundleRuleLayer(layer), Verdict: contract.Verdict(r.Verdict),
+			Category: contract.RuleCategory(r.Category), Mode: bundle.BundleRuleMode(mode), FailMode: failMode,
 			Message: r.Message, Source: source},
 	}
 	m.order = append(m.order, id)
@@ -320,7 +320,7 @@ func (m *merger) applyOverrides(sources []Source) {
 			continue
 		}
 		base := e.meta
-		lower := bundles.BundleRule{}
+		lower := bundle.BundleRule{}
 		overridden := false
 		for _, c := range byRule[id] {
 			if c.layer == Org {
@@ -338,7 +338,7 @@ func (m *merger) applyOverrides(sources []Source) {
 				lower.Verdict = contract.Verdict(v)
 			}
 			if md := c.o.Mode; md != "" && (lower.Mode == "" || md == "enforce") {
-				lower.Mode = bundles.BundleRuleMode(md)
+				lower.Mode = bundle.BundleRuleMode(md)
 			}
 			if fm := contract.FailMode(c.o.FailMode); fm != "" && failStrength[fm] > failStrength[lower.FailMode] {
 				lower.FailMode = fm
@@ -352,7 +352,7 @@ func (m *merger) applyOverrides(sources []Source) {
 		}
 		for _, c := range byRule[id] {
 			if c.layer == Org {
-				apply(&e.meta, bundles.BundleRule{Verdict: contract.Verdict(c.o.Verdict), Mode: bundles.BundleRuleMode(c.o.Mode),
+				apply(&e.meta, bundle.BundleRule{Verdict: contract.Verdict(c.o.Verdict), Mode: bundle.BundleRuleMode(c.o.Mode),
 					FailMode: contract.FailMode(c.o.FailMode), Message: c.o.Message})
 			}
 		}
@@ -362,7 +362,7 @@ func (m *merger) applyOverrides(sources []Source) {
 	}
 }
 
-func apply(dst *bundles.BundleRule, o bundles.BundleRule) {
+func apply(dst *bundle.BundleRule, o bundle.BundleRule) {
 	if o.Verdict != "" {
 		dst.Verdict = o.Verdict
 	}
@@ -378,7 +378,7 @@ func apply(dst *bundles.BundleRule, o bundles.BundleRule) {
 }
 
 // permitted checks one non-organization override against the loosening rules.
-func (m *merger) permitted(e *entry, layer, policy string, o compiler.Override, base bundles.BundleRule) bool {
+func (m *merger) permitted(e *entry, layer, policy string, o compiler.Override, base bundle.BundleRule) bool {
 	loosens := []string{}
 	if o.Verdict != "" && verdictStrength[o.Verdict] < verdictStrength[string(base.Verdict)] {
 		loosens = append(loosens, "verdict "+o.Verdict)

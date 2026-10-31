@@ -1,4 +1,4 @@
-package bundles
+package bundle
 
 import (
 	"regexp"

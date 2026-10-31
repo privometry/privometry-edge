@@ -24,7 +24,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/community"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/policy/compiler"
@@ -247,15 +247,15 @@ func main() {
 
 func buildBundle(entitlements signing.Envelope) []byte {
 	locked := true
-	return mustJSON(bundles.Bundle{
-		Schema:    bundles.BundleSchema,
+	return mustJSON(bundle.Bundle{
+		Schema:    bundle.BundleSchema,
 		BundleID:  "bnd_01JAB1QZ0000000000000000AB",
 		Version:   42,
 		OrgID:     "org_01JA0000000000000000000001",
 		CreatedAt: mustTime("2026-10-23T08:00:00.000Z"),
 		ExpiresAt: mustTime("2026-11-22T08:00:00.000Z"),
-		Defaults: bundles.BundleDefaults{
-			Unmatched: bundles.BundleDefaultsUnmatchedAuto,
+		Defaults: bundle.BundleDefaults{
+			Unmatched: bundle.BundleDefaultsUnmatchedAuto,
 			FailModes: map[string]contract.FailMode{
 				"catastrophic": contract.FailModeClosed, "secrets": contract.FailModeAsk, "exfiltration": contract.FailModeAsk,
 				"unapproved_mcp": contract.FailModeOpen, "other": contract.FailModeOpen,
@@ -263,24 +263,24 @@ func buildBundle(entitlements signing.Envelope) []byte {
 		},
 		CedarPolicies:        string(read(specsDir + "/policy/v1/examples/compiled/acme-default.cedar")),
 		CedarMonitorPolicies: "",
-		Rules: []bundles.BundleRule{
-			{ID: "acme-default:no-terraform-destroy", Layer: bundles.BundleRuleLayerOrg, Verdict: contract.VerdictDeny, Category: contract.RuleCategoryCatastrophic,
-				Mode: bundles.BundleRuleModeEnforce, FailMode: contract.FailModeClosed, Message: "Run terraform destroy from CI, not from an agent.", Locked: &locked, Source: "acme-default@7"},
-			{ID: "acme-default:allow-tests", Layer: bundles.BundleRuleLayerOrg, Verdict: contract.VerdictAllow, Category: contract.RuleCategoryOther,
-				Mode: bundles.BundleRuleModeEnforce, FailMode: contract.FailModeOpen, Source: "acme-default@7"},
-			{ID: "acme-default:ask-untrusted-network", Layer: bundles.BundleRuleLayerOrg, Verdict: contract.VerdictAsk, Category: contract.RuleCategoryOther,
-				Mode: bundles.BundleRuleModeEnforce, FailMode: contract.FailModeOpen, Message: "The agent read untrusted content; confirm this download.", Source: "acme-default@7"},
+		Rules: []bundle.BundleRule{
+			{ID: "acme-default:no-terraform-destroy", Layer: bundle.BundleRuleLayerOrg, Verdict: contract.VerdictDeny, Category: contract.RuleCategoryCatastrophic,
+				Mode: bundle.BundleRuleModeEnforce, FailMode: contract.FailModeClosed, Message: "Run terraform destroy from CI, not from an agent.", Locked: &locked, Source: "acme-default@7"},
+			{ID: "acme-default:allow-tests", Layer: bundle.BundleRuleLayerOrg, Verdict: contract.VerdictAllow, Category: contract.RuleCategoryOther,
+				Mode: bundle.BundleRuleModeEnforce, FailMode: contract.FailModeOpen, Source: "acme-default@7"},
+			{ID: "acme-default:ask-untrusted-network", Layer: bundle.BundleRuleLayerOrg, Verdict: contract.VerdictAsk, Category: contract.RuleCategoryOther,
+				Mode: bundle.BundleRuleModeEnforce, FailMode: contract.FailModeOpen, Message: "The agent read untrusted content; confirm this download.", Source: "acme-default@7"},
 		},
-		Catalog: bundles.BundleCatalog{Entries: []bundles.BundleCatalogEntry{
-			{ComponentID: "mcp_01J8MCPGH0000000000000000A", Kind: bundles.BundleCatalogEntryKindMCPServer, Name: "github",
-				Match:  &bundles.BundleCatalogEntryMatch{Transport: bundles.BundleCatalogEntryMatchTransportStdio, Package: "@modelcontextprotocol/server-github"},
-				Status: bundles.BundleCatalogEntryStatusApproved, RiskTier: bundles.BundleCatalogEntryRiskTierMedium},
-			{Kind: bundles.BundleCatalogEntryKindMCPServer, Name: "shell-runner",
-				Match:  &bundles.BundleCatalogEntryMatch{Command: "*mcp-shell-runner*"},
-				Status: bundles.BundleCatalogEntryStatusBlocked},
+		Catalog: bundle.BundleCatalog{Entries: []bundle.BundleCatalogEntry{
+			{ComponentID: "mcp_01J8MCPGH0000000000000000A", Kind: bundle.BundleCatalogEntryKindMCPServer, Name: "github",
+				Match:  &bundle.BundleCatalogEntryMatch{Transport: bundle.BundleCatalogEntryMatchTransportStdio, Package: "@modelcontextprotocol/server-github"},
+				Status: bundle.BundleCatalogEntryStatusApproved, RiskTier: bundle.BundleCatalogEntryRiskTierMedium},
+			{Kind: bundle.BundleCatalogEntryKindMCPServer, Name: "shell-runner",
+				Match:  &bundle.BundleCatalogEntryMatch{Command: "*mcp-shell-runner*"},
+				Status: bundle.BundleCatalogEntryStatusBlocked},
 		}},
 		Entitlements: entitlements,
-		Sources: []bundles.BundleSource{{Layer: bundles.BundleSourceLayerOrg, Name: "acme-default", Version: "7",
+		Sources: []bundle.BundleSource{{Layer: bundle.BundleSourceLayerOrg, Name: "acme-default", Version: "7",
 			Content: string(read(specsDir + "/policy/v1/examples/valid/acme-default.yaml"))}},
 	})
 }

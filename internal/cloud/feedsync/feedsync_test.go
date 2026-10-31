@@ -1,4 +1,4 @@
-package riskfeed_test
+package feedsync_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/privometry/privometry-edge/internal/cloud/cloudtest"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
+	"github.com/privometry/privometry-edge/internal/cloud/feedsync"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
 	"github.com/privometry/privometry-edge/internal/riskfeed"
@@ -60,20 +61,20 @@ func TestSyncSnapshotsAndDeltas(t *testing.T) {
 	snap["feed"] = "community"
 	edge.FeedDocument(t, snap)
 	ctx := context.Background()
-	if changed, err := riskfeed.Sync(ctx, edge.Client(), env, keys, time.Now()); err != nil || !changed {
+	if changed, err := feedsync.Sync(ctx, edge.Client(), env, keys, time.Now()); err != nil || !changed {
 		t.Fatalf("first sync: %v %v", changed, err)
 	}
 	held, _ := riskfeed.Load(env)
 	if held.Sequence != 5 || len(held.Entries) != 2 || held.ByPackage("@acme/files").Score != 10 {
 		t.Fatalf("held: %+v", held)
 	}
-	if changed, err := riskfeed.Sync(ctx, edge.Client(), env, keys, time.Now()); err != nil || changed {
+	if changed, err := feedsync.Sync(ctx, edge.Client(), env, keys, time.Now()); err != nil || changed {
 		t.Fatalf("nothing new: %v %v", changed, err)
 	}
 	delta := doc("delta", 6, 5, []any{entry(a, "@acme/files", 100, "deny", "known_malicious")}, []string{b})
 	delta["feed"] = "community"
 	edge.FeedDocument(t, delta)
-	if changed, err := riskfeed.Sync(ctx, edge.Client(), env, keys, time.Now()); err != nil || !changed {
+	if changed, err := feedsync.Sync(ctx, edge.Client(), env, keys, time.Now()); err != nil || !changed {
 		t.Fatalf("delta: %v %v", changed, err)
 	}
 	held, _ = riskfeed.Load(env)
@@ -85,7 +86,7 @@ func TestSyncSnapshotsAndDeltas(t *testing.T) {
 	old["feed"] = "community"
 	edge.FeedDocument(t, old)
 	// The fake serves the old snapshot for any since without a matching delta.
-	if _, err := riskfeed.Sync(ctx, edge.Client(), env, keys, time.Now()); !errors.Is(err, riskfeed.ErrRollback) {
+	if _, err := feedsync.Sync(ctx, edge.Client(), env, keys, time.Now()); !errors.Is(err, riskfeed.ErrRollback) {
 		t.Fatalf("an older snapshot: %v", err)
 	}
 	if kept, _ := riskfeed.Load(env); kept.Sequence != 6 {

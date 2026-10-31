@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
 	"github.com/privometry/privometry-edge/internal/extension"
@@ -58,7 +58,7 @@ func (d *Daemon) routeApproval(c call, sess *sessionInfo, a intent.Action, dec p
 		return nil
 	}
 	canAsk := native == "ask"
-	if cfg.Route != bundles.BundleApprovalsRouteAll && canAsk && !unattended(c) {
+	if cfg.Route != bundle.BundleApprovalsRouteAll && canAsk && !unattended(c) {
 		return nil // an interactive ask the developer answers
 	}
 	key := approvalKey(sess.ID, a, dec.RuleIDs)
@@ -151,8 +151,8 @@ func (d *Daemon) startApproval(r *approvalRequest, ev *events.Event) {
 }
 
 // approvalsConfig is the held bundle's approvals section, or nil.
-func (d *Daemon) approvalsConfig() *bundles.BundleApprovals {
-	held, err := bundles.Load(d.cfg.Env, d.cfg.Now())
+func (d *Daemon) approvalsConfig() *bundle.BundleApprovals {
+	held, err := bundle.Load(d.cfg.Env, d.cfg.Now())
 	if err != nil || held == nil {
 		return nil
 	}

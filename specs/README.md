@@ -29,7 +29,7 @@ Go code imports this folder as `github.com/privometry/privometry-edge/specs`: th
 | `common/v1` (shared enums, DSSE envelope, key set) | `internal/contract` | `common.gen.go` (plus hand-written `Time`) |
 | `event-schema/v1` | `internal/events` | `event.gen.go` |
 | `adapter/v1` (definition, set) | `internal/adapters/registry` | `adapter.gen.go` |
-| `policy/v1/bundle.schema.json` | `internal/cloud/bundles` | `bundle.gen.go` |
+| `policy/v1/bundle.schema.json` | `internal/bundle` | `bundle.gen.go` |
 | `entitlements/v1` (entitlements, license, feature registry) | `internal/cloud/entitlements` | `entitlements.gen.go` |
 | `riskfeed/v1` | `internal/riskfeed` | `riskfeed.gen.go` |
 | `rulepack/v1` (manifest, tests) | `internal/policy/rulepack` | `rulepack.gen.go` |

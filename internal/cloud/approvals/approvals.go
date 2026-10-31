@@ -17,8 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/privometry/privometry-edge/internal/bundle"
 	"github.com/privometry/privometry-edge/internal/cloud"
-	"github.com/privometry/privometry-edge/internal/cloud/bundles"
 	"github.com/privometry/privometry-edge/internal/cloud/enroll"
 	"github.com/privometry/privometry-edge/internal/keystore"
 	"github.com/privometry/privometry-edge/internal/platform"
@@ -37,7 +37,7 @@ func New(base *http.Client, env platform.Env) (*Client, error) {
 		return nil, err
 	}
 	if id == nil {
-		return nil, bundles.ErrNotEnrolled
+		return nil, bundle.ErrNotEnrolled
 	}
 	keys, err := keystore.Open(env, id.Keystore)
 	if err != nil {
