@@ -6,6 +6,9 @@
 //	go run ./scripts/release-manifest -version 0.5.0 -dist dist -key release.seed -name gh-2026
 //	go run ./scripts/release-manifest -version 0.5.0 -dist dist    # unsigned payload for an external signer
 //
+// The connected build (privometry-connect) runs it too, with -base-url and
+// -notes-url for its own download host.
+//
 // The manifest expires after -valid (60 days by default): devices refuse an
 // expired one, so a release is re-signed before then (the release workflow's
 // manual "resign" run). The signed envelope is checked the way a sensor
@@ -42,6 +45,7 @@ func main() {
 	version := flag.String("version", "", "release version without the v, for example 0.5.0")
 	dist := flag.String("dist", "dist", "goreleaser output folder with checksums.txt and the archives")
 	base := flag.String("base-url", "", "download folder; default https://github.com/privometry/privometry-edge/releases/download/v<version>")
+	notes := flag.String("notes-url", "", "release notes; default the GitHub release page")
 	channel := flag.String("channel", "stable", "stable or beta")
 	valid := flag.Duration("valid", 60*24*time.Hour, "how long devices accept the manifest")
 	released := flag.String("released-at", "", "release time (RFC 3339); default now, and kept when re-signing")
@@ -67,7 +71,7 @@ func main() {
 	}
 	rel := update.Release{Schema: "privometry.release/v1", Version: *version, Channel: update.ReleaseChannel(*channel),
 		ReleasedAt: contract.At(releasedAt), ExpiresAt: contract.At(now.Add(*valid)),
-		NotesURL: "https://github.com/privometry/privometry-edge/releases/tag/v" + *version}
+		NotesURL: orDefault(*notes, "https://github.com/privometry/privometry-edge/releases/tag/v"+*version)}
 	arts, err := artifacts(*dist, *version, strings.TrimSuffix(*base, "/"))
 	if err != nil {
 		log.Fatal(err)
