@@ -29,7 +29,7 @@ allowlist:
   - detectors: [privometry/injection:disable-protection, privometry/injection:skip-approvals]
     paths:
       - docs/*
-      - cmd/privometry/*.go
+      - internal/cli/*.go
       - internal/guard/guard.go
       - internal/scanner/posture/posture.go
     reason: Docs and CLI help name Privometry's own uninstall commands and the agent permission settings the posture checks report.

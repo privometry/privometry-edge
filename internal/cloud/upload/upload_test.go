@@ -60,15 +60,15 @@ func TestOnlyOrganizationFingerprintsLeave(t *testing.T) {
 		ev.ContentFinding = &events.ContentFinding{Category: "credential", SecretType: "github_token", Fingerprint: "hmac-sha256:" + strings.Repeat("a", 64)}
 		ev.Ext = map[string]any{"x_privometry_title": "GitHub token"}
 		if keyID != "" {
-			ev.Ext[FingerprintKeyExt] = keyID
+			ev.Ext[events.FingerprintKeyExt] = keyID
 		}
 		return ev
 	}
 	org := finding(id.HashKeyID)
-	if got := Prepare(org, id, key, nil); got.ContentFinding.Fingerprint == "" || got.Ext[FingerprintKeyExt] != nil || got.Ext["x_privometry_title"] == nil {
+	if got := Prepare(org, id, key, nil); got.ContentFinding.Fingerprint == "" || got.Ext[events.FingerprintKeyExt] != nil || got.Ext["x_privometry_title"] == nil {
 		t.Errorf("organization fingerprint: %+v %v", got.ContentFinding, got.Ext)
 	}
-	if org.Ext[FingerprintKeyExt] == nil {
+	if org.Ext[events.FingerprintKeyExt] == nil {
 		t.Error("the stored event is not changed")
 	}
 	for _, keyID := range []string{"", "hk_01JA00000000000000000000OLD"} {

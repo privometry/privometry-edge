@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/privometry/privometry-edge/internal/cloud/upload"
 	"github.com/privometry/privometry-edge/internal/content"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
@@ -286,7 +285,7 @@ func contentSalt(get func(string) (string, error), set func(string, string) erro
 func findingExt(f content.Finding) map[string]any {
 	ext := map[string]any{"x_privometry_title": f.Title}
 	if f.FingerprintKey != "" && f.Fingerprint != "" {
-		ext[upload.FingerprintKeyExt] = f.FingerprintKey
+		ext[events.FingerprintKeyExt] = f.FingerprintKey
 	}
 	return ext
 }

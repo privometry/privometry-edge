@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/privometry/privometry-edge/internal/cloud/bundles"
-	"github.com/privometry/privometry-edge/internal/cloud/inventory"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/policy/intent"
 	"github.com/privometry/privometry-edge/internal/scanner"
@@ -36,7 +35,7 @@ func (d *Daemon) mcpCatalogStatus(product contract.AgentProduct, a intent.Action
 	it := bundles.CatalogItem{Kind: "mcp_server", Name: a.MCPServer}
 	d.mu.Lock()
 	if m, ok := d.catalogState.servers[string(product)+"\x00"+a.MCPServer]; ok {
-		it.Transport, it.Package, it.URL, it.Command = m.Transport, inventory.PackageName(m.Package), m.URL, m.Command
+		it.Transport, it.Package, it.URL, it.Command = m.Transport, scanner.PackageName(m.Package), m.URL, m.Command
 		if it.Transport == "sse" || it.Transport == "streamable-http" {
 			it.Transport = "http"
 		}

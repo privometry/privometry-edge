@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -23,9 +22,9 @@ import (
 	"github.com/privometry/privometry-edge/internal/adapters/registry"
 	"github.com/privometry/privometry-edge/internal/buildinfo"
 	"github.com/privometry/privometry-edge/internal/cloud/bundles"
-	"github.com/privometry/privometry-edge/internal/cloud/cloudsync"
 	"github.com/privometry/privometry-edge/internal/contract"
 	"github.com/privometry/privometry-edge/internal/events"
+	"github.com/privometry/privometry-edge/internal/extension"
 	"github.com/privometry/privometry-edge/internal/guard"
 	"github.com/privometry/privometry-edge/internal/ipc"
 	"github.com/privometry/privometry-edge/internal/platform"
@@ -61,9 +60,10 @@ type Config struct {
 	// LocalCapture controls target_clear in the local timeline. Empty defaults
 	// to redacted; clear is retained for explicitly configured deployments.
 	LocalCapture contract.PrivacyLevel
-	// CloudHTTP is the client whose server roots cloud requests trust; nil
-	// means the system's. Tests set it to reach their own server.
-	CloudHTTP *http.Client
+	// Connector links the device to a control plane; nil means the one the
+	// build registered (internal/extension), if any. Without one the daemon
+	// runs on its own.
+	Connector extension.NewConnector
 	// AdapterSetVersion is the adapter definition set in use, for heartbeats.
 	AdapterSetVersion int64
 }
@@ -106,7 +106,8 @@ type Daemon struct {
 	bg          sync.WaitGroup       // background scans
 	bgSlots     chan struct{}
 
-	cloud        *cloudsync.Syncer    // enrolled devices: certificate renewal, bundles, uploads, heartbeats, inventory
+	conn         extension.Connector  // the control plane connection, or nil
+	approver     extension.Approver   // the connector, when it routes asks to people
 	catalogState catalogState         // guarded by mu
 	approvals    map[string]*approval // remote approvals by action, guarded by mu
 	feedState    feedState            // the risk feed, guarded by mu
@@ -178,12 +179,22 @@ func New(cfg Config) (*Daemon, error) {
 		roots: map[string]time.Time{}, agentWrites: map[string]time.Time{}}
 	d.device = events.Device{DeviceID: id, OS: contract.OS(cfg.Env.OS()), OSVersion: osVersion(), Arch: arch(), SensorVersion: sensorVersion()}
 	d.stop, d.cancel = context.WithCancel(context.Background())
-	d.cloud = &cloudsync.Syncer{Env: cfg.Env, HTTP: cfg.CloudHTTP, Logger: cfg.Logger}
-	d.cloud.Local = cloudLocal{d}
+	newConn := cfg.Connector
+	if newConn == nil {
+		newConn = extension.Registered()
+	}
+	if newConn != nil {
+		// Before the baseline policy: a connector may set the fingerprint key.
+		if d.conn, err = newConn(host{d}, extension.Options{Env: cfg.Env, Logger: cfg.Logger}); err != nil {
+			d.cancel()
+			store.Close()
+			return nil, err
+		}
+		d.approver, _ = d.conn.(extension.Approver)
+	}
 	if _, err := d.policyFor(""); err != nil {
 		d.cfg.Logger.Warn("baseline policy failed to load", "err", err)
 	}
-	d.refreshFingerprintKey()
 	return d, nil
 }
 
@@ -197,11 +208,14 @@ func (d *Daemon) Close() error {
 // Wait blocks until background scans finish, for tests.
 func (d *Daemon) Wait() { d.bg.Wait() }
 
-// CloudSync runs the cloud work that is due now, as the daemon's loop does
-// every few seconds; tests call it instead of waiting.
-func (d *Daemon) CloudSync(ctx context.Context) bool {
-	d.refreshFingerprintKey()
-	return d.cloud.Tick(ctx, d.cfg.Now())
+// Sync runs the connector's work that is due now, as the daemon's loop does
+// every few seconds; tests call it instead of waiting. It reports whether the
+// organization's bundle changed, and is false without a connector.
+func (d *Daemon) Sync(ctx context.Context) bool {
+	if d.conn == nil {
+		return false
+	}
+	return d.conn.Sync(ctx, d.cfg.Now())
 }
 
 // Store exposes the timeline, for tests and the CLI.
@@ -235,7 +249,9 @@ func (d *Daemon) Run(ctx context.Context) error {
 		l.Close()
 	}()
 	go d.housekeeping(ctx)
-	go d.cloudLoop(ctx)
+	if d.conn != nil {
+		go d.connectorLoop(ctx)
+	}
 	err = ipc.Serve(l, d.Handle, 5*time.Second)
 	os.Remove(addr)
 	if ctx.Err() != nil {

@@ -736,7 +736,9 @@ type FindingTriage struct {
 // in secret. A Jira base_url and a Teams URL must be https on public addresses,
 // as webhook URLs must, and are checked again before each call. Secrets are
 // kept encrypted and never returned. github takes the installation of the
-// Privometry GitHub App.
+// Privometry GitHub App and, in authorization_code, the code GitHub returns
+// when the person connecting authorizes the app; the installation connects only
+// when GitHub lists it among theirs.
 type IntegrationCreate struct {
 	Type   IntegrationCreateType `json:"type"`
 	Name   string                `json:"name"`
@@ -746,6 +748,12 @@ type IntegrationCreate struct {
 	// Slack only: the Slack app's signing secret, which signs its interactivity
 	// requests. Kept encrypted, never returned.
 	SigningSecret string `json:"signing_secret,omitempty"`
+
+	// GitHub only: the OAuth code GitHub adds to its redirect after the person
+	// connecting authorizes the Privometry GitHub App. Exchanged once to check
+	// that the installation is one they can see, then discarded; never stored or
+	// returned.
+	AuthorizationCode string `json:"authorization_code,omitempty"`
 }
 
 // IntegrationCreateType is generated from org-api/v1/messages.schema.json#/$defs/IntegrationCreate/properties/type.
