@@ -19,4 +19,10 @@ The edge verifies an organization bundle itself before using it: the region's po
 
 ## Getting the connected build
 
-Ask your organization's Privometry admin for the connected build and an invitation link or enrollment token. Running `privometry login` on this build prints this page.
+Ask your organization's Privometry admin for an invitation link or an enrollment token, then run `privometry login` with it. On this build, `login` offers to install the connected build and then signs you up with it. To install it without signing up, for example before an MDM rollout runs `privometry enroll`:
+
+```sh
+privometry update --connected
+```
+
+The connected build is published at `downloads.privometry.dev`, signed with its own release key, which this build trusts (`internal/trust/keys`). Its manifest, sizes and digests are checked like any release.

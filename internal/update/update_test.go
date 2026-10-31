@@ -155,6 +155,32 @@ func TestUpdateInstallsVerifiedRelease(t *testing.T) {
 	}
 }
 
+// Switching to another build installs its release whatever the versions,
+// still only when it is signed; a development build still refuses.
+func TestSwitchIgnoresVersions(t *testing.T) {
+	ctx := context.Background()
+	for _, current := range []string{"0.5.0", "0.6.0"} {
+		f := newFixture(t, "0.5.0")
+		o := f.opts(current)
+		o.Switch = true
+		if _, art, err := Check(ctx, o); err != nil || art == nil {
+			t.Errorf("switch from %s: %v", current, err)
+		}
+	}
+	f := newFixture(t, "0.5.0")
+	f.sign("release", "attacker")
+	o := f.opts("0.6.0")
+	o.Switch = true
+	if _, _, err := Check(ctx, o); !errors.Is(err, signing.ErrNoValidSignature) {
+		t.Errorf("switch to an unsigned release: %v", err)
+	}
+	o = newFixture(t, "0.5.0").opts("dev")
+	o.Switch = true
+	if _, _, err := Check(ctx, o); !errors.Is(err, ErrDevBuild) {
+		t.Errorf("switch from a dev build: %v", err)
+	}
+}
+
 func TestUpdateRefusals(t *testing.T) {
 	ctx := context.Background()
 	cases := []struct {

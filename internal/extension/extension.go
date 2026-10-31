@@ -130,10 +130,27 @@ type Command struct {
 }
 
 var (
-	mu        sync.Mutex
-	connector NewConnector
-	commands  []Command
+	mu             sync.Mutex
+	connector      NewConnector
+	commands       []Command
+	releaseChannel string
 )
+
+// SetReleaseChannel sets the release manifest privometry update installs
+// from, so a connected build updates to the next connected build rather than
+// the open-source one.
+func SetReleaseChannel(manifestURL string) {
+	mu.Lock()
+	defer mu.Unlock()
+	releaseChannel = manifestURL
+}
+
+// ReleaseChannel is the registered release manifest URL, or "".
+func ReleaseChannel() string {
+	mu.Lock()
+	defer mu.Unlock()
+	return releaseChannel
+}
 
 // SetConnector registers the build's connector. A build has at most one;
 // setting another panics.

@@ -107,7 +107,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		}
 	}
 	if isConnectedOnly(args[0]) {
-		return connectedStub(args[0], stderr)
+		return connectedStub(args[0], args[1:], stdout, stderr)
 	}
 	fmt.Fprintf(stderr, "privometry: unknown command %q\n\n%s", args[0], usageText())
 	return 2

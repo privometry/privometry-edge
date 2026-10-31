@@ -27,12 +27,24 @@ Tests that need a build without release keys call `trust.WithoutReleaseKeys`.
   reviewer approves. It moves to a cloud key service later by rotation: make
   the new key, sign a release key set naming it with the root key, and point
   the workflow at it.
+- **Connected release key** (decided 2026-10-31): the connected build,
+  from the private privometry-connect, is signed with its own `release`
+  key, `gl-2026`. Its seed is a protected, masked GitLab CI variable,
+  `PRIVOMETRY_RELEASE_KEY`, readable only on protected `v*` tags, with
+  `PRIVOMETRY_RELEASE_KEY_NAME`. Its public key goes in
+  `release-keys.json` next to `gh-2026`, so the open-source build can
+  install the connected one (`privometry update --connected`) and the
+  connected build can update itself. Until it is added, both refuse
+  connected releases.
 - **Root key**: an Ed25519 seed kept offline, in two places held by two
   people, never in CI or a cloud account. It signs key sets only.
 
 To create the release key:
 
     go run ./scripts/release-keygen -role release -name gh-2026 -out <private folder>
+
+The connected release key is made the same way with `-name gl-2026`; add
+its entry to the `keys` of `release-keys.json` rather than replacing it.
 
 Store the seed as the environment secret, delete the local copy once it is
 in two safe places, and commit the printed `release-keys.json` here. Every

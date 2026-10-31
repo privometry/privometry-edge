@@ -8,7 +8,8 @@
 //     internal/trust/keys/README.md);
 //   - the manifest validates against its schema and has not expired;
 //   - its version is newer than the running one (no downgrades, no
-//     reinstalls, and development builds never update themselves);
+//     reinstalls, and development builds never update themselves), unless
+//     the install switches to another build, such as the connected one;
 //   - the download for this OS and architecture has exactly the declared
 //     size and SHA-256, every URL is HTTPS, and the archive holds the
 //     declared binaries at its top level (nothing else is extracted);
@@ -49,8 +50,13 @@ import (
 const PayloadType = "application/vnd.privometry.release+json"
 
 // DefaultManifestURL is where privometry update looks for the latest stable
-// release. PRIVOMETRY_UPDATE_URL or --manifest override it.
+// release. A connected build registers its own channel (pkg/edge), and
+// PRIVOMETRY_UPDATE_URL or --manifest override both.
 const DefaultManifestURL = "https://github.com/privometry/privometry-edge/releases/latest/download/release.json"
+
+// ConnectedManifestURL is the stable channel of the connected build, which
+// privometry login installs over the open-source one.
+const ConnectedManifestURL = "https://downloads.privometry.dev/connect/stable/release.json"
 
 // Limits on what is downloaded.
 const (
@@ -78,9 +84,13 @@ type Options struct {
 	Keys        *signing.KeySet // nil means TrustedKeys
 	Client      *http.Client    // nil means a client with timeouts
 	Current     string          // the running version
-	GOOS        string          // runtime.GOOS
-	GOARCH      string
-	Now         func() time.Time
+	// Switch installs another build's release whatever its version, as
+	// moving to the connected build does; the signature and digests are
+	// checked as always.
+	Switch bool
+	GOOS   string // runtime.GOOS
+	GOARCH string
+	Now    func() time.Time
 }
 
 func (o *Options) defaults() error {
@@ -134,6 +144,7 @@ func Check(ctx context.Context, opts Options) (*Release, *Artifact, error) {
 		return &rel, nil, err
 	}
 	switch c := next.compare(cur); {
+	case opts.Switch:
 	case c == 0:
 		return &rel, nil, ErrUpToDate
 	case c < 0:
