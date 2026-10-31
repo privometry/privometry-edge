@@ -155,54 +155,9 @@ privometry mcp unwrap [--agent AGENT] [--dry-run]
 
 Only user-level MCP configs are edited (Claude Code `~/.claude.json`, Cursor `~/.cursor/mcp.json`, Codex `~/.codex/config.toml`); remote servers and repo configs are left alone. Restart the agents after wrapping. See `docs/mcp-shim.md`.
 
-## `privometry login`
+## Connected-build commands
 
-Signs this machine up with your organization and enrolls it:
-
-```sh
-privometry login --email ADDRESS --invite LINK                  # join from an invitation
-privometry login --email ADDRESS --org SLUG                     # add this machine to your account
-privometry login --email ADDRESS --create-org NAME --slug SLUG  # create an organization (you become owner)
-  [--name NAME] [--label LABEL] [--api URL] [--keystore auto|keychain|file] [--no-enroll] [--replace]
-```
-
-It asks for the emailed code (Enter sends a new one), your name for a new account, and a PIN for your sign-in key, then enrolls the device. The PIN never leaves the machine and cannot be recovered; an admin reset replaces the key. Exit code 1 means you are signed up but the device is not enrolled. See `docs/account.md`.
-
-## `privometry console`
-
-Signs you in to the console with your sign-in key after asking for its PIN, and opens the console in your browser:
-
-```sh
-privometry console [--print]
-```
-
-`--print` prints the one-time sign-in link (valid 60 seconds) instead of opening a browser.
-
-## `privometry enroll`
-
-Enrolls this device with a token from an admin or an MDM rollout, without signing a person up (the device belongs to no person until someone runs `privometry login` on it):
-
-```sh
-privometry enroll --token pet_... [--edge URL] [--keystore auto|keychain|file]
-```
-
-## `privometry device`
-
-```sh
-privometry device status   # device ID, organization, region, edge API, certificate expiry, upload backlog
-privometry device renew    # a new device key and certificate, over mutual TLS with the current one
-```
-
-Certificates last 30 days; `status` suggests renewing in the last 10, and the daemon renews on its own in that window. `status` also says when the region's key set was pinned at enrollment because this build has no root keys.
-
-## `privometry bundle`
-
-```sh
-privometry bundle status   # the organization bundle this device enforces: version, policies, rules, entitlements, key set
-privometry bundle sync     # fetch the newest bundle now
-```
-
-An enrolled daemon fetches the bundle every 5 minutes. A bundle is used only when it is signed by the region's policy key, is for this device's organization, is not older than the one held and has not expired; otherwise the device keeps the bundle it holds. An expired bundle stays in force until a new one arrives. The bundle's policies are merged with the built-in packs and the user and repo policies, so `privometry policy test` and `doctor` show the same rules the daemon enforces.
+`login`, `enroll`, `console`, `device` and `bundle` belong to the connected build, which signs a machine up with an organization. In this build they explain how to get it and exit 2. See [Connecting to Privometry](Connecting-to-Privometry.md).
 
 ## `privometry version`
 
@@ -215,8 +170,6 @@ Prints the version, commit, and build date injected by the release build.
 | `PRIVOMETRY_HOME` | Override the runtime data directory |
 | `PRIVOMETRY_HOOK_TIMEOUT_MS` | Override hook-to-daemon timeout |
 | `PRIVOMETRY_UPDATE_URL` | Override signed release manifest URL |
-| `PRIVOMETRY_EDGE_API` | Edge API for `privometry enroll` (default `https://in.api.privometry.dev/edge/v1`) |
-| `PRIVOMETRY_ACCOUNT_API` | Account API for `privometry login` (default `https://in.api.privometry.dev/account/v1`) |
 | `PRIVOMETRY_RECORD_DIR` | Development-only hook recorder output directory |
 | `NO_COLOR` | Disable terminal color |
 

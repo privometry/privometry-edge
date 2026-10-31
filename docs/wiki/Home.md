@@ -14,7 +14,7 @@ This wiki is the integration and maintenance guide for privometry-edge. It cover
 | Author policies and rule packs | [Policy Integration](Policy-Integration.md) |
 | See what the built-in rules block or ask about | [Built-in Rules](Built-in-Rules.md) |
 | Change schemas or generated types | [Contracts and Code Generation](Contracts-and-Code-Generation.md) |
-| Connect the edge to the Java platform | [Platform Integration](Platform-Integration.md) |
+| Connect a machine to an organization | [Connecting to Privometry](Connecting-to-Privometry.md) |
 | Build, test, and publish releases | [Testing and Release](Testing-and-Release.md) |
 | Diagnose a broken installation | [Operations and Troubleshooting](Operations-and-Troubleshooting.md) |
 | Review privacy and security guarantees | [Security and Privacy](Security-and-Privacy.md) |

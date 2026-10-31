@@ -36,27 +36,10 @@ var suites = []struct {
 	{dir: "detectorpack/v1/examples/detectors", schema: "detectorpack/v1/detectors.schema.json"},
 	{dir: "detectorpack/v1/examples/pack-set", schema: "detectorpack/v1/pack-set.schema.json"},
 	{dir: "communitypack/v1/examples", schema: "communitypack/v1/communitypack.schema.json"},
-	{dir: "entitlements/v1/examples/entitlements", schema: "entitlements/v1/entitlements.schema.json"},
-	{dir: "entitlements/v1/examples/license", schema: "entitlements/v1/license.schema.json"},
 }
 
 func TestExamples(t *testing.T) {
-	all := suites
-	// API messages: examples/<Def>/ is checked against messages.schema.json#/$defs/<Def>.
-	for _, api := range []string{"edge-api/v1", "account-api/v1", "org-api/v1"} {
-		msgDirs, _ := filepath.Glob(api + "/examples/*")
-		if len(msgDirs) == 0 {
-			t.Errorf("no message examples in %s", api)
-		}
-		for _, d := range msgDirs {
-			all = append(all, struct {
-				dir     string
-				schema  string
-				maxSize int
-			}{dir: d, schema: api + "/messages.schema.json#/$defs/" + filepath.Base(d)})
-		}
-	}
-	for _, s := range all {
+	for _, s := range suites {
 		t.Run(s.dir, func(t *testing.T) {
 			sch, err := specs.Schema(s.schema)
 			if err != nil {

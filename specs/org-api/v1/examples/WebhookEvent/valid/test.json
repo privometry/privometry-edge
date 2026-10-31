@@ -1,9 +1,0 @@
-{
-  "event_id": "whe_01JBK4N6Q8S0V2W4Y6A8C0E2GA",
-  "type": "webhook.test",
-  "created_at": "2026-10-28T09:01:00.000Z",
-  "org_id": "org_01JA0000000000000000000001",
-  "data": {
-    "webhook_id": "whk_01JBK3M5P7R9T1V3X5Z7B9D1F3"
-  }
-}

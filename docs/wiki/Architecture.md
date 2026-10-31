@@ -39,7 +39,7 @@ Privometry Java platform
 
 ### Connector
 
-A build may register one connector through `pkg/edge` (`internal/extension`). The daemon gives it a view of the machine: the timeline, hook status, scans and the fingerprint key. The connector syncs with a control plane and may route asks to people. It never takes part in a decision: without a connector, or when it fails, the daemon decides alone. The cloud connector (`internal/cloud/connector`) is moving to the private `privometry-connect` repository.
+A build may register one connector through `pkg/edge` (`internal/extension`). The daemon gives it a view of the machine: the timeline, hook status, scans and the fingerprint key. The connector syncs with a control plane and may route asks to people. It never takes part in a decision: without a connector, or when it fails, the daemon decides alone. This repository ships none: the Privometry cloud connector is in the private privometry-connect module, which builds the connected sensor. See [Connecting to Privometry](Connecting-to-Privometry.md).
 
 ### Policy engine
 

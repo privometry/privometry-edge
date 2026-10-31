@@ -47,7 +47,7 @@ its region's key set from `/edge/v1/enroll` and verifies it against these
 keys; the key set names the `policy` key that signs bundles and the `license`
 key that signs entitlements. Without `root-keys.json`, a device pins the key
 set it gets at enrollment after checking that a root key listed in it signed
-it, and `privometry device status` says so.
+it, and the connected build's `privometry device status` says so.
 
 The offline root key `root:offline-a:25358486e189b3d3` exists (2026-10-29),
 but its key set is not committed here yet. Today the control plane signs its

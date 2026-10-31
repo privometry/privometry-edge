@@ -54,19 +54,11 @@ var outputs = []output{
 		{"adapter/v1/adapter-set.schema.json", "AdapterSet"},
 	}},
 	{"bundle", "internal/bundle", "bundle.gen.go", []source{{"policy/v1/bundle.schema.json", "Bundle"}}},
-	{"entitlements", "internal/cloud/entitlements", "entitlements.gen.go", []source{
-		{"entitlements/v1/entitlements.schema.json", "Entitlements"},
-		{"entitlements/v1/license.schema.json", "License"},
-		{"entitlements/v1/feature-registry.schema.json", "FeatureRegistry"},
-	}},
 	{"riskfeed", "internal/riskfeed", "riskfeed.gen.go", []source{{"riskfeed/v1/riskfeed.schema.json", "Document"}}},
 	{"rulepack", "internal/policy/rulepack", "rulepack.gen.go", []source{
 		{"rulepack/v1/pack.schema.json", "Manifest"},
 		{"rulepack/v1/ruletest.schema.json", "TestFile"},
 	}},
-	{"cloud", "internal/cloud", "messages.gen.go", []source{{"edge-api/v1/messages.schema.json", ""}}},
-	{"account", "internal/cloud/account", "messages.gen.go", []source{{"account-api/v1/messages.schema.json", ""}}},
-	{"orgapi", "internal/cloud/orgapi", "messages.gen.go", []source{{"org-api/v1/messages.schema.json", ""}}},
 	{"update", "internal/update", "release.gen.go", []source{{"release/v1/release.schema.json", "Release"}}},
 	{"community", "internal/community", "communitypack.gen.go", []source{{"communitypack/v1/communitypack.schema.json", "Document"}}},
 	{"content", "internal/content", "detectorpack.gen.go", []source{
