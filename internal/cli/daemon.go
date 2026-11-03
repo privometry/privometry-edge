@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"text/tabwriter"
@@ -240,15 +241,32 @@ func sibling(flagPath, name string) (string, error) {
 		if resolved, err := filepath.EvalSymlinks(exe); err == nil {
 			exe = resolved
 		}
-		p = filepath.Join(filepath.Dir(exe), name)
+		p = filepath.Join(filepath.Dir(exe), exeName(name, runtime.GOOS))
 	}
 	abs, err := filepath.Abs(p)
 	if err != nil {
 		return "", err
 	}
 	info, err := os.Stat(abs) //nolint:gosec // the path is the user's own --binary flag or the CLI's sibling
-	if err != nil || info.IsDir() || info.Mode().Perm()&0o111 == 0 {
+	if err != nil || !runnable(info, runtime.GOOS) {
 		return "", fmt.Errorf("%s not found or not executable at %s (use --%s)", name, abs, strings.TrimSuffix(name, "-hook"))
 	}
 	return abs, nil
+}
+
+// exeName is a binary's file name on goos: Windows programs end in .exe.
+func exeName(name, goos string) string {
+	if goos == "windows" {
+		return name + ".exe"
+	}
+	return name
+}
+
+// runnable reports whether a file can be run. Windows has no execute bit (Go
+// reports 0666 or 0444), so there a regular file is enough.
+func runnable(info os.FileInfo, goos string) bool {
+	if info.IsDir() {
+		return false
+	}
+	return goos == "windows" || info.Mode().Perm()&0o111 != 0
 }

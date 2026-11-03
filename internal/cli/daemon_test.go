@@ -90,3 +90,35 @@ func TestDaemonCommands(t *testing.T) {
 		t.Errorf("status after uninstall:\n%s", out)
 	}
 }
+
+func TestSiblingOnWindows(t *testing.T) {
+	if got := exeName("privometryd", "windows"); got != "privometryd.exe" {
+		t.Errorf("exeName on windows = %q", got)
+	}
+	if got := exeName("privometryd", "linux"); got != "privometryd" {
+		t.Errorf("exeName on linux = %q", got)
+	}
+	dir := t.TempDir()
+	plain := dir + "/privometryd.exe"
+	if err := os.WriteFile(plain, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(plain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Go reports Windows files without execute bits.
+	if !runnable(info, "windows") {
+		t.Error("a regular file is not runnable on windows")
+	}
+	if runtime.GOOS != "windows" && runnable(info, "linux") {
+		t.Error("a file without execute bits is runnable on linux")
+	}
+	dirInfo, err := os.Stat(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runnable(dirInfo, "windows") {
+		t.Error("a directory is runnable")
+	}
+}
