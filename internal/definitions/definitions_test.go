@@ -330,7 +330,7 @@ var builtInDigests = map[string]string{
 	"detectorpacks 1": "sha256:67d93563fd3d144e907d1876fc7e8c315e9940df94fe109e11e2b1ff63425c85",
 	"detectorpacks 2": "sha256:0f489f0e56f3d87283af25a57dc4610f9c317237a3707b3055a20a518732b01c", // SCAN-13 exfiltration detectors
 	"detectorpacks 3": "sha256:11231588848668b267435ce73074732c68769cae18e46c22f701a5112517433b", // maintainers URL on GitHub
-	"detectorpacks 4": "sha256:9643083f4523a888aadb653806bc84bf889b5bb4234248ac33b1616d865c86ce", // tool-poisoning detectors
+	"detectorpacks 4": "sha256:0988dcfb76135da495c707981f46076ba421ffa283a66f1cafe6c7b9bc05fa8d", // tool-poisoning detectors
 }
 
 func TestBuiltInSetVersionsArePinned(t *testing.T) {
