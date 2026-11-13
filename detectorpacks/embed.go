@@ -10,7 +10,7 @@ import "embed"
 // whenever a pack here changes, so a signed set built from the old packs can
 // never replace the new ones; internal/definitions pins the content of each
 // version in a test.
-const SetVersion = 3
+const SetVersion = 4
 
 // FS holds each pack's manifest and detector files.
 //
